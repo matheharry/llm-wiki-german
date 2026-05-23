@@ -145,8 +145,18 @@ export async function safeReadPluginData(
 }
 
 async function ensureDir(app: SafeWriteApp, dir: string): Promise<void> {
-  if (!(await app.vault.adapter.exists(dir))) {
-    await app.vault.adapter.mkdir(dir);
+  const parts = dir.split("/");
+  let current = "";
+  for (const p of parts) {
+    if (!p) continue;
+    current = current ? `${current}/${p}` : p;
+    if (!(await app.vault.adapter.exists(current))) {
+      try {
+        await app.vault.adapter.mkdir(current);
+      } catch {
+        // Parent might not exist or other race condition — best effort
+      }
+    }
   }
 }
 

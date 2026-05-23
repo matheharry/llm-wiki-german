@@ -1,8 +1,8 @@
 import type { Concept, Entity } from "./types.js";
 
 /** Hardcoded quality thresholds for page generation. */
-const MIN_FACTS_PER_ENTITY = 2;
-const MIN_SOURCES_PER_ENTITY = 2;
+const MIN_FACTS_PER_ENTITY = 1;
+const MIN_SOURCES_PER_ENTITY = 1;
 
 const ENTITY_BLACKLIST = new Set([
   "exact name",
