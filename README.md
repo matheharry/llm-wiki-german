@@ -13,6 +13,12 @@ Everything runs locally on your machine. No cloud account required. Your notes n
 
 ![LLM Wiki demo — asking questions about your notes](docs/assets/hero-demo.gif)
 
+## LLM Wiki German
+
+Da das geforkte Projekt rein die englische Sprache als Grundlage für die Erstellung eines Wikis verwendet und die deutsche Sprache sehr unterschiedlich aufgebaut ist, habe ich hier versucht, die Funktionalität im Deutschen nachzubauen. Im Original dürften in diesem frühen Entwicklungsstadium wenig Ressourcen dafür zur Verfügung stehen, deshalb experimentiere ich hier für mich in diese Richtung - eine Art Proof of Concept.
+
+Außerdem sehe ich das als optimale Gelegenheit, Vibe Coding anzuwenden und auszuprobieren und spiele mich mit der GeminiCLI.
+
 ## Quick start
 
 You need two things: [Ollama](https://ollama.com) (a free, local LLM runtime) and the plugin itself.
