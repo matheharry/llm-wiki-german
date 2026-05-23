@@ -103,7 +103,7 @@ describe("extraction language selection", () => {
       });
 
       expect(prompt).toContain(
-        "All output must be in Dutch regardless of the source language.",
+        "Die gesamte Ausgabe muss in Dutch erfolgen, unabhängig von der Sprache des Quelltexts.",
       );
     } finally {
       __setLanguage("en");
@@ -119,10 +119,10 @@ describe("extraction language selection", () => {
     });
 
     expect(prompt).toContain("Known token {output_language}");
-    expect(prompt).toContain("DOCUMENT (path-with-{content}.md):");
+    expect(prompt).toContain("DOKUMENT (path-with-{content}.md):");
     expect(prompt).toContain("Literal text {vocabulary}");
     expect(prompt).toContain(
-      "All output must be in Dutch regardless of the source language.",
+      "Die gesamte Ausgabe muss in Dutch erfolgen, unabhängig von der Sprache des Quelltexts.",
     );
   });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { renderEntityPage } from "../../src/pages/render-entity.js";
-import type { Entity, Connection } from "../../src/core/types.js";
+import type { Connection, Entity } from "../../src/core/types.js";
 
 const TODAY = "2026-04-07";
 
@@ -21,8 +21,15 @@ const CONNECTIONS: Connection[] = [
     from: "alan-watts",
     to: "zen-buddhism",
     type: "influences",
-    description: "Watts popularized Zen in the West",
-    sources: ["Books/Watts.md"],
+    description: "",
+    sources: [],
+  },
+  {
+    from: "dt-suzuki",
+    to: "alan-watts",
+    type: "related-to",
+    description: "",
+    sources: [],
   },
 ];
 
@@ -38,21 +45,21 @@ describe("renderEntityPage", () => {
     expect(md).toContain("\n# Alan Watts\n");
   });
 
-  it("lists all facts under ## Facts", () => {
+  it("lists all facts under ## Fakten", () => {
     const md = renderEntityPage(ENTITY, [], TODAY);
-    expect(md).toContain("## Facts");
+    expect(md).toContain("## Fakten");
     expect(md).toContain("- Author of The Wisdom of Insecurity");
     expect(md).toContain("- Popularized Zen Buddhism in the West");
   });
 
-  it("lists outgoing connections under ## Connections", () => {
+  it("lists outgoing connections under ## Verbindungen", () => {
     const md = renderEntityPage(ENTITY, CONNECTIONS, TODAY);
-    expect(md).toContain("## Connections");
+    expect(md).toContain("## Verbindungen");
     expect(md).toContain("[[zen-buddhism]]");
     expect(md).toContain("influences");
   });
 
-  it("lists incoming connections under ## Connections", () => {
+  it("lists incoming connections under ## Verbindungen", () => {
     const incomingConn: Connection = {
       from: "dt-suzuki",
       to: "alan-watts",
@@ -64,22 +71,22 @@ describe("renderEntityPage", () => {
     expect(md).toContain("[[dt-suzuki]]");
   });
 
-  it("lists sources under ## Sources as wikilinks", () => {
+  it("lists sources under ## Quellen as wikilinks", () => {
     const md = renderEntityPage(ENTITY, [], TODAY);
-    expect(md).toContain("## Sources");
+    expect(md).toContain("## Quellen");
     expect(md).toContain("[[Books/Watts.md]]");
     expect(md).toContain("[[Learn/Zen.md]]");
   });
 
-  it("omits ## Connections section when there are no connections", () => {
+  it("omits ## Verbindungen section when there are no connections", () => {
     const md = renderEntityPage(ENTITY, [], TODAY);
-    expect(md).not.toContain("## Connections");
+    expect(md).not.toContain("## Verbindungen");
   });
 
-  it("omits ## Facts section when entity has no facts", () => {
+  it("omits ## Fakten section when entity has no facts", () => {
     const e = { ...ENTITY, facts: [] };
     const md = renderEntityPage(e, [], TODAY);
-    expect(md).not.toContain("## Facts");
+    expect(md).not.toContain("## Fakten");
   });
 
   it("output ends with a newline", () => {
@@ -87,9 +94,9 @@ describe("renderEntityPage", () => {
     expect(md.endsWith("\n")).toBe(true);
   });
 
-  it("omits ## Sources section when entity has no sources", () => {
+  it("omits ## Quellen section when entity has no sources", () => {
     const e = { ...ENTITY, sources: [] };
     const md = renderEntityPage(e, [], TODAY);
-    expect(md).not.toContain("## Sources");
+    expect(md).not.toContain("## Quellen");
   });
 });

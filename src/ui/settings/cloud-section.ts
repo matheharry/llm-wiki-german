@@ -38,12 +38,12 @@ export function renderCloudSection(
   plugin: LlmWikiPlugin,
   handlers: CloudSectionHandlers,
 ): void {
-  new Setting(containerEl).setName("Model").setHeading();
+  new Setting(containerEl).setName("Modell").setHeading();
 
   // ── Provider picker ───────────────────────────────────────────────
   new Setting(containerEl)
-    .setName("Provider")
-    .setDesc("Choose between a local server or a cloud API.")
+    .setName("Anbieter")
+    .setDesc("Wähle zwischen einem lokalen Server oder einer Cloud-API.")
     .addDropdown((dropdown) => {
       for (const p of PROVIDER_OPTIONS) {
         dropdown.addOption(p, PROVIDER_LABELS[p]);
@@ -80,11 +80,11 @@ export function renderCloudSection(
 
   if (pt === "openai-compatible") {
     new Setting(containerEl)
-      .setName("Base URL")
-      .setDesc("Endpoint root for your OpenAI-compatible API (for example: https://api.groq.com).")
+      .setName("Basis-URL")
+      .setDesc("Endpunkt-Root für deine OpenAI-kompatible API (z. B. https://api.groq.com).")
       .addText((text) =>
         text
-          .setPlaceholder("Paste base URL")
+          .setPlaceholder("Basis-URL einfügen")
           .setValue(plugin.settings.customOpenAIBaseUrl)
           .onChange(async (value) => {
             plugin.settings.customOpenAIBaseUrl = value.trim();
@@ -94,11 +94,11 @@ export function renderCloudSection(
       );
 
     new Setting(containerEl)
-      .setName("API key")
-      .setDesc("Optional for self-hosted providers. Stored locally in this vault's data.json.")
+      .setName("API-Schlüssel")
+      .setDesc("Optional für selbst gehostete Anbieter. Wird lokal in der Datei data.json dieses Vaults gespeichert.")
       .addText((text) =>
         text
-          .setPlaceholder("Paste your API key…")
+          .setPlaceholder("API-Schlüssel einfügen\u2026")
           .setValue(
             plugin.settings.customOpenAIApiKey
               ? maskKey(plugin.settings.customOpenAIApiKey)
@@ -116,11 +116,11 @@ export function renderCloudSection(
       );
 
     new Setting(containerEl)
-      .setName("Model")
-      .setDesc("Completion model used for extraction and chat.")
+      .setName("Modell")
+      .setDesc("Completion-Modell für Extraktion und Chat.")
       .addText((text) =>
         text
-          .setPlaceholder("Completion model name")
+          .setPlaceholder("Name des Completion-Modells")
           .setValue(plugin.settings.customOpenAIModel)
           .onChange(async (value) => {
             plugin.settings.customOpenAIModel = value.trim();
@@ -129,11 +129,11 @@ export function renderCloudSection(
       );
 
     new Setting(containerEl)
-      .setName("Embedding model")
-      .setDesc("Optional. Defaults to the completion model if left blank.")
+      .setName("Embedding-Modell")
+      .setDesc("Optional. Standardmäßig wird das Completion-Modell verwendet, wenn leer gelassen.")
       .addText((text) =>
         text
-          .setPlaceholder("Embedding model name")
+          .setPlaceholder("Name des Embedding-Modells")
           .setValue(plugin.settings.customOpenAIEmbeddingModel)
           .onChange(async (value) => {
             plugin.settings.customOpenAIEmbeddingModel = value.trim();
@@ -142,8 +142,8 @@ export function renderCloudSection(
       );
 
     new Setting(containerEl)
-      .setName("Models endpoint")
-      .setDesc("Path or absolute URL for model listing. Default: /v1/models")
+      .setName("Modell-Endpunkt")
+      .setDesc("Pfad oder absolute URL zur Modellliste. Standard: /v1/models")
       .addText((text) =>
         text
           .setPlaceholder("/v1/models")
@@ -156,8 +156,8 @@ export function renderCloudSection(
       );
 
     new Setting(containerEl)
-      .setName("Completions endpoint")
-      .setDesc("Path or absolute URL for text generation. Chat completions and legacy completions are both supported.")
+      .setName("Completion-Endpunkt")
+      .setDesc("Pfad oder absolute URL zur Texterzeugung. Chat-Completions und Legacy-Completions werden beide unterstützt.")
       .addText((text) =>
         text
           .setPlaceholder("/v1/chat/completions")
@@ -171,8 +171,8 @@ export function renderCloudSection(
       );
 
     new Setting(containerEl)
-      .setName("Embeddings endpoint")
-      .setDesc("Path or absolute URL for embeddings. Default: /v1/embeddings")
+      .setName("Embedding-Endpunkt")
+      .setDesc("Pfad oder absolute URL für Embeddings. Standard: /v1/embeddings")
       .addText((text) =>
         text
           .setPlaceholder("/v1/embeddings")
@@ -194,10 +194,10 @@ export function renderCloudSection(
   const masked = currentKey ? maskKey(currentKey) : "";
 
   const keySetting = new Setting(containerEl).setName(
-    `${PROVIDER_LABELS[pt]} API key`,
+    `${PROVIDER_LABELS[pt]}-API-Schlüssel`,
   );
 
-  // Description: "Current: sk-p••••-XgA" colored by validation state
+  // Description: "Aktuell: sk-p\u2022\u2022\u2022\u2022-XgA" colored by validation state
   if (currentKey) {
     const descEl = keySetting.descEl;
     const statusCls = cached
@@ -207,7 +207,7 @@ export function renderCloudSection(
       : "llm-wiki-key-validating";
 
     descEl.createSpan({
-      text: `Current: ${masked}`,
+      text: `Aktuell: ${masked}`,
       cls: statusCls,
     });
 
@@ -216,7 +216,7 @@ export function renderCloudSection(
     if (detected !== null && detected !== providerKey) {
       descEl.createEl("br");
       descEl.createSpan({
-        text: `This looks like a ${PROVIDER_LABELS[detected]} key.`,
+        text: `Dies sieht nach einem Schlüssel für ${PROVIDER_LABELS[detected]} aus.`,
         cls: "llm-wiki-key-invalid",
       });
     }
@@ -232,13 +232,13 @@ export function renderCloudSection(
       });
     }
   } else {
-    keySetting.setDesc("No API key set.");
+    keySetting.setDesc("Kein API-Schlüssel gesetzt.");
   }
 
   // Text field: shows the masked key so it doesn't feel like it vanished
   keySetting.addText((text) =>
     text
-      .setPlaceholder("Paste your API key…")
+      .setPlaceholder("API-Schlüssel einfügen\u2026")
       .setValue(masked)
       .onChange(async (value) => {
         const trimmed = value.trim();
@@ -256,15 +256,15 @@ export function renderCloudSection(
     cls: "setting-item-description llm-wiki-privacy-note",
   });
   privacyEl.setText(
-    "When using a cloud provider, note content is sent to that provider's servers during extraction and queries. " +
-      "Use Ollama if your notes must stay on your machine.",
+    "Bei Verwendung eines Cloud-Anbieters werden Notizinhalte während der Extraktion und bei Abfragen an dessen Server gesendet. " +
+      "Verwende Ollama, wenn deine Notizen auf deinem Rechner bleiben sollen.",
   );
 
   const keyNoteEl = containerEl.createEl("p", {
     cls: "setting-item-description llm-wiki-security-note",
   });
   keyNoteEl.setText(
-    "API keys are stored in this vault's data.json — local to your machine, not synced by Obsidian Sync.",
+    "API-Schlüssel werden in der Datei data.json dieses Vaults gespeichert \u2014 lokal auf deinem Rechner, nicht durch Obsidian Sync synchronisiert.",
   );
 }
 

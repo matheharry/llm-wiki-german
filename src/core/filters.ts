@@ -4,8 +4,39 @@ import type { Concept, Entity } from "./types.js";
 const MIN_FACTS_PER_ENTITY = 2;
 const MIN_SOURCES_PER_ENTITY = 2;
 
-const ENTITY_BLACKLIST = new Set(["exact name", "exact-name"]);
-const CONCEPT_BLACKLIST = new Set(["address book"]);
+const ENTITY_BLACKLIST = new Set([
+  "exact name",
+  "exact-name",
+  "unbekannt",
+  "nicht angegeben",
+  "unbekannte person",
+  "unbekannte organisation",
+  "unbekanntes objekt",
+  "keine angabe",
+  "n/a",
+]);
+const CONCEPT_BLACKLIST = new Set([
+  "address book",
+  "address-book",
+  "unbekanntes konzept",
+  "zusammenhang",
+  "aspekt",
+  "aspekte",
+  "themen",
+  "bereich",
+  "bereiche",
+  "beziehung",
+  "bedeutung",
+  "hintergrund",
+  "grundlage",
+  "grundlagen",
+  "eigenschaft",
+  "eigenschaften",
+  "detail",
+  "details",
+  "information",
+  "informationen",
+]);
 
 export function isQualityEntity(e: Entity): boolean {
   const lower = e.name.trim().toLowerCase();

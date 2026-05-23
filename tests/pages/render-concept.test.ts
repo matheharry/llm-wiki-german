@@ -29,17 +29,18 @@ describe("renderConceptPage", () => {
     expect(md).toContain("Direct experience over scriptural study");
   });
 
-  it("lists related items as wikilinks under ## Related", () => {
+  it("lists related items as wikilinks under ## Verwandte Begriffe", () => {
     const md = renderConceptPage(CONCEPT, TODAY);
-    expect(md).toContain("## Related");
+    expect(md).toContain("## Verwandte Begriffe");
     expect(md).toContain("[[alan-watts|Alan Watts]]");
     expect(md).toContain("[[dt-suzuki|D.T. Suzuki]]");
   });
 
-  it("lists sources as wikilinks under ## Sources", () => {
+  it("lists sources as wikilinks under ## Quellen", () => {
     const md = renderConceptPage(CONCEPT, TODAY);
-    expect(md).toContain("## Sources");
+    expect(md).toContain("## Quellen");
     expect(md).toContain("[[Books/Watts.md]]");
+    expect(md).toContain("[[Learn/Zen.md]]");
   });
 
   it("omits ## Related when related list is empty", () => {

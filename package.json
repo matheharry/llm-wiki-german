@@ -1,5 +1,5 @@
 {
-  "name": "llm-wiki-plugin",
+  "name": "llm-wiki-de-plugin",
   "version": "1.0.2",
   "description": "Local-first LLM-powered knowledge base for your Obsidian vault",
   "type": "module",

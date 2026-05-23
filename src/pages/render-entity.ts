@@ -1,6 +1,18 @@
 import type { Connection, Entity } from "../core/types.js";
 import { entityFrontmatter, serializeFrontmatter } from "./frontmatter.js";
 
+const ENTITY_TYPE_LABELS: Record<string, string> = {
+  person: "Person",
+  org: "Organisation",
+  tool: "Werkzeug",
+  project: "Projekt",
+  book: "Buch",
+  article: "Artikel",
+  place: "Ort",
+  event: "Ereignis",
+  other: "Sonstiges",
+};
+
 export function renderEntityPage(
   entity: Entity,
   connections: Connection[],
@@ -13,7 +25,7 @@ export function renderEntityPage(
   const lines: string[] = [serializeFrontmatter(fm), "", `# ${entity.name}`, ""];
 
   if (entity.facts.length > 0) {
-    lines.push("## Facts", "");
+    lines.push("## Fakten", "");
     for (const f of entity.facts) {
       lines.push(`- ${f}`);
     }
@@ -21,18 +33,20 @@ export function renderEntityPage(
   }
 
   if (outgoing.length > 0 || incoming.length > 0) {
-    lines.push("## Connections", "");
+    lines.push("## Verbindungen", "");
     for (const c of outgoing) {
-      lines.push(`- [[${c.to}]] *(${c.type})*`);
+      const typeLabel = ENTITY_TYPE_LABELS[c.type] ?? c.type;
+      lines.push(`- [[${c.to}]] *(${typeLabel})*`);
     }
     for (const c of incoming) {
-      lines.push(`- [[${c.from}]] *(${c.type})*`);
+      const typeLabel = ENTITY_TYPE_LABELS[c.type] ?? c.type;
+      lines.push(`- [[${c.from}]] *(${typeLabel})*`);
     }
     lines.push("");
   }
 
   if (entity.sources.length > 0) {
-    lines.push("## Sources", "");
+    lines.push("## Quellen", "");
     for (const s of entity.sources) {
       lines.push(`- [[${s}]]`);
     }

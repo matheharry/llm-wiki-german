@@ -12,48 +12,48 @@ export interface BuildExtractionPromptArgs {
   outputLanguage: string;
 }
 
-const TEMPLATE = `You are a knowledge extraction system. Given a document and a vocabulary of already-known entities and concepts, extract structured knowledge.
+const TEMPLATE = `Du bist ein System zur Wissensextraktion. Extrahiere strukturiertes Wissen aus dem gegebenen Dokument unter Berücksichtigung des Vokabulars bereits bekannter Entitäten und Konzepte.
 
-RULES:
-1. If an entity or concept already exists in the vocabulary, USE ITS EXACT NAME. Do not create duplicates or variants.
-2. Only create a NEW entity/concept if it is clearly absent from the vocabulary.
-3. Be conservative — extract only what the document actually says, not inferences.
-4. All output must be in {output_language} regardless of the source language.
-5. Every entity needs a type: person, org, tool, project, book, article, place, event, other.
-6. Connections have a type: influences, uses, critiques, extends, part-of, created-by, related-to, applies-to, contrasts-with.
+REGELN:
+1. Wenn eine Entität oder ein Konzept bereits im Vokabular existiert, VERWENDE EXAKT DIESEN NAMEN. Erstelle keine Duplikate oder Varianten.
+2. Erstelle eine NEUE Entität oder ein neues Konzept nur dann, wenn sie eindeutig nicht im Vokabular vorhanden sind.
+3. Sei konservativ — extrahiere nur das, was im Dokument tatsächlich steht, keine Schlussfolgerungen.
+4. Die gesamte Ausgabe muss in {output_language} erfolgen, unabhängig von der Sprache des Quelltexts.
+5. Jede Entität benötigt einen Typ: person, org, tool, project, book, article, place, event, other.
+6. Verbindungen haben einen Typ: influences, uses, critiques, extends, part-of, created-by, related-to, applies-to, contrasts-with.
 
-CURRENT VOCABULARY:
+AKTUELLES VOKABULAR:
 {vocabulary}
 
-DOCUMENT ({source_path}):
+DOKUMENT ({source_path}):
 ---
 {content}
 ---
 
-Respond with ONLY a JSON object, no markdown fences, no commentary:
+Antworte NUR mit einem JSON-Objekt, keine Markdown-Blöcke, kein Kommentar:
 {
-  "source_summary": "1-2 sentence summary of what this document is about",
+  "source_summary": "1-2 Sätze Zusammenfassung, worum es in diesem Dokument geht",
   "entities": [
     {
-      "name": "Exact Name",
+      "name": "Exakter Name",
       "type": "person|org|tool|project|book|article|place|event|other",
-      "aliases": ["optional", "other names"],
-      "facts": ["factual statement from this document"]
+      "aliases": ["optional", "andere Namen"],
+      "facts": ["Faktische Aussage aus diesem Dokument"]
     }
   ],
   "concepts": [
     {
-      "name": "Concept Name",
-      "definition": "Brief definition based on document content",
-      "related": ["names of related concepts or entities"]
+      "name": "Name des Konzepts",
+      "definition": "Kurze Definition basierend auf dem Dokumentinhalt",
+      "related": ["Namen verwandter Konzepte oder Entitäten"]
     }
   ],
   "connections": [
     {
-      "from": "Entity or Concept Name",
-      "to": "Entity or Concept Name",
+      "from": "Name der Entität oder des Konzepts",
+      "to": "Name der Entität oder des Konzepts",
       "type": "influences|uses|critiques|extends|part-of|created-by|related-to|applies-to|contrasts-with",
-      "description": "Brief description of the relationship"
+      "description": "Kurze Beschreibung der Beziehung"
     }
   ]
 }

@@ -11,11 +11,11 @@ describe("buildExtractionPrompt", () => {
     });
     expect(out).toContain("=== KNOWN ENTITIES ===");
     expect(out).toContain("- [person] Alan Watts");
-    expect(out).toContain("DOCUMENT (Books/watts.md):");
+    expect(out).toContain("DOKUMENT (Books/watts.md):");
     expect(out).toContain("Alan Watts wrote The Wisdom of Insecurity.");
-    expect(out).toContain("RULES:");
-    expect(out).toContain("All output must be in French regardless of the source language.");
-    expect(out).toContain("JSON object, no markdown fences");
+    expect(out).toContain("REGELN:");
+    expect(out).toContain("Die gesamte Ausgabe muss in French erfolgen, unabhängig von der Sprache des Quelltexts.");
+    expect(out).toContain("JSON-Objekt, keine Markdown-Blöcke");
     expect(out).toContain("source_summary");
     expect(out).toContain("entities");
     expect(out).toContain("concepts");

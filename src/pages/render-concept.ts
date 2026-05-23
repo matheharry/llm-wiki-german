@@ -16,7 +16,7 @@ export function renderConceptPage(concept: Concept, today?: string): string {
   }
 
   if (concept.related.length > 0) {
-    lines.push("## Related", "");
+    lines.push("## Verwandte Begriffe", "");
     for (const r of concept.related) {
       lines.push(`- [[${makeId(r)}|${r}]]`);
     }
@@ -24,7 +24,7 @@ export function renderConceptPage(concept: Concept, today?: string): string {
   }
 
   if (concept.sources.length > 0) {
-    lines.push("## Sources", "");
+    lines.push("## Quellen", "");
     for (const s of concept.sources) {
       lines.push(`- [[${s}]]`);
     }

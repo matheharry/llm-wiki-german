@@ -233,12 +233,12 @@ export class QueryModal extends Modal {
     });
     this.inputEl = inputContainer.createEl("input", {
       type: "text",
-      placeholder: "Ask your knowledge base\u2026",
+      placeholder: "Frage deine Wissensdatenbank\u2026",
       cls: "llm-wiki-query-input",
     });
     this.clearBtn = inputContainer.createEl("button", {
       cls: "llm-wiki-query-clear",
-      attr: { type: "button", "aria-label": "Clear" },
+      attr: { type: "button", "aria-label": "Löschen" },
     });
     setIcon(this.clearBtn, "x");
     this.clearBtn.onclick = (ev): void => {
@@ -252,8 +252,8 @@ export class QueryModal extends Modal {
     const pills = contentEl.createDiv({ cls: "llm-wiki-query-pills" });
     this.modelPillEl = pills.createSpan({
       cls: "llm-wiki-query-pill llm-wiki-query-pill-clickable",
-      text: pillLabel("model", this.currentModel),
-      attr: { "aria-label": "Change model", role: "button" },
+      text: pillLabel("Modell", this.currentModel),
+      attr: { "aria-label": "Modell ändern", role: "button" },
     });
     this.modelPillEl.onclick = (): void => this.handleModelPillClick();
     this.ollamaPillEl = pills.createSpan({
@@ -263,7 +263,7 @@ export class QueryModal extends Modal {
     this.folderPillEl = pills.createSpan({
       cls: "llm-wiki-query-pill llm-wiki-query-pill-clickable",
       text: this.getFolderPillText(),
-      attr: { "aria-label": "Change folder scope", role: "button" },
+      attr: { "aria-label": "Ordnerbereich ändern", role: "button" },
     });
     this.folderPillEl.onclick = (): void => this.handleFolderPillClick();
 
@@ -738,12 +738,12 @@ export class QueryModal extends Modal {
 
   private enterChatMode(): void {
     this.contentEl.setAttr("data-mode", "chat");
-    this.inputEl.placeholder = "Reply\u2026";
+    this.inputEl.placeholder = "Antworten\u2026";
     // Footer is useless in chat mode — hide it
     this.footerEl.addClass("is-hidden");
-  }
+    }
 
-  private submit(): void {
+    private submit(): void {
     if (!this.controller) return;
     const q = this.inputEl.value.trim();
     if (!q) return;
@@ -766,45 +766,45 @@ export class QueryModal extends Modal {
     // Generate a title right away — only needs the question, no need to
     // wait for the answer. Only for the first turn of a new chat.
     if (chat.turns.length === 0) {
-      void this.runTitleGeneration(chat, q);
+    void this.runTitleGeneration(chat, q);
     }
 
     this.inputEl.value = "";
     this.updateClearVisibility();
-  }
+    }
 
-  private finalizeTurn(): void {
+    private finalizeTurn(): void {
     const chat = this.activeChatId
-      ? this.chats.find((c) => c.id === this.activeChatId)
-      : null;
+    ? this.chats.find((c) => c.id === this.activeChatId)
+    : null;
 
     // Re-score: keep only sources linked to entities/concepts the LLM
     // actually mentioned in its answer.
     if (this.currentBundle && this.currentStreamedAnswer) {
-      this.currentScoredSources = groundSources(
-        this.currentStreamedAnswer,
-        this.currentBundle,
-        this.currentScoredSources,
-      );
+    this.currentScoredSources = groundSources(
+      this.currentStreamedAnswer,
+      this.currentBundle,
+      this.currentScoredSources,
+    );
     }
 
     const sourceIds = this.currentScoredSources.map((s) => s.id);
     if (!chat) {
-      this.currentHandle?.setSources(this.currentScoredSources);
-      this.currentHandle?.finalize();
-      this.currentHandle = null;
-      return;
+    this.currentHandle?.setSources(this.currentScoredSources);
+    this.currentHandle?.finalize();
+    this.currentHandle = null;
+    return;
     }
 
     const turn: ChatTurn = {
-      question: this.lastSubmittedQuestion,
-      answer: this.currentStreamedAnswer,
-      sourceIds,
-      rewrittenQuery:
-        this.currentRewrittenQuery !== this.lastSubmittedQuestion
-          ? this.currentRewrittenQuery
-          : null,
-      createdAt: Date.now(),
+    question: this.lastSubmittedQuestion,
+    answer: this.currentStreamedAnswer,
+    sourceIds,
+    rewrittenQuery:
+      this.currentRewrittenQuery !== this.lastSubmittedQuestion
+        ? this.currentRewrittenQuery
+        : null,
+    createdAt: Date.now(),
     };
 
     const updatedChat = appendTurn(chat, turn, Date.now());
@@ -817,33 +817,33 @@ export class QueryModal extends Modal {
     this.currentHandle = null;
 
     if (this.currentBundle) {
-      this.args.onAnswered({
-        question: this.lastSubmittedQuestion,
-        answer: this.currentStreamedAnswer,
-        bundle: this.currentBundle,
-        elapsedMs: Date.now() - this.startMs,
-      });
+    this.args.onAnswered({
+      question: this.lastSubmittedQuestion,
+      answer: this.currentStreamedAnswer,
+      bundle: this.currentBundle,
+      elapsedMs: Date.now() - this.startMs,
+    });
     }
 
-  }
+    }
 
-  private async runTitleGeneration(chat: Chat, question: string): Promise<void> {
+    private async runTitleGeneration(chat: Chat, question: string): Promise<void> {
     try {
-      const title = await generateChatTitle({
-        provider: this.args.provider,
-        model: this.currentModel,
-        question,
-      });
-      const updated = updateChatTitle(chat, title, Date.now());
-      this.chats = this.chats.map((c) => (c.id === updated.id ? updated : c));
-      this.args.onChatsChanged(this.chats);
-      this.chatList.render(this.chats, this.activeChatId);
+    const title = await generateChatTitle({
+      provider: this.args.provider,
+      model: this.currentModel,
+      question,
+    });
+    const updated = updateChatTitle(chat, title, Date.now());
+    this.chats = this.chats.map((c) => (c.id === updated.id ? updated : c));
+    this.args.onChatsChanged(this.chats);
+    this.chatList.render(this.chats, this.activeChatId);
     } catch {
-      // Title generation failure must not crash the modal
+    // Title generation failure must not crash the modal
     }
-  }
+    }
 
-  private pickChat(id: string): void {
+    private pickChat(id: string): void {
     const chat = this.chats.find((c) => c.id === id);
     if (!chat) return;
     this.activeChatId = id;
@@ -852,62 +852,61 @@ export class QueryModal extends Modal {
     this.inputEl.value = "";
     this.updateClearVisibility();
     this.inputEl.focus();
-  }
+    }
 
-  private handleRename(id: string, newTitle: string): void {
+    private handleRename(id: string, newTitle: string): void {
     const chat = this.chats.find((c) => c.id === id);
     if (!chat) return;
     const updated = updateChatTitle(chat, newTitle, Date.now());
     this.chats = this.chats.map((c) => (c.id === updated.id ? updated : c));
     this.args.onChatsChanged(this.chats);
     this.chatList.render(this.chats, this.activeChatId);
-  }
+    }
 
-  private handleDelete(id: string): void {
+    private handleDelete(id: string): void {
     this.chats = deleteChat(this.chats, id);
     if (this.activeChatId === id) {
-      this.activeChatId = null;
-      this.transcript.clear();
+    this.activeChatId = null;
+    this.transcript.clear();
     }
     this.args.onChatsChanged(this.chats);
     this.chatList.render(this.chats, this.activeChatId);
-  }
+    }
 
-  private applyState(s: QueryControllerState): void {
+    private applyState(s: QueryControllerState): void {
     this.contentEl.setAttr("data-state", s);
     this.terminalTextEl.setText(this.terminalLabel(s));
     if (s === "loading" || s === "streaming") {
-      this.inputEl.setAttr("disabled", "true");
+    this.inputEl.setAttr("disabled", "true");
     } else {
-      this.inputEl.removeAttribute("disabled");
-      if (s === "done" || s === "error" || s === "cancelled") {
-        this.inputEl.focus();
-      }
+    this.inputEl.removeAttribute("disabled");
+    if (s === "done" || s === "error" || s === "cancelled") {
+      this.inputEl.focus();
     }
-  }
+    }
+    }
 
-  private terminalLabel(s: QueryControllerState): string {
+    private terminalLabel(s: QueryControllerState): string {
     switch (s) {
-      case "idle":
-        return "";
-      case "loading":
-        return "thinking";
-      case "streaming":
-        return "streaming";
-      case "done": {
-        const endMs = this.firstChunkMs || Date.now();
-        const secs = ((endMs - this.startMs) / 1000).toFixed(1);
-        const n = this.currentSourceCount;
-        const srcLabel = n === 1 ? "1 source" : `${n} sources`;
-        return `done in ${secs}s \u00B7 ${srcLabel}`;
-      }
-      case "error":
-        return "error — see notice";
-      case "cancelled":
-        return "cancelled";
+    case "idle":
+      return "";
+    case "loading":
+      return "denkt nach\u2026";
+    case "streaming":
+      return "Antwort wird generiert\u2026";
+    case "done": {
+      const endMs = this.firstChunkMs || Date.now();
+      const secs = ((endMs - this.startMs) / 1000).toFixed(1);
+      const n = this.currentSourceCount;
+      const srcLabel = n === 1 ? "1 Quelle" : `${n} Quellen`;
+      return `fertig in ${secs}s \u00B7 ${srcLabel}`;
     }
-  }
-
+    case "error":
+      return "Fehler \u2014 siehe Benachrichtigung";
+    case "cancelled":
+      return "abgebrochen";
+    }
+    }
   private updateClearVisibility(): void {
     this.clearBtn.setAttr(
       "data-visible",
@@ -918,9 +917,9 @@ export class QueryModal extends Modal {
   private renderFooterHints(): void {
     this.footerEl.empty();
     this.footerEl.removeClass("is-hidden");
-    this.appendInstruction(this.footerEl, "↑↓", "to navigate");
-    this.appendInstruction(this.footerEl, "↩", "to use");
-    this.appendInstruction(this.footerEl, "esc", "to dismiss");
+    this.appendInstruction(this.footerEl, "↑↓", "zum Navigieren");
+    this.appendInstruction(this.footerEl, "↩", "zum Auswählen");
+    this.appendInstruction(this.footerEl, "esc", "zum Schließen");
   }
 
   private renderFooterIndexingWarning(): void {
@@ -929,7 +928,7 @@ export class QueryModal extends Modal {
     this.footerEl.empty();
     this.footerEl.removeClass("is-hidden");
     const warn = this.footerEl.createDiv({ cls: "llm-wiki-query-footer-warning" });
-    warn.textContent = "Indexing in progress \u2014 results may be less accurate";
+    warn.textContent = "Indizierung läuft \u2014 Ergebnisse können ungenauer sein";
   }
 
   private appendInstruction(

@@ -158,6 +158,14 @@ function dirname(path: string): string {
 /**
  * Write a generated wiki page. Path must be under wiki/entities/, wiki/concepts/,
  * wiki/sources/, wiki/log.md, or wiki/memory.md.
+ *
+ * If the page already exists, we compare its content with the new `content`.
+ * To avoid unnecessary writes (which trigger Obsidian re-indexing), we
+ * perform the comparison INGNORING the `date-updated` line in the frontmatter.
+ *
+ * If the content has changed, we write the new `content` as-is (which should
+ * include the current date if the caller provided it). If the content is
+ * identical (ignoring the date), we skip the write entirely.
  */
 export async function safeWritePage(
   app: SafeWriteApp,
@@ -166,11 +174,19 @@ export async function safeWritePage(
 ): Promise<void> {
   assertAllowed(app, relPath);
   await ensureDir(app, dirname(relPath));
+
   if (await app.vault.adapter.exists(relPath)) {
     const existing = await app.vault.adapter.read(relPath);
-    if (existing === content) return;
+    if (stripUpdateDate(existing) === stripUpdateDate(content)) {
+      return;
+    }
   }
+
   await app.vault.adapter.write(relPath, content);
+}
+
+function stripUpdateDate(content: string): string {
+  return content.replace(/^date-updated:.*\n/m, "");
 }
 
 /**

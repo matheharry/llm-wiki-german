@@ -14,16 +14,16 @@ export function renderIndexingSection(
   plugin: LlmWikiPlugin,
   handlers: IndexingSectionHandlers,
 ): void {
-  new Setting(containerEl).setName("Indexing").setHeading();
+  new Setting(containerEl).setName("Indizierung").setHeading();
 
   // ── Ollama URL (only visible when Ollama is the active provider) ──
   if (plugin.settings.providerType === "ollama") {
     new Setting(containerEl)
-      .setName("Ollama URL")
-      .setDesc("Base URL of your local server.")
+      .setName("Ollama-URL")
+      .setDesc("Basis-URL deines lokalen Servers.")
       .addText((text) =>
         text
-          .setPlaceholder("Server URL")
+          .setPlaceholder("Server-URL")
           .setValue(plugin.settings.ollamaUrl)
           .onChange(async (value) => {
             plugin.settings.ollamaUrl =
@@ -37,22 +37,22 @@ export function renderIndexingSection(
   // ── Index now / cancel ────────────────────────────────────────────
   const running = handlers.isRunning();
   const lastRunText = plugin.settings.lastExtractionRunIso
-    ? new Date(plugin.settings.lastExtractionRunIso).toLocaleString()
-    : "never";
+    ? new Date(plugin.settings.lastExtractionRunIso).toLocaleString("de-DE")
+    : "nie";
 
   const indexSetting = new Setting(containerEl)
-    .setName("Index now")
-    .setDesc("Walks the vault and extracts new or modified files.");
+    .setName("Jetzt indizieren")
+    .setDesc("Durchsucht den Vault und extrahiert neue oder geänderte Dateien.");
 
   indexSetting.descEl.createEl("div", {
-    text: running ? "Extraction running…" : `Last run: ${lastRunText}`,
+    text: running ? "Extraktion läuft\u2026" : `Zuletzt ausgeführt: ${lastRunText}`,
     cls: "llm-wiki-indexing-status",
   });
 
   if (running) {
     indexSetting.addButton((btn) =>
       btn
-        .setButtonText("Cancel")
+        .setButtonText("Abbrechen")
         .setWarning()
         .onClick(() => {
           handlers.onIndexCancel();
@@ -61,7 +61,7 @@ export function renderIndexingSection(
   } else {
     indexSetting.addButton((btn) =>
       btn
-        .setButtonText("Run extraction")
+        .setButtonText("Extraktion starten")
         .setCta()
         .onClick(() => {
           handlers.onIndexAll();
@@ -70,9 +70,9 @@ export function renderIndexingSection(
   }
 
   new Setting(containerEl)
-    .setName("Extraction language")
+    .setName("Extraktionssprache")
     .setDesc(
-      `Language used for extracted summaries, facts, and definitions. Current output: ${plugin.extractionOutputLanguage}.`,
+      `Sprache für Zusammenfassungen, Fakten und Definitionen. Aktuelle Ausgabe: ${plugin.extractionOutputLanguage}.`,
     )
     .addDropdown((dropdown) => {
       for (const [value, label] of EXTRACTION_LANGUAGE_OPTIONS) {
@@ -89,9 +89,9 @@ export function renderIndexingSection(
 
   // ── Daily refresh ─────────────────────────────────────────────────
   new Setting(containerEl)
-    .setName("Daily refresh")
+    .setName("Tägliche Aktualisierung")
     .setDesc(
-      "Quietly processes changes and new notes in your vault once per day. Missed runs (machine asleep) catch up at next launch.",
+      "Verarbeitet einmal täglich Änderungen und neue Notizen im Vault im Hintergrund.",
     )
     .addToggle((toggle) =>
       toggle
@@ -106,8 +106,8 @@ export function renderIndexingSection(
 
   if (plugin.settings.nightlyExtractionEnabled) {
     new Setting(containerEl)
-      .setName("Daily refresh hour")
-      .setDesc("Hour of day (0–23, local time) at which the daily refresh fires.")
+      .setName("Uhrzeit der Aktualisierung")
+      .setDesc("Stunde (0\u201323, Lokalzeit), zu der die tägliche Aktualisierung startet.")
       .addText((text) =>
         text
           .setPlaceholder("2")
@@ -126,12 +126,12 @@ export function renderIndexingSection(
 const EXTRACTION_LANGUAGE_OPTIONS: ReadonlyArray<
   [ExtractionLanguageSetting, string]
 > = [
-  ["app", "Auto (use Obsidian language)"],
-  ["en", "English"],
-  ["fr", "French"],
-  ["es", "Spanish"],
-  ["de", "German"],
-  ["it", "Italian"],
-  ["nl", "Dutch"],
-  ["pt", "Portuguese"],
+  ["app", "Auto (Obsidian-Sprache verwenden)"],
+  ["en", "Englisch"],
+  ["fr", "Französisch"],
+  ["es", "Spanisch"],
+  ["de", "Deutsch"],
+  ["it", "Italienisch"],
+  ["nl", "Niederländisch"],
+  ["pt", "Portugiesisch"],
 ];

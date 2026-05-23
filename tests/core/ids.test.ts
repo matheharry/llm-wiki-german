@@ -27,4 +27,10 @@ describe("makeId", () => {
   it("handles digits", () => {
     expect(makeId("GPT 4")).toBe("gpt-4");
   });
+
+  it("preserves German umlauts and ß", () => {
+    expect(makeId("Müller")).toBe("müller");
+    expect(makeId("Groß")).toBe("groß");
+    expect(makeId("Österreich")).toBe("österreich");
+  });
 });

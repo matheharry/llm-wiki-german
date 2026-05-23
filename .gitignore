@@ -2,8 +2,7 @@
 .worktrees/
 
 # Claude Code local settings (per-machine, user-specific)
-.claude/settings.local.json
-CLAUDE.md
+GEMINI.md
 
 # macOS
 .DS_Store

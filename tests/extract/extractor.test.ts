@@ -48,10 +48,10 @@ describe("extractFile", () => {
     expect(provider.calls).toHaveLength(1);
     const call = provider.calls[0];
     expect(call.model).toBe("qwen2.5:7b");
-    expect(call.prompt).toContain("DOCUMENT (Books/watts.md):");
+    expect(call.prompt).toContain("DOKUMENT (Books/watts.md):");
     expect(call.prompt).toContain("Alan Watts wrote about Zen.");
     expect(call.prompt).toContain(
-      "All output must be in French regardless of the source language.",
+      "Die gesamte Ausgabe muss in French erfolgen, unabhängig von der Sprache des Quelltexts.",
     );
   });
 

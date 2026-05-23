@@ -33,6 +33,25 @@ const TYPE_SYNONYMS: ReadonlyMap<string, EntityType> = new Map([
   ["places", "place"],
   ["event", "event"],
   ["events", "event"],
+
+  // German
+  ["wer", "person"],
+  ["leute", "person"],
+  ["personen", "person"],
+  ["organisation", "org"],
+  ["firma", "org"],
+  ["unternehmen", "org"],
+  ["buch", "book"],
+  ["bücher", "book"],
+  ["werkzeug", "tool"],
+  ["tools", "tool"],
+  ["projekt", "project"],
+  ["projekte", "project"],
+  ["artikel", "article"],
+  ["ort", "place"],
+  ["orte", "place"],
+  ["ereignis", "event"],
+  ["event", "event"],
 ]);
 
 export function detectTypeHint(terms: readonly string[]): EntityType | null {

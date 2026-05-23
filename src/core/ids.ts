@@ -21,5 +21,5 @@ export function makeId(name: string): string {
 }
 
 function isAlnum(c: string): boolean {
-  return /^[a-z0-9]$/.test(c);
+  return /^[\p{L}\p{N}]$/u.test(c);
 }

@@ -58,6 +58,97 @@ const CONNECTION_TYPES: ReadonlySet<ConnectionType> = new Set<ConnectionType>([
   "contrasts-with",
 ]);
 
+const ENTITY_TYPE_MAP: Record<string, EntityType> = {
+  person: "person",
+  personne: "person",
+  persona: "person",
+  personen: "person",
+  leute: "person",
+  org: "org",
+  organization: "org",
+  organisation: "org",
+  company: "org",
+  firma: "org",
+  unternehmen: "org",
+  tool: "tool",
+  outil: "tool",
+  herramienta: "tool",
+  werkzeug: "tool",
+  project: "project",
+  projet: "project",
+  proyecto: "project",
+  projekt: "project",
+  book: "book",
+  livre: "book",
+  libro: "book",
+  buch: "book",
+  article: "article",
+  place: "place",
+  lieu: "place",
+  lugar: "place",
+  ort: "place",
+  event: "event",
+  événement: "event",
+  evento: "event",
+  ereignis: "event",
+};
+
+const CONNECTION_TYPE_MAP: Record<string, ConnectionType> = {
+  influences: "influences",
+  influence: "influences",
+  influye: "influences",
+  beeinflusst: "influences",
+  uses: "uses",
+  utilise: "uses",
+  usa: "uses",
+  benutzt: "uses",
+  verwendet: "uses",
+  critiques: "critiques",
+  critique: "critiques",
+  kritisiert: "critiques",
+  extends: "extends",
+  étend: "extends",
+  extiende: "extends",
+  erweitert: "extends",
+  "part-of": "part-of",
+  "partie-de": "part-of",
+  "parte-de": "part-of",
+  "teil-von": "part-of",
+  "created-by": "created-by",
+  "créé-par": "created-by",
+  "creado-por": "created-by",
+  "erstellt-von": "created-by",
+  "related-to": "related-to",
+  "lié-à": "related-to",
+  "relacionado-con": "related-to",
+  "verknüpft-mit": "related-to",
+  "applies-to": "applies-to",
+  "s'applique-à": "applies-to",
+  "se-aplica-a": "applies-to",
+  "bezieht-sich-auf": "applies-to",
+  "contrasts-with": "contrasts-with",
+  "contraste-avec": "contrasts-with",
+  "contrasta-con": "contrasts-with",
+  "steht-im-kontrast-zu": "contrasts-with",
+};
+
+function normalizeEntityType(raw: string | undefined): EntityType {
+  if (!raw) return "other";
+  const low = raw.toLowerCase().trim();
+  return ENTITY_TYPE_MAP[low] ?? (ENTITY_TYPES.has(low as EntityType) ? (low as EntityType) : "other");
+}
+
+function normalizeConnectionType(raw: string | undefined): ConnectionType {
+  if (!raw) return "related-to";
+  const low = raw.toLowerCase().trim();
+  return (
+    CONNECTION_TYPE_MAP[low] ??
+    (CONNECTION_TYPES.has(low as ConnectionType)
+      ? (low as ConnectionType)
+      : "related-to")
+  );
+}
+
 /**
  * Extract structured knowledge from a single file and merge into the KB.
  * Returns the parsed extraction on success, or null if the LLM response
@@ -95,9 +186,7 @@ export async function extractFile(
   for (const ent of parsed.entities) {
     const name = (ent.name ?? "").trim();
     if (!name) continue;
-    const type: EntityType = ENTITY_TYPES.has(ent.type as EntityType)
-      ? (ent.type as EntityType)
-      : "other";
+    const type = normalizeEntityType(ent.type);
     args.kb.addEntity({
       name,
       type,
@@ -122,11 +211,7 @@ export async function extractFile(
     const from = (conn.from ?? "").trim();
     const to = (conn.to ?? "").trim();
     if (!from || !to) continue;
-    const type: ConnectionType = CONNECTION_TYPES.has(
-      conn.type as ConnectionType,
-    )
-      ? (conn.type as ConnectionType)
-      : "related-to";
+    const type = normalizeConnectionType(conn.type);
     args.kb.addConnection({
       from,
       to,
