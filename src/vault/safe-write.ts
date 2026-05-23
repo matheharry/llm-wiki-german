@@ -186,7 +186,7 @@ export async function safeWritePage(
 }
 
 function stripUpdateDate(content: string): string {
-  return content.replace(/^date-updated:.*\n/m, "");
+  return content.replace(/^aktualisierungs-datum:.*\n/m, "");
 }
 
 /**

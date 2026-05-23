@@ -13,6 +13,18 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
   other: "Sonstiges",
 };
 
+const CONNECTION_TYPE_LABELS: Record<string, string> = {
+  influences: "beeinflusst",
+  uses: "verwendet",
+  critiques: "kritisiert",
+  extends: "erweitert",
+  "part-of": "Teil von",
+  "created-by": "erstellt von",
+  "related-to": "verknüpft mit",
+  "applies-to": "bezieht sich auf",
+  "contrasts-with": "steht im Kontrast zu",
+};
+
 export function renderEntityPage(
   entity: Entity,
   connections: Connection[],
@@ -35,11 +47,11 @@ export function renderEntityPage(
   if (outgoing.length > 0 || incoming.length > 0) {
     lines.push("## Verbindungen", "");
     for (const c of outgoing) {
-      const typeLabel = ENTITY_TYPE_LABELS[c.type] ?? c.type;
+      const typeLabel = CONNECTION_TYPE_LABELS[c.type] ?? c.type;
       lines.push(`- [[${c.to}]] *(${typeLabel})*`);
     }
     for (const c of incoming) {
-      const typeLabel = ENTITY_TYPE_LABELS[c.type] ?? c.type;
+      const typeLabel = CONNECTION_TYPE_LABELS[c.type] ?? c.type;
       lines.push(`- [[${c.from}]] *(${typeLabel})*`);
     }
     lines.push("");

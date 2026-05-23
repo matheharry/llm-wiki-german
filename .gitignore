@@ -3,6 +3,7 @@
 
 # Claude Code local settings (per-machine, user-specific)
 GEMINI.md
+geminiresume.txt
 
 # macOS
 .DS_Store

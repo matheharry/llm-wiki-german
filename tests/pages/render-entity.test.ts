@@ -56,7 +56,7 @@ describe("renderEntityPage", () => {
     const md = renderEntityPage(ENTITY, CONNECTIONS, TODAY);
     expect(md).toContain("## Verbindungen");
     expect(md).toContain("[[zen-buddhism]]");
-    expect(md).toContain("influences");
+    expect(md).toContain("beeinflusst");
   });
 
   it("lists incoming connections under ## Verbindungen", () => {

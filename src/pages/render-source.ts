@@ -19,7 +19,7 @@ export function renderSourcePage(
   }
 
   if (entities.length > 0) {
-    lines.push("## Entities", "");
+    lines.push("## Entitäten", "");
     for (const e of entities) {
       lines.push(`- [[${e.id}|${e.name}]]`);
     }
@@ -27,7 +27,7 @@ export function renderSourcePage(
   }
 
   if (concepts.length > 0) {
-    lines.push("## Concepts", "");
+    lines.push("## Konzepte", "");
     for (const c of concepts) {
       lines.push(`- [[${c.id}|${c.name}]]`);
     }

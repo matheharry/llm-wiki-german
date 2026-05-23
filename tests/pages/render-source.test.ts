@@ -44,26 +44,26 @@ describe("renderSourcePage", () => {
     expect(md).toContain("Notes on Watts' Wisdom of Insecurity");
   });
 
-  it("lists related entities as wikilinks under ## Entities", () => {
+  it("lists related entities as wikilinks under ## Entitäten", () => {
     const md = renderSourcePage(SOURCE, [ENTITY], []);
-    expect(md).toContain("## Entities");
+    expect(md).toContain("## Entitäten");
     expect(md).toContain("[[alan-watts|Alan Watts]]");
   });
 
-  it("lists related concepts as wikilinks under ## Concepts", () => {
+  it("lists related concepts as wikilinks under ## Konzepte", () => {
     const md = renderSourcePage(SOURCE, [], [CONCEPT]);
-    expect(md).toContain("## Concepts");
+    expect(md).toContain("## Konzepte");
     expect(md).toContain("[[zen-buddhism|Zen Buddhism]]");
   });
 
-  it("omits ## Entities when none reference this source", () => {
+  it("omits ## Entitäten when none reference this source", () => {
     const md = renderSourcePage(SOURCE, [], []);
-    expect(md).not.toContain("## Entities");
+    expect(md).not.toContain("## Entitäten");
   });
 
-  it("omits ## Concepts when none reference this source", () => {
+  it("omits ## Konzepte when none reference this source", () => {
     const md = renderSourcePage(SOURCE, [], []);
-    expect(md).not.toContain("## Concepts");
+    expect(md).not.toContain("## Konzepte");
   });
 
   it("omits the summary paragraph when summary is empty", () => {

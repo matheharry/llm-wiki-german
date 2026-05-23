@@ -9,13 +9,13 @@ export function entityFrontmatter(
   today = todayIso(),
 ): Record<string, unknown> {
   return {
-    type: "entity",
-    "entity-type": entity.type,
+    typ: "entität",
+    "entitäts-typ": entity.type,
     name: entity.name,
     aliases: [...entity.aliases],
     tags: ["llm-wiki/entity", `llm-wiki/entity/${entity.type}`],
-    "source-count": entity.sources.length,
-    "date-updated": today,
+    "quellen-anzahl": entity.sources.length,
+    "aktualisierungs-datum": today,
     cssclasses: [],
   };
 }
@@ -25,12 +25,12 @@ export function conceptFrontmatter(
   today = todayIso(),
 ): Record<string, unknown> {
   return {
-    type: "concept",
+    typ: "konzept",
     name: concept.name,
     aliases: [],
     tags: ["llm-wiki/concept"],
-    "source-count": concept.sources.length,
-    "date-updated": today,
+    "quellen-anzahl": concept.sources.length,
+    "aktualisierungs-datum": today,
     cssclasses: [],
   };
 }
@@ -39,9 +39,9 @@ export function sourceFrontmatter(
   source: SourceRecord,
 ): Record<string, unknown> {
   return {
-    type: "source",
-    origin: source.origin,
-    date: source.date,
+    typ: "quelle",
+    herkunft: source.origin,
+    datum: source.date,
     tags: ["llm-wiki/source"],
     aliases: [],
     cssclasses: [],
