@@ -70,9 +70,9 @@ describe("entityFrontmatter", () => {
     expect(fm["quellen-anzahl"]).toBe(2);
   });
 
-  it("sets aktualisierungs-datum to TODAY", () => {
+  it("sets aktualisiert to TODAY", () => {
     const fm = entityFrontmatter(ENTITY, TODAY);
-    expect(fm["aktualisierungs-datum"]).toBe(TODAY);
+    expect(fm["aktualisiert"]).toBe(TODAY);
   });
 
   it("sets cssclasses to empty list", () => {
@@ -118,9 +118,9 @@ describe("conceptFrontmatter", () => {
     expect(fm["cssclasses"]).toEqual([]);
   });
 
-  it("sets aktualisierungs-datum to TODAY", () => {
+  it("sets aktualisiert to TODAY", () => {
     const fm = conceptFrontmatter(CONCEPT, TODAY);
-    expect(fm["aktualisierungs-datum"]).toBe(TODAY);
+    expect(fm["aktualisiert"]).toBe(TODAY);
   });
 });
 
@@ -140,7 +140,7 @@ describe("sourceFrontmatter", () => {
     expect(fm["herkunft"]).toBe("user-note");
   });
 
-  it("sets datum field (ISO, not aktualisierungs-datum)", () => {
+  it("sets datum field (ISO, not aktualisiert)", () => {
     const fm = sourceFrontmatter(SOURCE);
     expect(fm["datum"]).toBe("2026-03-01");
   });
@@ -196,6 +196,6 @@ describe("serializeFrontmatter", () => {
   it("defaults today to current ISO date when not provided", () => {
     const fm = entityFrontmatter(ENTITY);
     const expected = new Date().toISOString().slice(0, 10);
-    expect(fm["aktualisierungs-datum"]).toBe(expected);
+    expect(fm["aktualisiert"]).toBe(expected);
   });
 });

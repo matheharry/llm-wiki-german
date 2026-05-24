@@ -15,7 +15,7 @@ export function entityFrontmatter(
     aliases: [...entity.aliases],
     tags: ["llm-wiki/entity", `llm-wiki/entity/${entity.type}`],
     "quellen-anzahl": entity.sources.length,
-    "aktualisierungs-datum": today,
+    "aktualisiert": today,
     cssclasses: [],
   };
 }
@@ -30,7 +30,7 @@ export function conceptFrontmatter(
     aliases: [],
     tags: ["llm-wiki/concept"],
     "quellen-anzahl": concept.sources.length,
-    "aktualisierungs-datum": today,
+    "aktualisiert": today,
     cssclasses: [],
   };
 }
