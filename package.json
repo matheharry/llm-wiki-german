@@ -18,7 +18,7 @@
     "llm",
     "knowledge-base"
   ],
-  "author": "Dominique Leca",
+  "author": "Dominique Leca", "Harald March"
   "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^9.39.4",
