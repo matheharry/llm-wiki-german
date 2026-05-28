@@ -1,6 +1,7 @@
 import { Setting } from "obsidian";
 import type LlmWikiPlugin from "../../plugin.js";
 import type { ExtractionLanguageSetting } from "../../plugin.js";
+import { ReindexConfirmationModal } from "../modal/reindex-modal.js";
 
 export interface IndexingSectionHandlers {
   onIndexAll: () => void;
@@ -36,15 +37,24 @@ export function renderIndexingSection(
     new Setting(containerEl)
       .setName("Ollama Embedding-Modell")
       .setDesc("Lokales Modell zur Vektorisierung für die semantische Suche (z. B. qllama/multilingual-e5-base:latest). Standard: nomic-embed-text")
-      .addText((text) =>
+      .addText((text) => {
+        let prevValue = plugin.settings.ollamaEmbeddingModel;
         text
           .setPlaceholder("nomic-embed-text")
           .setValue(plugin.settings.ollamaEmbeddingModel)
           .onChange(async (value) => {
             plugin.settings.ollamaEmbeddingModel = value.trim() || "nomic-embed-text";
             await plugin.saveSettings();
-          }),
-      );
+          });
+
+        text.inputEl.addEventListener("blur", () => {
+          const currentValue = plugin.settings.ollamaEmbeddingModel;
+          if (currentValue !== prevValue) {
+            prevValue = currentValue;
+            new ReindexConfirmationModal(plugin.app, plugin, currentValue).open();
+          }
+        });
+      });
   }
 
   // ── Index now / cancel ────────────────────────────────────────────
