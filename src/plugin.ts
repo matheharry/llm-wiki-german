@@ -79,6 +79,7 @@ interface LlmWikiSettings {
   customOpenAIEmbeddingModel: string;
   ollamaUrl: string;
   ollamaModel: string;
+  ollamaEmbeddingModel: string;
   /** Model used when providerType is a preset cloud provider. */
   cloudModel: string;
   /** Output language used when extracting summaries, facts, and definitions. */
@@ -105,6 +106,7 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   customOpenAIEmbeddingModel: "",
   ollamaUrl: "http://localhost:11434",
   ollamaModel: "mistral-nemo:12b-instruct-2407-q3_K_M",
+  ollamaEmbeddingModel: "nomic-embed-text",
   cloudModel: "",
   extractionOutputLanguage: "app",
   extractionCharLimit: 12_000,
@@ -529,7 +531,7 @@ export default class LlmWikiPlugin extends Plugin {
   get activeEmbeddingModel(): string {
     if (this.settings.providerType === "openai-compatible") {
       if (!this.hasCustomOpenAIBaseUrl()) {
-        return EMBEDDING_MODEL;
+        return this.settings.ollamaEmbeddingModel || EMBEDDING_MODEL;
       }
       return (
         this.settings.customOpenAIEmbeddingModel ||
@@ -541,7 +543,7 @@ export default class LlmWikiPlugin extends Plugin {
       const provider = this.settings.providerType;
       return defaultEmbeddingModel(provider) ?? EMBEDDING_MODEL;
     }
-    return EMBEDDING_MODEL;
+    return this.settings.ollamaEmbeddingModel || EMBEDDING_MODEL;
   }
 
   get extractionOutputLanguage(): string {

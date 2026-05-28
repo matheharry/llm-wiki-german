@@ -32,6 +32,19 @@ export function renderIndexingSection(
             plugin.rebuildProvider();
           }),
       );
+
+    new Setting(containerEl)
+      .setName("Ollama Embedding-Modell")
+      .setDesc("Lokales Modell zur Vektorisierung für die semantische Suche (z. B. qllama/multilingual-e5-base:latest). Standard: nomic-embed-text")
+      .addText((text) =>
+        text
+          .setPlaceholder("nomic-embed-text")
+          .setValue(plugin.settings.ollamaEmbeddingModel)
+          .onChange(async (value) => {
+            plugin.settings.ollamaEmbeddingModel = value.trim() || "nomic-embed-text";
+            await plugin.saveSettings();
+          }),
+      );
   }
 
   // ── Index now / cancel ────────────────────────────────────────────

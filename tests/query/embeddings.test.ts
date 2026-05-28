@@ -171,4 +171,87 @@ describe("buildEmbeddingIndex", () => {
     });
     expect(events).toEqual([{ current: 1, total: 1 }]);
   });
+
+  it("stores the model in cache entries upon embedding", async () => {
+    const kb = new KnowledgeBase();
+    kb.addEntity({
+      name: "Alan Watts",
+      type: "person",
+      aliases: [],
+      facts: ["philosopher"],
+      source: "x.md",
+    });
+    const provider = new MockLLMProvider({
+      responses: [],
+      embeddings: [[1, 2, 3]],
+    });
+    const cache: EmbeddingsCache = { entries: {} };
+    await buildEmbeddingIndex({
+      kb,
+      provider,
+      model: "qllama/multilingual-e5-base:latest",
+      cache,
+    });
+    expect(cache.entries["alan-watts"]?.model).toBe("qllama/multilingual-e5-base:latest");
+  });
+
+  it("skips re-embedding when both sourceText and model match", async () => {
+    const kb = new KnowledgeBase();
+    kb.addEntity({
+      name: "Alan Watts",
+      type: "person",
+      aliases: [],
+      facts: ["philosopher"],
+      source: "x.md",
+    });
+    const provider = new MockLLMProvider({ responses: [], embeddings: [] });
+    const { contextualTextForEntity } = await import(
+      "../../src/query/embedding-text.js"
+    );
+    const text = contextualTextForEntity(kb.allEntities()[0]);
+    const cache: EmbeddingsCache = {
+      entries: {
+        "alan-watts": { sourceText: text, vector: [9, 9, 9], model: "qllama/multilingual-e5-base:latest" },
+      },
+    };
+    const index = await buildEmbeddingIndex({
+      kb,
+      provider,
+      model: "qllama/multilingual-e5-base:latest",
+      cache,
+    });
+    expect(index.get("alan-watts")).toEqual([9, 9, 9]);
+  });
+
+  it("re-embeds when cached model is different", async () => {
+    const kb = new KnowledgeBase();
+    kb.addEntity({
+      name: "Alan Watts",
+      type: "person",
+      aliases: [],
+      facts: ["philosopher"],
+      source: "x.md",
+    });
+    const provider = new MockLLMProvider({
+      responses: [],
+      embeddings: [[5, 5, 5]],
+    });
+    const { contextualTextForEntity } = await import(
+      "../../src/query/embedding-text.js"
+    );
+    const text = contextualTextForEntity(kb.allEntities()[0]);
+    const cache: EmbeddingsCache = {
+      entries: {
+        "alan-watts": { sourceText: text, vector: [9, 9, 9], model: "nomic-embed-text" },
+      },
+    };
+    const index = await buildEmbeddingIndex({
+      kb,
+      provider,
+      model: "qllama/multilingual-e5-base:latest",
+      cache,
+    });
+    expect(index.get("alan-watts")).toEqual([5, 5, 5]);
+    expect(cache.entries["alan-watts"]?.model).toBe("qllama/multilingual-e5-base:latest");
+  });
 });

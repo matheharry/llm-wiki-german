@@ -7,6 +7,7 @@ import {
 export interface EmbeddingsCacheEntry {
   sourceText: string;
   vector: number[];
+  model?: string;
 }
 
 export interface EmbeddingsCache {

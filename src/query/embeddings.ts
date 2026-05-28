@@ -59,7 +59,8 @@ export async function buildEmbeddingIndex(
     const id = e.id;
     const text = contextualTextForEntity(e);
     const cached = args.cache.entries[id];
-    if (cached && cached.sourceText === text) {
+    const cachedModel = cached?.model || "nomic-embed-text";
+    if (cached && cached.sourceText === text && cachedModel === args.model) {
       index.set(id, cached.vector);
       tick();
       continue;
@@ -69,7 +70,7 @@ export async function buildEmbeddingIndex(
       model: args.model,
       signal: args.signal,
     });
-    args.cache.entries[id] = { sourceText: text, vector: vec };
+    args.cache.entries[id] = { sourceText: text, vector: vec, model: args.model };
     index.set(id, vec);
     tick();
   }
@@ -78,7 +79,8 @@ export async function buildEmbeddingIndex(
     const id = `concept:${c.id}`;
     const text = contextualTextForConcept(c);
     const cached = args.cache.entries[id];
-    if (cached && cached.sourceText === text) {
+    const cachedModel = cached?.model || "nomic-embed-text";
+    if (cached && cached.sourceText === text && cachedModel === args.model) {
       index.set(id, cached.vector);
       tick();
       continue;
@@ -88,7 +90,7 @@ export async function buildEmbeddingIndex(
       model: args.model,
       signal: args.signal,
     });
-    args.cache.entries[id] = { sourceText: text, vector: vec };
+    args.cache.entries[id] = { sourceText: text, vector: vec, model: args.model };
     index.set(id, vec);
     tick();
   }
