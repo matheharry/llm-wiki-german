@@ -20,8 +20,12 @@ export function defaultSkipDirs(configDir: string): string[] {
     "wiki",
     configDir,
     ".trash",
+    ".git",
     "Template",
     "Templates",
+    "Vorlagen",
+    "Bases",
+    "Excalidraw",
     "Assets",
   ];
 }

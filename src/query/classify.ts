@@ -1,26 +1,25 @@
 import type { QueryType } from "./types.js";
 
 const LIST_PATTERNS = [
-  /\bwhat\s+(books|articles|tools|people|places|events|projects)\b/i,
-  /\blist\s+(all|the)\b/i,
-  /\bhow\s+many\b/i,
+  /\b(what|welche)\s+(books|bücher|articles|artikel|tools|werkzeuge|people|leute|personen|places|orte|events|ereignisse|projects|projekte)\b/i,
+  /\b(list|liste|auflisten)\s+(all|alle|die)\b/i,
+  /\b(how many|wie viele)\b/i,
   /\bwhich\s+(books|articles|tools|people)\b/i,
   /\ball\s+the\b/i,
 ];
 
 const ENTITY_PATTERNS = [
-  /^who\s+is\b/i,
-  /^what\s+is\b/i,
-  /^tell\s+me\s+about\b/i,
-  /^who\s+was\b/i,
-  /^what\s+was\b/i,
+  /^(who|wer)\s+(is|ist|was|war)\b/i,
+  /^(what|was)\s+(is|ist|was|war)\b/i,
+  /^(tell me about|erzähl mir von|über)\b/i,
 ];
 
 const RELATIONAL_PATTERNS = [
-  /\brelate(s|d)?\s+to\b/i,
-  /\bconnection\s+between\b/i,
-  /\binfluence(s|d)?\b/i,
+  /\b(relate(s|d)?|beziehung|verbindung|zusammenhang)\s+(to|zu|zwischen)\b/i,
+  /\b(connection|verbindung)\s+between\b/i,
+  /\b(influence(s|d)?|beeinflusst|einfluss)\b/i,
   /\bhow\s+does\b.*\b(relate|connect|influence)\b/i,
+  /\bwie\s+(hängt|beeinflusst|verbunden)\b/i,
 ];
 
 export function classifyQuery(text: string): QueryType {

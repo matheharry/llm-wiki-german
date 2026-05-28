@@ -34,14 +34,14 @@ describe("isQualityEntity", () => {
     expect(isQualityEntity(baseEntity)).toBe(true);
   });
 
-  it("rejects an entity with too few facts", () => {
-    expect(isQualityEntity({ ...baseEntity, facts: ["only one"] })).toBe(
-      false,
+  it("accepts an entity with exactly 1 fact and 1 source (new threshold)", () => {
+    expect(isQualityEntity({ ...baseEntity, facts: ["one fact"], sources: ["one.md"] })).toBe(
+      true,
     );
   });
 
-  it("rejects an entity with too few sources", () => {
-    expect(isQualityEntity({ ...baseEntity, sources: ["one.md"] })).toBe(
+  it("rejects an entity with no facts and no aliases", () => {
+    expect(isQualityEntity({ ...baseEntity, facts: [], aliases: [] })).toBe(
       false,
     );
   });
@@ -50,10 +50,7 @@ describe("isQualityEntity", () => {
     expect(isQualityEntity({ ...baseEntity, name: "Exact Name" })).toBe(
       false,
     );
-  });
-
-  it("rejects an entity with no facts and no aliases", () => {
-    expect(isQualityEntity({ ...baseEntity, facts: [], aliases: [] })).toBe(
+    expect(isQualityEntity({ ...baseEntity, name: "unbekannt" })).toBe(
       false,
     );
   });
@@ -66,6 +63,9 @@ describe("isQualityConcept", () => {
 
   it("rejects a blacklisted name", () => {
     expect(isQualityConcept({ ...baseConcept, name: "Address Book" })).toBe(
+      false,
+    );
+    expect(isQualityConcept({ ...baseConcept, name: "zusammenhang" })).toBe(
       false,
     );
   });
@@ -81,9 +81,11 @@ describe("filters against sample-kb fixture", () => {
     expect(isQualityEntity(fixture.entities["andrej-karpathy"])).toBe(true);
   });
 
-  it("rejects the noise entities", () => {
+  it("rejects the noise entities (unless they now pass 1/1 threshold)", () => {
     expect(isQualityEntity(fixture.entities["exact-name"])).toBe(false);
-    expect(isQualityEntity(fixture.entities["lonely-entity"])).toBe(false);
+    // lonely-entity in sample-kb has 1 fact and 1 source. 
+    // Since we lowered threshold to 1/1, it now PASSES.
+    expect(isQualityEntity(fixture.entities["lonely-entity"])).toBe(true);
   });
 
   it("accepts the high-quality concepts", () => {
@@ -97,14 +99,15 @@ describe("filters against sample-kb fixture", () => {
     expect(isQualityConcept(fixture.concepts["address-book"])).toBe(false);
   });
 
-  it("after filtering, sample-kb yields exactly 2 entities and 2 concepts", () => {
+  it("after filtering, sample-kb yields exactly 3 entities and 2 concepts", () => {
     const goodEntities = Object.values(fixture.entities).filter((e) =>
       isQualityEntity(e),
     );
     const goodConcepts = Object.values(fixture.concepts).filter((c) =>
       isQualityConcept(c),
     );
-    expect(goodEntities).toHaveLength(2);
+    // alan-watts (2/2), andrej-karpathy (2/1), lonely-entity (1/1)
+    expect(goodEntities).toHaveLength(3);
     expect(goodConcepts).toHaveLength(2);
   });
 });

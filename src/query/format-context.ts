@@ -4,40 +4,40 @@ export function formatContextMarkdown(bundle: RetrievedBundle): string {
   const lines: string[] = [];
 
   if (bundle.entities.length > 0) {
-    lines.push("## ENTITIES");
+    lines.push("## ENTITÄTEN");
     for (const e of bundle.entities) {
       lines.push(`### ${e.name} [${e.type}]`);
       if (e.aliases.length > 0) {
-        lines.push(`Aliases: ${e.aliases.join(", ")}`);
+        lines.push(`Andere Namen: ${e.aliases.join(", ")}`);
       }
       if (e.facts.length > 0) {
-        lines.push("Facts:");
+        lines.push("Fakten:");
         for (const f of e.facts) lines.push(`- ${f}`);
       }
       if (e.sources.length > 0) {
-        lines.push(`Sources: ${e.sources.join(", ")}`);
+        lines.push(`Quellen: ${e.sources.join(", ")}`);
       }
       lines.push("");
     }
   }
 
   if (bundle.concepts.length > 0) {
-    lines.push("## CONCEPTS");
+    lines.push("## KONZEPTE");
     for (const c of bundle.concepts) {
       lines.push(`### ${c.name}`);
       if (c.definition) lines.push(c.definition);
       if (c.related && c.related.length > 0) {
-        lines.push(`Related: ${c.related.join(", ")}`);
+        lines.push(`Verwandt mit: ${c.related.join(", ")}`);
       }
       if (c.sources.length > 0) {
-        lines.push(`Sources: ${c.sources.join(", ")}`);
+        lines.push(`Quellen: ${c.sources.join(", ")}`);
       }
       lines.push("");
     }
   }
 
   if (bundle.connections.length > 0) {
-    lines.push("## CONNECTIONS");
+    lines.push("## VERBINDUNGEN");
     for (const c of bundle.connections) {
       lines.push(`- ${c.from} → ${c.to} (${c.type}): ${c.description}`);
     }
@@ -45,7 +45,7 @@ export function formatContextMarkdown(bundle: RetrievedBundle): string {
   }
 
   if (bundle.sources.length > 0) {
-    lines.push("## SOURCE FILES");
+    lines.push("## QUELLDATEIEN");
     for (const s of bundle.sources) {
       lines.push(`- ${s.id} — ${s.summary}`);
     }

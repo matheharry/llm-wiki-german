@@ -9,7 +9,7 @@ function buildRichKb() {
   // alan-watts: 2 facts, 2 sources → passes entity filter
   kb.addEntity({ name: "Alan Watts", type: "person", facts: ["Fact 1", "Fact 2"], source: "Books/Watts.md" });
   kb.addEntity({ name: "Alan Watts", type: "person", source: "Learn/Zen.md" });
-  // lonely: 1 fact, 1 source → fails entity filter
+  // lonely: 1 fact, 1 source → now PASSES entity filter (1/1 threshold)
   kb.addEntity({ name: "Lonely Entity", type: "person", facts: ["Only fact"], source: "notes/a.md" });
   // zen-buddhism: has definition → passes concept filter
   kb.addConcept({ name: "Zen Buddhism", definition: "Direct experience", source: "Books/Watts.md" });
@@ -23,11 +23,11 @@ function buildRichKb() {
 }
 
 describe("generatePages", () => {
-  it("writes entity pages only for quality entities", async () => {
+  it("writes entity pages for entities passing the 1/1 threshold", async () => {
     const { app, files } = createMockApp();
     await generatePages(app, buildRichKb());
     expect(files.has("wiki/entities/alan-watts.md")).toBe(true);
-    expect(files.has("wiki/entities/lonely-entity.md")).toBe(false);
+    expect(files.has("wiki/entities/lonely-entity.md")).toBe(true);
   });
 
   it("writes concept pages only for quality concepts", async () => {
@@ -48,8 +48,8 @@ describe("generatePages", () => {
   it("returns correct written count", async () => {
     const { app } = createMockApp();
     const result = await generatePages(app, buildRichKb());
-    // 1 entity + 1 concept + 3 sources = 5
-    expect(result.written).toBe(5);
+    // 2 entities + 1 concept + 3 sources = 6
+    expect(result.written).toBe(6);
   });
 
   it("deletes stale entity pages after regeneration", async () => {

@@ -168,11 +168,11 @@ describe("QueryController.runChatTurn", () => {
 
     // Two complete() calls: rewrite + ask
     expect(provider.calls).toHaveLength(2);
-    // Second call is the ask: prompt includes "Question: and why?" and history markers
+    // Second call is the ask: prompt includes "Frage: and why?" and history markers
     const askPrompt = provider.calls[1].prompt;
-    expect(askPrompt).toContain("Question: and why?");
-    expect(askPrompt).toContain("Conversation so far:");
-    expect(askPrompt).toContain("[user]");
+    expect(askPrompt).toContain("Frage: and why?");
+    expect(askPrompt).toContain("Bisheriger Gesprächsverlauf:");
+    expect(askPrompt).toContain("[Nutzer]");
     // onRetrievalQuery called with the rewritten query
     expect(retrievalQueries).toEqual(["Why is Alan Watts important"]);
   });

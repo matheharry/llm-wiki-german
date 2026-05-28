@@ -16,9 +16,10 @@ describe("contextualTextForEntity", () => {
       sources: ["x.md"],
     };
     const text = contextualTextForEntity(e);
-    expect(text).toContain("Entity [person]");
+    expect(text).toContain("Entität [person]");
     expect(text).toContain("Alan Watts");
     expect(text).toContain("Watts");
+    expect(text).toContain("Auch bekannt als");
     expect(text).toContain("British philosopher");
   });
 
@@ -46,7 +47,7 @@ describe("contextualTextForEntity", () => {
       facts: ["fact"],
       sources: [],
     };
-    expect(contextualTextForEntity(e)).not.toContain("Also known as");
+    expect(contextualTextForEntity(e)).not.toContain("Auch bekannt als");
   });
 });
 
@@ -60,9 +61,10 @@ describe("contextualTextForConcept", () => {
       sources: ["x.md"],
     };
     const text = contextualTextForConcept(c);
-    expect(text).toContain("Concept: Zen");
+    expect(text).toContain("Konzept: Zen");
     expect(text).toContain("Mahayana");
     expect(text).toContain("meditation");
+    expect(text).toContain("Verwandt mit");
   });
 
   it("truncates definition at 200 chars", () => {

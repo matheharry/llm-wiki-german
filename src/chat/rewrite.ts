@@ -20,17 +20,17 @@ function buildRewritePrompt(
   question: string,
 ): string {
   const lines: string[] = [
-    "Rewrite the user's latest question into a single standalone sentence that can be understood without the prior conversation.",
-    "Resolve pronouns and implied subjects using the conversation below.",
-    "Output ONLY the rewritten question, no preamble, no quotes, no explanation.",
+    "Formuliere die letzte Frage des Nutzers in einem einzigen, in sich geschlossenen Satz um, der auch ohne Kenntnis des vorangegangenen Gesprächs verständlich ist.",
+    "Finde die Pronomen und implizierten Themen anhand des folgenden Gesprächs heraus.",
+    "Gib NUR die umformulierte Frage aus, ohne Einleitung, ohne Anführungszeichen und ohne Erklärung.",
     "",
-    "Conversation:",
+    "Gespräch:",
   ];
   for (const t of history) {
     lines.push(`[user] ${t.question}`);
     lines.push(`[assistant] ${t.answer}`);
   }
-  lines.push("", `Latest question: ${question}`, "", "Standalone question:");
+  lines.push("", `Aktuelle Frage: ${question}`, "", "Separate Frage:");
   return lines.join("\n");
 }
 

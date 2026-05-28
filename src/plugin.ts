@@ -104,7 +104,7 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   customOpenAIModel: "gpt-4o-mini",
   customOpenAIEmbeddingModel: "",
   ollamaUrl: "http://localhost:11434",
-  ollamaModel: "qwen2.5:7b",
+  ollamaModel: "mistral-nemo:12b-instruct-2407-q3_K_M",
   cloudModel: "",
   extractionOutputLanguage: "app",
   extractionCharLimit: 12_000,

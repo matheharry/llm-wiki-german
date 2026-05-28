@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { formatContextMarkdown } from "../../src/query/format-context.js";
 import type { RetrievedBundle } from "../../src/query/types.js";
 
-const bundle: RetrievedBundle = {
-  question: "who is Alan Watts",
-  queryType: "entity_lookup",
+const BUNDLE: RetrievedBundle = {
+  question: "zen",
+  queryType: "conceptual",
   entities: [
     {
       id: "alan-watts",
@@ -19,8 +19,8 @@ const bundle: RetrievedBundle = {
     {
       id: "zen",
       name: "Zen",
-      definition: "Mahayana school",
-      related: [],
+      definition: "A school of Mahayana Buddhism",
+      related: ["meditation"],
       sources: ["Books/Watts.md"],
     },
   ],
@@ -29,25 +29,17 @@ const bundle: RetrievedBundle = {
       from: "Alan Watts",
       to: "Zen",
       type: "influences",
-      description: "wrote about it",
+      description: "Watts brought Zen to the West",
       sources: ["Books/Watts.md"],
     },
   ],
-  sources: [
-    {
-      id: "Books/Watts.md",
-      summary: "Notes on Watts",
-      date: "2026-01-01",
-      mtime: 0,
-      origin: "user-note",
-    },
-  ],
+  sources: [{ id: "Books/Watts.md", summary: "Watts notes" }],
 };
 
 describe("formatContextMarkdown", () => {
   it("emits all four sections in order", () => {
-    const md = formatContextMarkdown(bundle);
-    const order = ["## ENTITIES", "## CONCEPTS", "## CONNECTIONS", "## SOURCE FILES"];
+    const md = formatContextMarkdown(BUNDLE);
+    const order = ["## ENTITÄTEN", "## KONZEPTE", "## VERBINDUNGEN", "## QUELLDATEIEN"];
     let lastIdx = -1;
     for (const h of order) {
       const idx = md.indexOf(h);
@@ -57,21 +49,22 @@ describe("formatContextMarkdown", () => {
   });
 
   it("includes facts, aliases, and source paths", () => {
-    const md = formatContextMarkdown(bundle);
-    expect(md).toContain("Alan Watts");
-    expect(md).toContain("Watts");
-    expect(md).toContain("British philosopher");
-    expect(md).toContain("Books/Watts.md");
-    expect(md).toContain("Mahayana school");
+    const md = formatContextMarkdown(BUNDLE);
+    expect(md).toContain("Andere Namen: Watts");
+    expect(md).toContain("- British philosopher");
+    expect(md).toContain("Quellen: Books/Watts.md");
+    expect(md).toContain("Verwandt mit: meditation");
   });
 
   it("omits empty sections", () => {
-    const md = formatContextMarkdown({
-      ...bundle,
+    const empty: RetrievedBundle = {
+      ...BUNDLE,
+      entities: [],
       concepts: [],
       connections: [],
-    });
-    expect(md).not.toContain("## CONCEPTS");
-    expect(md).not.toContain("## CONNECTIONS");
+      sources: [],
+    };
+    const md = formatContextMarkdown(empty);
+    expect(md).not.toContain("##");
   });
 });

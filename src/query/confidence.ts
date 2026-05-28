@@ -17,11 +17,11 @@ export function assessConfidence(bundle: RetrievedBundle): ConfidenceLevel {
 }
 
 const EMPTY_MESSAGES = [
-  "We don't seem to have anything on that.",
-  "Nothing in our notes about that one.",
-  "That's a blank spot in our knowledge.",
-  "We haven't covered that yet.",
-  "\u00AF\\_(\u30C4)_/\u00AF nothing here.",
+  "Wir scheinen dazu nichts zu haben.",
+  "Dazu steht nichts in unseren Notizen.",
+  "Das ist ein blinder Fleck in unserem Wissen.",
+  "Das haben wir noch nicht behandelt.",
+  "\u00AF\\_(\u30C4)_/\u00AF hier gibt es nichts.",
 ];
 
 export function randomEmptyMessage(): string {

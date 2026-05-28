@@ -131,7 +131,7 @@ describe("Phase 4 integration: extraction → page generation", () => {
     // another rich: 2 facts, 2 sources → passes
     kb.addEntity({ name: "Second Entity", type: "org", facts: ["f1", "f2"], source: "c.md" });
     kb.addEntity({ name: "Second Entity", type: "org", source: "d.md" });
-    // thin: 1 fact, 1 source → fails
+    // thin: 1 fact, 1 source → now PASSES (1/1 threshold)
     kb.addEntity({ name: "Thin Entity", type: "other", facts: ["only"], source: "e.md" });
 
     await generatePages(app, kb);
@@ -139,17 +139,18 @@ describe("Phase 4 integration: extraction → page generation", () => {
     const entityPages = Array.from(files.keys()).filter((p) =>
       p.startsWith("wiki/entities/"),
     );
-    expect(entityPages).toHaveLength(2);
+    // All 3 entities now pass
+    expect(entityPages).toHaveLength(3);
     expect(files.has("wiki/entities/rich-entity.md")).toBe(true);
     expect(files.has("wiki/entities/second-entity.md")).toBe(true);
-    expect(files.has("wiki/entities/thin-entity.md")).toBe(false);
+    expect(files.has("wiki/entities/thin-entity.md")).toBe(true);
   });
 
   it("regenerate prunes stale pages when entity is removed", async () => {
     const { app, files } = createMockApp();
     const kb = new KnowledgeBase();
 
-    // First run: entity passes filter (2 facts, 2 sources)
+    // First run: entity passes filter
     kb.addEntity({ name: "Rich Entity", type: "person", facts: ["f1", "f2"], source: "a.md" });
     kb.addEntity({ name: "Rich Entity", type: "person", source: "b.md" });
     await generatePages(app, kb);

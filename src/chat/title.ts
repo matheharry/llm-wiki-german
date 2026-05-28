@@ -14,8 +14,8 @@ export interface TitleArgs {
 
 export async function generateChatTitle(args: TitleArgs): Promise<string> {
   const prompt = [
-    "Summarize this question as a short chat title of at most 6 words.",
-    "Output only the title. No quotes, no trailing punctuation, no preamble.",
+    "Fasse diese Frage als kurzen Chat-Titel mit maximal 6 Wörtern zusammen.",
+    "Gib nur den Titel aus. Keine Anführungszeichen, keine abschließende Zeichensetzung, keine Einleitung.",
     "",
     `Q: ${args.question}`,
     "",

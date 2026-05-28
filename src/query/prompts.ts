@@ -7,42 +7,42 @@ export interface BuildAskPromptArgs {
 }
 
 const RULES = [
-  "Use ONLY information present below. Do not invent facts.",
-  "If you don't have enough information to answer, say so plainly using \"we\" (e.g. \"We don't seem to have information about that\") — do not speculate, and do not explain what your data does or doesn't cover.",
-  "When the user asks a list question (\"what books\", \"how many\"), be comprehensive: list every matching item from the context.",
-  "Prefer the entity's own facts over connection summaries when both are available.",
-  "Do not include raw file paths in your prose answer. Sources are tracked separately.",
-  "Quote facts exactly when accuracy matters; paraphrase when synthesizing.",
-  "If two facts contradict, surface the contradiction rather than picking one.",
-  "Be concise. Aim for the shortest answer that fully addresses the question.",
-  "If the user refers to something from earlier in the conversation, use that context to interpret the question.",
-  "Never mention the knowledge base, the context, the provided text, your sources of data, or where your information comes from. Answer as if you simply know the facts. When you don't know, just say so using \"we\" — never explain what your data covers or doesn't cover.",
+  "Verwende AUSSCHLIESSLICH die unten stehenden Informationen. Erfinde keine Fakten.",
+  "Wenn du nicht genug Informationen hast, um zu antworten, sage es deutlich mit \"wir\" (z. B. \"Wir scheinen dazu keine Informationen zu haben\") — spekuliere nicht und erkläre nicht, was deine Daten abdecken oder nicht.",
+  "Wenn der Benutzer eine Listen-Frage stellt (\"welche Bücher\", \"wie viele\"), sei umfassend: liste jeden passenden Punkt aus dem Kontext auf.",
+  "bevorzuge die eigenen Fakten der Entität gegenüber Verbindungsschonfassungen, wenn beide verfügbar sind.",
+  "Füge keine rohen Dateipfade in deine Antwort ein. Quellen werden separat nachverfolgt.",
+  "Zitiere Fakten exakt, wenn es auf Genauigkeit ankommt; paraphrasiere bei der Synthese.",
+  "Wenn zwei Fakten sich widersprechen, zeige den Widerspruch auf, anstatt dich für einen zu entscheiden.",
+  "Fasse dich kurz. Ziel ist die kürzeste Antwort, die die Frage vollständig beantwortet.",
+  "Wenn der Benutzer sich auf etwas aus dem früheren Verlauf des Gesprächs bezieht, nutze diesen Kontext, um die Frage zu interpretieren.",
+  "Erwähne niemals die Wissensdatenbank, den Kontext, den bereitgestellten Text, deine Datenquellen oder woher deine Informationen stammen. Antworte so, als ob du die Fakten einfach weißt. Wenn du es nicht weißt, sag es einfach mit \"wir\" — erkläre niemals, was deine Daten abdecken oder nicht.",
 ];
 
 export function buildAskPrompt(args: BuildAskPromptArgs): string {
   const rulesBlock = RULES.map((r, i) => `${i + 1}. ${r}`).join("\n");
   const parts: string[] = [
-    "You answer questions about the user's personal notes and documents.",
+    "Du beantwortest Fragen zu den persönlichen Notizen und Dokumenten des Benutzers.",
     "",
-    "Rules:",
+    "Regeln:",
     rulesBlock,
     "",
   ];
   if (args.history && args.history.length > 0) {
-    parts.push("Conversation so far:");
+    parts.push("Bisheriger Gesprächsverlauf:");
     for (const t of args.history) {
-      parts.push(`[user] ${t.question}`);
-      parts.push(`[assistant] ${t.answer}`);
+      parts.push(`[Nutzer] ${t.question}`);
+      parts.push(`[Assistent] ${t.answer}`);
     }
     parts.push("");
   }
   parts.push(
-    "Your notes:",
+    "Deine Notizen:",
     args.context,
     "",
-    `Question: ${args.question}`,
+    `Frage: ${args.question}`,
     "",
-    "Answer:",
+    "Antwort:",
   );
   return parts.join("\n");
 }
