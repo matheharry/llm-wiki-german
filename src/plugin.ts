@@ -850,14 +850,14 @@ function resolveLanguageLabel(language: string): string {
   }
 
   try {
-    const displayNames = new Intl.DisplayNames(["en"], { type: "language" });
+    const displayNames = new Intl.DisplayNames(["de"], { type: "language" });
     return (
       displayNames.of(normalized) ??
       displayNames.of(base) ??
-      (normalized || trimmed || "English")
+      (normalized || trimmed || "German")
     );
   } catch {
-    return normalized || trimmed || "English";
+    return normalized || trimmed || "German";
   }
 }
 
