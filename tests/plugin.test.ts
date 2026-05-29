@@ -64,7 +64,7 @@ describe("extraction language selection", () => {
   });
 
   it("falls back to a descriptive label for unknown app languages", () => {
-    expect(describeExtractionLanguage("app", "pl")).toBe("Polish");
+    expect(describeExtractionLanguage("app", "pl")).toBe("Polnisch");
   });
 
   it("falls back safely for unknown persisted explicit values", () => {

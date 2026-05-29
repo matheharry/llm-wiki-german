@@ -18,17 +18,17 @@ export function renderModelsSection(
   plugin: LlmWikiPlugin,
   handlers: ModelsSectionHandlers,
 ): void {
-  new Setting(containerEl).setName("Model").setHeading();
+  new Setting(containerEl).setName("Chat-Modell").setHeading();
 
   const pt = plugin.settings.providerType;
 
   if (pt === "ollama") {
     // Ollama: use existing dynamic model picker (fetches from server)
     new Setting(containerEl)
-      .setName("Ollama model")
-      .setDesc(`Current: ${plugin.settings.ollamaModel}`)
+      .setName("Ollama-Modell")
+      .setDesc(`Aktuell: ${plugin.settings.ollamaModel}`)
       .addButton((btn) =>
-        btn.setButtonText("Change…").onClick(() => {
+        btn.setButtonText("Ändern…").onClick(() => {
           void openModelPicker({
             app: plugin.app,
             provider: plugin.provider,
@@ -46,13 +46,13 @@ export function renderModelsSection(
   } else {
     // Cloud provider: pick from catalog
     const cloudProvider = pt as CloudProvider;
-    const current = plugin.settings.cloudModel || "(none)";
+    const current = plugin.settings.cloudModel || "(keines)";
 
     new Setting(containerEl)
-      .setName("Model")
-      .setDesc(`Current: ${current}`)
+      .setName("Modell")
+      .setDesc(`Aktuell: ${current}`)
       .addButton((btn) =>
-        btn.setButtonText("Change…").onClick(() => {
+        btn.setButtonText("Ändern…").onClick(() => {
           const models = completionModels(cloudProvider);
           new CloudModelPickerModal(
             plugin.app,
@@ -80,8 +80,8 @@ class CloudModelPickerModal extends SuggestModal<CatalogEntry> {
     private readonly onPick: (modelId: string) => void | Promise<void>,
   ) {
     super(app);
-    this.setPlaceholder("Search models…");
-    this.emptyStateText = "No matching models.";
+    this.setPlaceholder("Modelle durchsuchen…");
+    this.emptyStateText = "Keine passenden Modelle gefunden.";
     this.modalEl.addClass("llm-wiki-centered-suggest");
   }
 
@@ -103,7 +103,7 @@ class CloudModelPickerModal extends SuggestModal<CatalogEntry> {
     });
     if (entry.id === this.current) {
       el.createEl("small", {
-        text: "Current",
+        text: "Aktuell",
         cls: "llm-wiki-model-picker-hint",
       });
     }

@@ -4,6 +4,7 @@ import type LlmWikiPlugin from "../../plugin.js";
 import { buildQuerySection } from "./query-section.js";
 import { renderCloudSection } from "./cloud-section.js";
 import { renderIndexingSection } from "./indexing-section.js";
+import { renderModelsSection } from "./models-section.js";
 
 export class LlmWikiSettingsTab extends PluginSettingTab {
   private readonly plugin: LlmWikiPlugin;
@@ -32,6 +33,10 @@ export class LlmWikiSettingsTab extends PluginSettingTab {
     containerEl.empty();
 
     renderCloudSection(containerEl, this.plugin, {
+      rerender: () => this.display(),
+    });
+
+    renderModelsSection(containerEl, this.plugin, {
       rerender: () => this.display(),
     });
 
