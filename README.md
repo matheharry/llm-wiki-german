@@ -6,7 +6,7 @@ Da das geforkte Projekt rein die englische Sprache als Grundlage für die Erstel
 
 Außerdem sehe ich das als optimale Gelegenheit, Vibe Coding anzuwenden und auszuprobieren und spiele mich mit der GeminiCLI.
 
-## LLM Wike Original
+## LLM Wiki Original
 
 This project was inspired by [Andrej Karpathy's post on LLM knowledge bases](https://x.com/karpathy/status/2039805659525644595) — using LLMs to compile personal notes into a structured, queryable wiki. 
 LLM Wiki is an attempt to package that workflow into something anyone can use, privately, right inside Obsidian.
