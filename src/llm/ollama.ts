@@ -11,6 +11,8 @@ import {
 export interface OllamaProviderOptions {
   /** Base URL; defaults to http://localhost:11434. */
   url?: string;
+  /** Default context window size for Ollama completions. */
+  numCtx?: number;
   /** Custom fetch; defaults to globalThis.fetch. Injected in tests. */
   fetchImpl?: typeof globalThis.fetch;
 }
@@ -24,9 +26,11 @@ interface OllamaStreamLine {
 export class OllamaProvider implements LLMProvider {
   private readonly url: string;
   private readonly fetchImpl: typeof globalThis.fetch;
+  private readonly defaultNumCtx: number;
 
   constructor(opts: OllamaProviderOptions = {}) {
     this.url = opts.url ?? "http://localhost:11434";
+    this.defaultNumCtx = opts.numCtx ?? 8192;
     this.fetchImpl =
       opts.fetchImpl ?? ((...args) => globalThis.fetch(...args));
   }
@@ -148,7 +152,7 @@ export class OllamaProvider implements LLMProvider {
       stream: true,
       options: {
         temperature: opts.temperature ?? 0.1,
-        num_ctx: opts.numCtx ?? 8192,
+        num_ctx: opts.numCtx ?? this.defaultNumCtx,
       },
     });
     const fetchImpl = this.fetchImpl;

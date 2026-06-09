@@ -80,6 +80,7 @@ interface LlmWikiSettings {
   ollamaUrl: string;
   ollamaModel: string;
   ollamaEmbeddingModel: string;
+  ollamaNumCtx: number;
   /** Model used when providerType is a preset cloud provider. */
   cloudModel: string;
   /** Output language used when extracting summaries, facts, and definitions. */
@@ -107,6 +108,7 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   ollamaUrl: "http://localhost:11434",
   ollamaModel: "mistral-nemo:12b-instruct-2407-q3_K_M",
   ollamaEmbeddingModel: "nomic-embed-text",
+  ollamaNumCtx: 8192,
   cloudModel: "",
   extractionOutputLanguage: "app",
   extractionCharLimit: 12_000,
@@ -129,6 +131,7 @@ export default class LlmWikiPlugin extends Plugin {
   progress = new ProgressEmitter();
   provider: LLMProvider = new OllamaProvider({
     url: this.settings.ollamaUrl,
+    numCtx: this.settings.ollamaNumCtx,
   });
   /**
    * In-memory cache of the last key validation result per provider.
@@ -447,7 +450,10 @@ export default class LlmWikiPlugin extends Plugin {
    */
   rebuildProvider(): void {
     const s = this.settings;
-    const ollama = new OllamaProvider({ url: s.ollamaUrl });
+    const ollama = new OllamaProvider({
+      url: s.ollamaUrl,
+      numCtx: s.ollamaNumCtx,
+    });
 
     switch (s.providerType) {
       case "openai-compatible": {

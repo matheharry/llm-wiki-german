@@ -35,6 +35,21 @@ export function renderIndexingSection(
       );
 
     new Setting(containerEl)
+      .setName("Ollama Kontextlänge")
+      .setDesc("Standardwert für num_ctx in Ollama-Anfragen. Beispiel: 4096 oder 8192.")
+      .addText((text) => {
+        text
+          .setPlaceholder("8192")
+          .setValue(String(plugin.settings.ollamaNumCtx))
+          .onChange(async (value) => {
+            const parsed = Number.parseInt(value, 10);
+            plugin.settings.ollamaNumCtx = Number.isFinite(parsed) && parsed > 0 ? parsed : 8192;
+            await plugin.saveSettings();
+            plugin.rebuildProvider();
+          });
+      });
+
+    new Setting(containerEl)
       .setName("Ollama Embedding-Modell")
       .setDesc("Lokales Modell zur Vektorisierung für die semantische Suche (z. B. qllama/multilingual-e5-base:latest). Standard: nomic-embed-text")
       .addText((text) => {

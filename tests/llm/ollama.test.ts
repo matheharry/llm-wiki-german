@@ -65,6 +65,22 @@ describe("OllamaProvider.complete", () => {
     expect(out.join("")).toBe("foobar");
   });
 
+  it("uses the configured default numCtx when no request-specific value is provided", async () => {
+    const mock = createMockFetch([{ chunks: [JSON.stringify({ response: "ok", done: true }) + "\n"] }]);
+    globalThis.fetch = mock.fetch;
+
+    const provider = new OllamaProvider({ url: "http://localhost:11434", numCtx: 4096 });
+    for await (const _ of provider.complete({
+      prompt: "x",
+      model: "qwen2.5:7b",
+    })) {
+      void _;
+    }
+
+    const body = JSON.parse(mock.calls[0].body!);
+    expect(body.options.num_ctx).toBe(4096);
+  });
+
   it("throws LLMAbortError if signal is already aborted", async () => {
     const mock = createMockFetch([{ chunks: ["{}"] }]);
     globalThis.fetch = mock.fetch;
