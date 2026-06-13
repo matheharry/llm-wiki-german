@@ -147,9 +147,14 @@ export class OllamaProvider implements LLMProvider {
 
   complete(opts: CompletionOptions): AsyncIterable<string> {
     const url = `${this.url}/api/chat`;
+    const messages: Array<{ role: string; content: string }> = [];
+    if (opts.system) {
+      messages.push({ role: "system", content: opts.system });
+    }
+    messages.push({ role: "user", content: opts.prompt });
     const body = JSON.stringify({
       model: opts.model,
-      messages: [{ role: "user", content: opts.prompt }],
+      messages,
       stream: true,
       options: {
         temperature: opts.temperature ?? 0.1,

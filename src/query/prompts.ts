@@ -27,30 +27,42 @@ const RULES = [
   "Erwähne niemals die Wissensdatenbank, den Kontext, den bereitgestellten Text, deine Datenquellen oder woher deine Informationen stammen. Antworte so, als ob du die Fakten einfach weißt. Wenn du es nicht weißt, sag es einfach mit \"wir\" — erkläre niemals, was deine Daten abdecken oder nicht.",
 ];
 
-export function buildAskPrompt(args: BuildAskPromptArgs): string {
+/**
+ * Build a prompt split into system instructions and user context/question.
+ * Returns an object with `system` and `user` fields.
+ * The `system` part is sent as a separate system message for providers that
+ * support it (Ollama /api/chat, OpenAI chat completions), and embedded at the
+ * start of the prompt for providers that don't.
+ */
+export function buildAskPrompt(args: BuildAskPromptArgs): {
+  system: string;
+  user: string;
+} {
   const rulesBlock = RULES.map((r, i) => `${i + 1}. ${r}`).join("\n");
-  const parts: string[] = [
+  const systemParts: string[] = [
     "Du beantwortest Fragen zu den persönlichen Notizen und Dokumenten des Benutzers.",
     "",
     "Regeln:",
     rulesBlock,
-    "",
   ];
+
+  const userParts: string[] = [];
   if (args.history && args.history.length > 0) {
-    parts.push("Bisheriger Gesprächsverlauf:");
+    userParts.push("Bisheriger Gesprächsverlauf:");
     for (const t of args.history) {
-      parts.push(`[Nutzer] ${t.question}`);
-      parts.push(`[Assistent] ${t.answer}`);
+      userParts.push(`[Nutzer] ${t.question}`);
+      userParts.push(`[Assistent] ${t.answer}`);
     }
-    parts.push("");
+    userParts.push("");
   }
+
   const truncatedContext =
     args.context.length > MAX_CONTEXT_CHARS
       ? args.context.slice(0, MAX_CONTEXT_CHARS) +
         "\n\n[... weitere Notizen wurden gekürzt ...]"
       : args.context;
 
-  parts.push(
+  userParts.push(
     "Deine Notizen:",
     truncatedContext,
     "",
@@ -58,5 +70,9 @@ export function buildAskPrompt(args: BuildAskPromptArgs): string {
     "",
     "Antwort:",
   );
-  return parts.join("\n");
+
+  return {
+    system: systemParts.join("\n"),
+    user: userParts.join("\n"),
+  };
 }

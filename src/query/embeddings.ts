@@ -77,7 +77,10 @@ function buildPendingList(
     const id = e.id;
     const text = prefix + contextualTextForEntity(e);
     const cached = args.cache.entries[id];
-    if (cached && cached.sourceText === text && cached.model === args.model) {
+    // Legacy cache entries may lack a `model` field — treat them as matching
+    // the first time the user embeds with any model (the text is the same).
+    const cachedModel = cached?.model ?? args.model;
+    if (cached && cached.sourceText === text && cachedModel === args.model) {
       index.set(id, cached.vector);
       onProgress();
     } else {
@@ -89,7 +92,8 @@ function buildPendingList(
     const id = `concept:${c.id}`;
     const text = prefix + contextualTextForConcept(c);
     const cached = args.cache.entries[id];
-    if (cached && cached.sourceText === text && cached.model === args.model) {
+    const cachedModel = cached?.model ?? args.model;
+    if (cached && cached.sourceText === text && cachedModel === args.model) {
       index.set(id, cached.vector);
       onProgress();
     } else {

@@ -168,8 +168,13 @@ export class OpenAIProvider implements LLMProvider {
       stream: true,
       temperature: opts.temperature ?? 0.1,
       ...(legacyCompletions
-        ? { prompt: opts.prompt }
-        : { messages: [{ role: "user", content: opts.prompt }] }),
+        ? { prompt: opts.system ? `${opts.system}\n\n${opts.prompt}` : opts.prompt }
+        : {
+            messages: [
+              ...(opts.system ? [{ role: "system", content: opts.system }] : []),
+              { role: "user", content: opts.prompt },
+            ],
+          }),
     });
     const apiKey = this.apiKey;
     const fetchImpl = this.fetchImpl;

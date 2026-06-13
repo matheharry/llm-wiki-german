@@ -89,13 +89,17 @@ export class AnthropicProvider implements LLMProvider {
 
   complete(opts: CompletionOptions): AsyncIterable<string> {
     const url = "https://api.anthropic.com/v1/messages";
-    const body = JSON.stringify({
+    const bodyObj: Record<string, unknown> = {
       model: opts.model,
       max_tokens: opts.numCtx ?? 8192,
       stream: true,
       temperature: opts.temperature ?? 0.1,
       messages: [{ role: "user", content: opts.prompt }],
-    });
+    };
+    if (opts.system) {
+      bodyObj.system = opts.system;
+    }
+    const body = JSON.stringify(bodyObj);
     const apiKey = this.apiKey;
     const fetchImpl = this.fetchImpl;
     const signal = opts.signal;

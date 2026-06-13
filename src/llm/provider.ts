@@ -10,8 +10,14 @@
  */
 
 export interface CompletionOptions {
-  /** Fully-rendered prompt text sent to the model. */
+  /** Fully-rendered prompt text sent to the model as the user message. */
   prompt: string;
+  /**
+   * Optional system-level instructions, rendered as a separate system message
+   * for providers that support it (Ollama /api/chat, OpenAI, etc.).
+   * Extraction pipelines do not set this — they embed instructions in prompt.
+   */
+  system?: string;
   /** Model identifier — e.g. "qwen2.5:7b" for Ollama. */
   model: string;
   /** Sampling temperature. Extraction uses 0.1 (ported from Python). */

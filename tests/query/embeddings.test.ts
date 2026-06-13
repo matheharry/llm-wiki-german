@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { cosineSim, buildEmbeddingIndex } from "../../src/query/embeddings.js";
+import { cosineSim, buildEmbeddingIndex, e5PassagePrefix } from "../../src/query/embeddings.js";
 import { KnowledgeBase } from "../../src/core/kb.js";
 import { MockLLMProvider } from "../helpers/mock-llm-provider.js";
 import type { EmbeddingsCache } from "../../src/vault/plugin-data.js";
@@ -208,10 +208,13 @@ describe("buildEmbeddingIndex", () => {
     const { contextualTextForEntity } = await import(
       "../../src/query/embedding-text.js"
     );
-    const text = contextualTextForEntity(kb.allEntities()[0]);
+    // The e5 prefix is prepended to the source text before embedding,
+    // so the cache entry must include it for a match.
+    const rawText = contextualTextForEntity(kb.allEntities()[0]);
+    const prefix = e5PassagePrefix("qllama/multilingual-e5-base:latest");
     const cache: EmbeddingsCache = {
       entries: {
-        "alan-watts": { sourceText: text, vector: [9, 9, 9], model: "qllama/multilingual-e5-base:latest" },
+        "alan-watts": { sourceText: prefix + rawText, vector: [9, 9, 9], model: "qllama/multilingual-e5-base:latest" },
       },
     };
     const index = await buildEmbeddingIndex({

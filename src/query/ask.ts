@@ -53,8 +53,14 @@ export async function* ask(args: AskArgs): AsyncIterable<AnswerEvent> {
       history: args.history,
     });
 
+    // Send rules/instructions as a separate system message and the context/
+    // question as the user message. This works correctly with Ollama /api/chat
+    // (which applies the Modelfile system template separately) and with OpenAI-
+    // style chat completions. For legacy /api/generate providers the system
+    // text is simply prepended (see each provider's complete() implementation).
     for await (const chunk of args.provider.complete({
-      prompt,
+      prompt: prompt.user,
+      system: prompt.system,
       model: args.model,
       signal: args.signal,
     })) {

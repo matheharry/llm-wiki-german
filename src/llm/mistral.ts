@@ -114,11 +114,16 @@ export class MistralProvider implements LLMProvider {
 
   complete(opts: CompletionOptions): AsyncIterable<string> {
     const url = `${this.baseUrl}/v1/chat/completions`;
+    const messages: Array<{ role: string; content: string }> = [];
+    if (opts.system) {
+      messages.push({ role: "system", content: opts.system });
+    }
+    messages.push({ role: "user", content: opts.prompt });
     const body = JSON.stringify({
       model: opts.model,
       stream: true,
       temperature: opts.temperature ?? 0.1,
-      messages: [{ role: "user", content: opts.prompt }],
+      messages,
     });
     const apiKey = this.apiKey;
     const fetchImpl = this.fetchImpl;

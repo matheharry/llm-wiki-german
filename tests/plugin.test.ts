@@ -41,7 +41,7 @@ describe("LlmWikiPlugin embedding model selection", () => {
     } as never;
 
     expect(plugin.activeModel).toBe("qwen2.5:7b");
-    expect(plugin.activeEmbeddingModel).toBe("nomic-embed-text");
+    expect(plugin.activeEmbeddingModel).toBe("qllama/multilingual-e5-base:latest");
   });
 
   it("uses provider defaults for built-in cloud providers", () => {

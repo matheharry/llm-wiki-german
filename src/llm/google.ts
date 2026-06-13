@@ -114,8 +114,11 @@ export class GoogleProvider implements LLMProvider {
   complete(opts: CompletionOptions): AsyncIterable<string> {
     const url =
       `${BASE}/models/${opts.model}:streamGenerateContent?alt=sse&key=${encodeURIComponent(this.apiKey)}`;
+    // Google's API doesn't have a separate system message field, so prepend
+    // system text to the user prompt when provided.
+    const prompt = opts.system ? `${opts.system}\n\n${opts.prompt}` : opts.prompt;
     const body = JSON.stringify({
-      contents: [{ parts: [{ text: opts.prompt }] }],
+      contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: opts.temperature ?? 0.1,
       },
