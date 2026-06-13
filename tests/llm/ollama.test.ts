@@ -11,11 +11,11 @@ describe("OllamaProvider.complete", () => {
 
   it("streams tokens from a single-chunk NDJSON response", async () => {
     const ndjson =
-      JSON.stringify({ response: "Hello", done: false }) +
+      JSON.stringify({ message: { content: "Hello" }, done: false }) +
       "\n" +
-      JSON.stringify({ response: " world", done: false }) +
+      JSON.stringify({ message: { content: " world" }, done: false }) +
       "\n" +
-      JSON.stringify({ response: "", done: true }) +
+      JSON.stringify({ message: { content: "" }, done: true }) +
       "\n";
     const mock = createMockFetch([{ chunks: [ndjson] }]);
     globalThis.fetch = mock.fetch;
@@ -31,11 +31,11 @@ describe("OllamaProvider.complete", () => {
 
     expect(tokens.join("")).toBe("Hello world");
     expect(mock.calls).toHaveLength(1);
-    expect(mock.calls[0].url).toBe("http://localhost:11434/api/generate");
+    expect(mock.calls[0].url).toBe("http://localhost:11434/api/chat");
     expect(mock.calls[0].method).toBe("POST");
     const body = JSON.parse(mock.calls[0].body!);
     expect(body.model).toBe("qwen2.5:7b");
-    expect(body.prompt).toBe("hi");
+    expect(body.messages).toEqual([{ role: "user", content: "hi" }]);
     expect(body.stream).toBe(true);
     expect(body.options.temperature).toBe(0.1);
     expect(body.options.num_ctx).toBe(8192);
@@ -43,11 +43,11 @@ describe("OllamaProvider.complete", () => {
 
   it("handles NDJSON lines split across chunks", async () => {
     const full =
-      JSON.stringify({ response: "foo", done: false }) +
+      JSON.stringify({ message: { content: "foo" }, done: false }) +
       "\n" +
-      JSON.stringify({ response: "bar", done: false }) +
+      JSON.stringify({ message: { content: "bar" }, done: false }) +
       "\n" +
-      JSON.stringify({ response: "", done: true }) +
+      JSON.stringify({ message: { content: "" }, done: true }) +
       "\n";
     const mid = Math.floor(full.length / 2);
     const chunks = [full.slice(0, 8), full.slice(8, mid), full.slice(mid)];
@@ -65,18 +65,44 @@ describe("OllamaProvider.complete", () => {
     expect(out.join("")).toBe("foobar");
   });
 
+  it("yields content from the final NDJSON line even when done:true is set on the same line", async () => {
+    // /api/chat often sends the last token and done:true together
+    const ndjson =
+      JSON.stringify({ message: { content: "Berlin" }, done: false }) +
+      "\n" +
+      JSON.stringify({ message: { content: " ist" }, done: false }) +
+      "\n" +
+      JSON.stringify({ message: { content: " Hauptstadt" }, done: true }) +
+      "\n";
+    const mock = createMockFetch([{ chunks: [ndjson] }]);
+    globalThis.fetch = mock.fetch;
+
+    const provider = new OllamaProvider({ url: "http://localhost:11434" });
+    const tokens: string[] = [];
+    for await (const chunk of provider.complete({
+      prompt: "x",
+      model: "qwen2.5:7b",
+    })) {
+      tokens.push(chunk);
+    }
+
+    expect(tokens.join("")).toBe("Berlin ist Hauptstadt");
+  });
+
   it("uses the configured default numCtx when no request-specific value is provided", async () => {
-    const mock = createMockFetch([{ chunks: [JSON.stringify({ response: "ok", done: true }) + "\n"] }]);
+    const mock = createMockFetch([{ chunks: [JSON.stringify({ message: { content: "ok" }, done: true }) + "\n"] }]);
     globalThis.fetch = mock.fetch;
 
     const provider = new OllamaProvider({ url: "http://localhost:11434", numCtx: 4096 });
+    const tokens: string[] = [];
     for await (const _ of provider.complete({
       prompt: "x",
       model: "qwen2.5:7b",
     })) {
-      void _;
+      tokens.push(_);
     }
 
+    expect(tokens.join("")).toBe("ok");
     const body = JSON.parse(mock.calls[0].body!);
     expect(body.options.num_ctx).toBe(4096);
   });

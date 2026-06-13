@@ -18,6 +18,7 @@ export interface OllamaProviderOptions {
 }
 
 interface OllamaStreamLine {
+  message?: { role?: string; content?: string };
   response?: string;
   done?: boolean;
   error?: string;
@@ -145,10 +146,10 @@ export class OllamaProvider implements LLMProvider {
   }
 
   complete(opts: CompletionOptions): AsyncIterable<string> {
-    const url = `${this.url}/api/generate`;
+    const url = `${this.url}/api/chat`;
     const body = JSON.stringify({
       model: opts.model,
-      prompt: opts.prompt,
+      messages: [{ role: "user", content: opts.prompt }],
       stream: true,
       options: {
         temperature: opts.temperature ?? 0.1,
@@ -236,6 +237,10 @@ function parseLine(line: string): string | null {
   if (parsed.error) {
     throw new LLMHttpError(`Ollama error: ${parsed.error}`, null);
   }
+  // Some streaming responses send the final token together with done: true.
+  // Always yield non-empty content, even if the stream is ending.
+  const content = parsed.message?.content ?? parsed.response ?? "";
+  if (content) return content;
   if (parsed.done === true) return null;
-  return parsed.response ?? "";
+  return "";
 }
