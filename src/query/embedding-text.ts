@@ -19,7 +19,8 @@ export function contextualTextForConcept(c: Concept): string {
   const parts: string[] = [`Konzept: ${c.name}.`];
   if (def.length > 0) parts.push(def);
   if (c.related && c.related.length > 0) {
-    parts.push(`Verwandt mit: ${c.related.join(", ")}.`);
+    const related = Array.isArray(c.related) ? c.related : [c.related];
+    parts.push(`Verwandt mit: ${related.join(", ")}.`);
   }
   return parts.join(" ");
 }

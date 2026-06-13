@@ -27,7 +27,8 @@ export function formatContextMarkdown(bundle: RetrievedBundle): string {
       lines.push(`### ${c.name}`);
       if (c.definition) lines.push(c.definition);
       if (c.related && c.related.length > 0) {
-        lines.push(`Verwandt mit: ${c.related.join(", ")}`);
+        const related = Array.isArray(c.related) ? c.related : [c.related];
+        lines.push(`Verwandt mit: ${related.join(", ")}`);
       }
       if (c.sources.length > 0) {
         lines.push(`Quellen: ${c.sources.join(", ")}`);
