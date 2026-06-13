@@ -707,6 +707,7 @@ export default class LlmWikiPlugin extends Plugin {
           ? new OllamaProvider({ url: this.settings.ollamaUrl })
           : undefined,
       model: this.activeModel,
+      embeddingModel: this.activeEmbeddingModel,
       folders: this.settings.queryFolders,
       chats: this.chats,
       activeChatId: null,

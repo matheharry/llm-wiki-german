@@ -22,6 +22,8 @@ export interface QueryControllerOptions {
   kb: KnowledgeBase;
   provider: LLMProvider;
   model: string;
+  /** Model used to build the embedding index — needed for query embedding. */
+  embeddingModel?: string;
   folders?: string[];
   embeddingIndex?: ReadonlyMap<string, number[]>;
   queryEmbedding?: number[] | null;
@@ -85,6 +87,7 @@ export class QueryController {
         kb: this.opts.kb,
         provider: this.opts.provider,
         model: this.currentModel,
+        embeddingModel: this.opts.embeddingModel,
         folders: this.currentFolders,
         embeddingIndex: this.opts.embeddingIndex,
         queryEmbedding: this.opts.queryEmbedding,

@@ -52,6 +52,8 @@ export interface QueryModalArgs {
    */
   embedFallbackProvider?: LLMProvider;
   model: string;
+  /** Model used to build the embedding index — needed for query embedding. */
+  embeddingModel?: string;
   folders: string[];
   chats: readonly Chat[];
   activeChatId: string | null;
@@ -683,6 +685,7 @@ export class QueryModal extends Modal {
       kb: this.args.kb,
       provider: this.args.provider,
       model: this.currentModel,
+      embeddingModel: this.args.embeddingModel,
       folders: this.currentFolders,
       embeddingIndex,
       queryEmbedding: this.args.queryEmbedding,
