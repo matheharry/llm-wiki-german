@@ -107,7 +107,7 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   customOpenAIEmbeddingModel: "",
   ollamaUrl: "http://localhost:11434",
   ollamaModel: "mistral-nemo:12b-instruct-2407-q3_K_M",
-  ollamaEmbeddingModel: "nomic-embed-text",
+  ollamaEmbeddingModel: "qllama/multilingual-e5-base:latest",
   ollamaNumCtx: 16384,
   cloudModel: "",
   extractionOutputLanguage: "app",
@@ -807,6 +807,11 @@ export default class LlmWikiPlugin extends Plugin {
       const reloaded = await loadKB(this.app);
       this.kbMtime = reloaded.mtime;
       await generatePages(this.app, this.kb);
+
+      // Re-index the embedding cache so on-save extractions are immediately
+      // searchable via semantic retrieval.
+      this.embeddingsCache = await loadEmbeddingsCache(this.app);
+      await this.embeddingIndexController?.ensureBuilt();
     } catch (e) {
       new Notice(`LLM Wiki: extract failed — ${(e as Error).message}`);
     } finally {
