@@ -31,7 +31,7 @@ export class OllamaProvider implements LLMProvider {
 
   constructor(opts: OllamaProviderOptions = {}) {
     this.url = opts.url ?? "http://localhost:11434";
-    this.defaultNumCtx = opts.numCtx ?? 8192;
+    this.defaultNumCtx = opts.numCtx ?? 16384;
     this.fetchImpl =
       opts.fetchImpl ?? ((...args) => globalThis.fetch(...args));
   }

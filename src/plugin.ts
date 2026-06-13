@@ -108,7 +108,7 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   ollamaUrl: "http://localhost:11434",
   ollamaModel: "mistral-nemo:12b-instruct-2407-q3_K_M",
   ollamaEmbeddingModel: "nomic-embed-text",
-  ollamaNumCtx: 8192,
+  ollamaNumCtx: 16384,
   cloudModel: "",
   extractionOutputLanguage: "app",
   extractionCharLimit: 12_000,

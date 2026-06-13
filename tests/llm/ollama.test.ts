@@ -38,7 +38,7 @@ describe("OllamaProvider.complete", () => {
     expect(body.messages).toEqual([{ role: "user", content: "hi" }]);
     expect(body.stream).toBe(true);
     expect(body.options.temperature).toBe(0.1);
-    expect(body.options.num_ctx).toBe(8192);
+    expect(body.options.num_ctx).toBe(16384);
   });
 
   it("handles NDJSON lines split across chunks", async () => {

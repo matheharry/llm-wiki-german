@@ -6,6 +6,14 @@ export interface BuildAskPromptArgs {
   history?: readonly ChatTurn[];
 }
 
+/**
+ * Maximum characters of retrieved context to include in the query prompt.
+ * The model's full context window (num_ctx) is shared between the system
+ * prompt, rules, history, question, and the answer itself. Truncating at
+ * ~16k chars (~4k tokens) leaves enough room for the rest.
+ */
+const MAX_CONTEXT_CHARS = 16_000;
+
 const RULES = [
   "Verwende AUSSCHLIESSLICH die unten stehenden Informationen. Erfinde keine Fakten.",
   "Wenn du nicht genug Informationen hast, um zu antworten, sage es deutlich mit \"wir\" (z. B. \"Wir scheinen dazu keine Informationen zu haben\") — spekuliere nicht und erkläre nicht, was deine Daten abdecken oder nicht.",
@@ -36,9 +44,15 @@ export function buildAskPrompt(args: BuildAskPromptArgs): string {
     }
     parts.push("");
   }
+  const truncatedContext =
+    args.context.length > MAX_CONTEXT_CHARS
+      ? args.context.slice(0, MAX_CONTEXT_CHARS) +
+        "\n\n[... weitere Notizen wurden gekürzt ...]"
+      : args.context;
+
   parts.push(
     "Deine Notizen:",
-    args.context,
+    truncatedContext,
     "",
     `Frage: ${args.question}`,
     "",
