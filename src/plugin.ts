@@ -9,6 +9,7 @@ import { OpenAIProvider } from "./llm/openai.js";
 import { AnthropicProvider } from "./llm/anthropic.js";
 import { GoogleProvider } from "./llm/google.js";
 import { MistralProvider } from "./llm/mistral.js";
+import { LlamaCppProvider } from "./llm/llama-cpp.js";
 import type { LLMProvider } from "./llm/provider.js";
 import {
   completionModels,
@@ -46,7 +47,7 @@ import { safeDeletePage } from "./vault/safe-write.js";
 /** Per-provider API keys, keyed by CloudProvider. */
 export type ApiKeys = Partial<Record<CloudProvider, string>>;
 
-export type ProviderType = "ollama" | CloudProvider | "openai-compatible";
+export type ProviderType = "ollama" | "llama-cpp" | CloudProvider | "openai-compatible";
 export type ExtractionLanguageSetting =
   | "app"
   | "en"
@@ -81,6 +82,10 @@ interface LlmWikiSettings {
   ollamaModel: string;
   ollamaEmbeddingModel: string;
   ollamaNumCtx: number;
+  llamaCppUrl: string;
+  llamaCppModel: string;
+  llamaCppEmbeddingModel: string;
+  llamaCppNumCtx: number;
   /** Model used when providerType is a preset cloud provider. */
   cloudModel: string;
   /** Output language used when extracting summaries, facts, and definitions. */
@@ -106,9 +111,13 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   customOpenAIModel: "gpt-4o-mini",
   customOpenAIEmbeddingModel: "",
   ollamaUrl: "http://localhost:11434",
-  ollamaModel: "mistral-nemo:12b-instruct-2407-q3_K_M",
+  ollamaModel: "gemma4:e4b-it-qat",
   ollamaEmbeddingModel: "qllama/multilingual-e5-base:latest",
-  ollamaNumCtx: 16384,
+  ollamaNumCtx: 8192,
+  llamaCppUrl: "http://localhost:8080",
+  llamaCppModel: "gemma-4-E4B_q4_0-it",
+  llamaCppEmbeddingModel: "multilingual-e5-base-Q8_0",
+  llamaCppNumCtx: 8192,
   cloudModel: "",
   extractionOutputLanguage: "app",
   extractionCharLimit: 12_000,
@@ -503,6 +512,13 @@ export default class LlmWikiPlugin extends Plugin {
           : ollama;
         break;
       }
+      case "llama-cpp": {
+        this.provider = new LlamaCppProvider({
+          url: s.llamaCppUrl,
+          numCtx: s.llamaCppNumCtx,
+        });
+        break;
+      }
       default:
         this.provider = ollama;
     }
@@ -521,6 +537,9 @@ export default class LlmWikiPlugin extends Plugin {
       this.settings.customOpenAIModel
     ) {
       return this.settings.customOpenAIModel;
+    }
+    if (this.settings.providerType === "llama-cpp") {
+      return this.settings.llamaCppModel;
     }
     if (this.settings.providerType !== "ollama") {
       const provider = this.settings.providerType as CloudProvider;
@@ -544,6 +563,9 @@ export default class LlmWikiPlugin extends Plugin {
         this.settings.customOpenAIModel ||
         EMBEDDING_MODEL
       );
+    }
+    if (this.settings.providerType === "llama-cpp") {
+      return this.settings.llamaCppEmbeddingModel || EMBEDDING_MODEL;
     }
     if (this.settings.providerType !== "ollama") {
       const provider = this.settings.providerType;
@@ -719,6 +741,8 @@ export default class LlmWikiPlugin extends Plugin {
       onModelChanged: (model): void => {
         if (this.settings.providerType === "ollama") {
           this.settings.ollamaModel = model;
+        } else if (this.settings.providerType === "llama-cpp") {
+          this.settings.llamaCppModel = model;
         } else if (this.settings.providerType === "openai-compatible") {
           this.settings.customOpenAIModel = model;
         } else {

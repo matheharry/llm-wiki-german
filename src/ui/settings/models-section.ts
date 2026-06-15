@@ -43,6 +43,27 @@ export function renderModelsSection(
           });
         }),
       );
+  } else if (pt === "llama-cpp") {
+    // Llama.cpp: use dynamic model picker (fetches from server via OpenAI API)
+    new Setting(containerEl)
+      .setName("Llama.cpp-Modell")
+      .setDesc(`Aktuell: ${plugin.settings.llamaCppModel}`)
+      .addButton((btn) =>
+        btn.setButtonText("Ändern…").onClick(() => {
+          void openModelPicker({
+            app: plugin.app,
+            provider: plugin.provider,
+            current: plugin.settings.llamaCppModel,
+            onPick: (model) => {
+              void (async () => {
+                plugin.settings.llamaCppModel = model;
+                await plugin.saveSettings();
+                handlers.rerender();
+              })();
+            },
+          });
+        }),
+      );
   } else {
     // Cloud provider: pick from catalog
     const cloudProvider = pt as CloudProvider;

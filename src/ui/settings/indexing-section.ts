@@ -1,3 +1,4 @@
+/* eslint-disable obsidianmd/ui/sentence-case */
 import { Setting } from "obsidian";
 import type LlmWikiPlugin from "../../plugin.js";
 import type { ExtractionLanguageSetting } from "../../plugin.js";
@@ -64,6 +65,61 @@ export function renderIndexingSection(
 
         text.inputEl.addEventListener("blur", () => {
           const currentValue = plugin.settings.ollamaEmbeddingModel;
+          if (currentValue !== prevValue) {
+            prevValue = currentValue;
+            new ReindexConfirmationModal(plugin.app, plugin, currentValue).open();
+          }
+        });
+      });
+  }
+
+  // ── Llama.cpp Settings ──
+  if (plugin.settings.providerType === "llama-cpp") {
+    new Setting(containerEl)
+      .setName("Llama.cpp-URL")
+      .setDesc("Basis-URL deines lokalen llama.cpp Servers (z. B. http://localhost:8080).")
+      .addText((text) =>
+        text
+          .setPlaceholder("Server-URL")
+          .setValue(plugin.settings.llamaCppUrl)
+          .onChange(async (value) => {
+            plugin.settings.llamaCppUrl =
+              value.trim() || "http://localhost:8080";
+            await plugin.saveSettings();
+            plugin.rebuildProvider();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName("Llama.cpp Kontextlänge")
+      .setDesc("Kontextfenster-Limit für den llama.cpp Server. Beispiel: 4096 oder 8192.")
+      .addText((text) => {
+        text
+          .setPlaceholder("8192")
+          .setValue(String(plugin.settings.llamaCppNumCtx))
+          .onChange(async (value) => {
+            const parsed = Number.parseInt(value, 10);
+            plugin.settings.llamaCppNumCtx = Number.isFinite(parsed) && parsed > 0 ? parsed : 8192;
+            await plugin.saveSettings();
+            plugin.rebuildProvider();
+          });
+      });
+
+    new Setting(containerEl)
+      .setName("Llama.cpp Embedding-Modell")
+      .setDesc("Name des Embedding-Modells (falls der Server mit --embeddings gestartet wurde). Standard: leer (nutzt Completion-Modell)")
+      .addText((text) => {
+        let prevValue = plugin.settings.llamaCppEmbeddingModel;
+        text
+          .setPlaceholder("Llama-Modellname")
+          .setValue(plugin.settings.llamaCppEmbeddingModel)
+          .onChange(async (value) => {
+            plugin.settings.llamaCppEmbeddingModel = value.trim();
+            await plugin.saveSettings();
+          });
+
+        text.inputEl.addEventListener("blur", () => {
+          const currentValue = plugin.settings.llamaCppEmbeddingModel;
           if (currentValue !== prevValue) {
             prevValue = currentValue;
             new ReindexConfirmationModal(plugin.app, plugin, currentValue).open();

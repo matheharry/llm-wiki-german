@@ -1,3 +1,4 @@
+/* eslint-disable obsidianmd/ui/sentence-case */
 /**
  * Settings UI section for cloud provider configuration: provider picker,
  * API key entry with auto-validation.
@@ -17,6 +18,7 @@ export interface CloudSectionHandlers {
 
 const PROVIDER_LABELS: Record<ProviderType, string> = {
   ollama: "Ollama (local)",
+  "llama-cpp": "Llama.cpp (local)",
   "openai-compatible": "OpenAI-compatible (custom)",
   openai: "OpenAI",
   anthropic: "Anthropic",
@@ -26,6 +28,7 @@ const PROVIDER_LABELS: Record<ProviderType, string> = {
 
 const PROVIDER_OPTIONS: ProviderType[] = [
   "ollama",
+  "llama-cpp",
   "openai-compatible",
   "openai",
   "anthropic",
@@ -55,11 +58,11 @@ export function renderCloudSection(
           if (!plugin.settings.customOpenAIModel) {
             plugin.settings.customOpenAIModel = "gpt-4o-mini";
           }
-        } else if (value !== "ollama" && !plugin.settings.cloudModel) {
+        } else if (value !== "ollama" && value !== "llama-cpp" && !plugin.settings.cloudModel) {
           plugin.settings.cloudModel = defaultCompletionModel(
             value as CloudProvider,
           );
-        } else if (value !== "ollama") {
+        } else if (value !== "ollama" && value !== "llama-cpp") {
           const provider = value as CloudProvider;
           const valid = completionModels(provider).some(
             (m) => m.id === plugin.settings.cloudModel,
@@ -76,7 +79,7 @@ export function renderCloudSection(
 
   // ── API key entry (only for cloud providers) ──────────────────────
   const pt = plugin.settings.providerType;
-  if (pt === "ollama") return;
+  if (pt === "ollama" || pt === "llama-cpp") return;
 
   if (pt === "openai-compatible") {
     new Setting(containerEl)

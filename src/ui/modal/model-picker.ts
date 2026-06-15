@@ -12,10 +12,14 @@ export class ModelPickerModal extends SuggestModal<string> {
     private readonly models: readonly string[],
     private readonly current: string,
     private readonly onPick: (model: string) => void,
+    providerName: string = "Ollama",
   ) {
     super(app);
     this.setPlaceholder("Search installed models…");
-    this.emptyStateText = "No matching installed models. Run `ollama pull <tag>` first.";
+    this.emptyStateText =
+      providerName === "LlamaCppProvider"
+        ? "No matching models found on llama.cpp server."
+        : "No matching installed models. Run `ollama pull <tag>` first.";
     this.modalEl.addClass("llm-wiki-centered-suggest");
   }
 
@@ -52,11 +56,18 @@ export async function openModelPicker(args: {
     return;
   }
   const models = await args.provider.listModels();
+  const providerName = args.provider.constructor.name;
   if (!models || models.length === 0) {
-    new Notice(
-      "LLM Wiki: Ollama unreachable or no models installed. Start Ollama and `ollama pull` a model.",
-    );
+    if (providerName === "LlamaCppProvider") {
+      new Notice(
+        "LLM Wiki: llama.cpp server unreachable or no models loaded. Start llama.cpp server.",
+      );
+    } else {
+      new Notice(
+        "LLM Wiki: Ollama unreachable or no models installed. Start Ollama and `ollama pull` a model.",
+      );
+    }
     return;
   }
-  new ModelPickerModal(args.app, models, args.current, args.onPick).open();
+  new ModelPickerModal(args.app, models, args.current, args.onPick, providerName).open();
 }
