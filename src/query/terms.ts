@@ -9,11 +9,50 @@ const STOP_WORDS = new Set([
   "will", "shall", "may", "might", "must", "me", "my", "your", "his", "her",
   "its", "our", "their",
   // German
-  "der", "die", "das", "ein", "eine", "ist", "sind", "war", "waren", "sein",
+  // --- Artikel & Demonstrativpronomen (Akk, Dat, Gen) ---
+  "der", "die", "das", "den", "dem", "des",
+  "ein", "eine", "einer", "einem", "einen", "eines",
+  "dieser", "diese", "dieses", "diesem", "diesen", "dieser",
+  "jener", "jene", "jenes", "jenem", "jenen", "jener",
+  // --- Personalpronomen (Nom, Akk, Dat) ---
+  "ich", "du", "er", "sie", "es", "wir", "ihr",
+  "mich", "mir", "dich", "dir", "ihn", "ihm", "uns", "euch",
+  // --- Reflexivpronomen (Akk, Dat) ---
+  "sich",
+  // --- Possessivpronomen (alle Kasus/Genus) ---
+  "mein", "meine", "meiner", "meines", "meinem", "meinen",
+  "dein", "deine", "deiner", "deines", "deinem", "deinen",
+  "sein", "seine", "seiner", "seines", "seinem", "seinen",
+  "ihr", "ihre", "ihrer", "ihres", "ihrem", "ihren",
+  "unser", "unsere", "unserer", "unseres", "unserem", "unseren",
+  "euer", "eure", "eurer", "eures", "eurem", "euren",
+  // --- Interrogativ- & Relativpronomen ---
+  "wer", "wen", "wem", "wessen", "was",
+  "welcher", "welche", "welches", "welchem", "welchen",
+  "wo", "wann", "warum", "wie", "woher", "wohin", "wofür", "worüber", "worin",
+  // --- Hilfsverben & Modalverben (Konjugationen) ---
+  "bin", "bist", "ist", "sind", "war", "waren", "warst", "sei", "seien", "seiend",
+  "hat", "hast", "hatte", "hatten", "hätte", "hätten", "habe", "haben",
+  "wurde", "wurden", "wirst", "werde", "werden", "worden", "wird",
+  "kann", "kannst", "konnte", "konnten", "könnte", "könnten",
+  "soll", "sollst", "sollte", "sollten",
+  "will", "willst", "wollte", "wollten",
+  "muss", "musst", "musste", "mussten", "müsse", "müssten",
+  "darf", "darfst", "durfte", "durften", "dürfe", "dürften",
+  "mag", "magst", "mochte", "mochten", "möchte", "möchten", "möge", "mögen",
+  "lässt", "lasse", "lassen", "ließ", "ließen",
+  // --- Präpositionen ---
   "von", "zu", "in", "auf", "an", "für", "mit", "bei", "aus", "über",
-  "als", "und", "oder", "aber", "wenn", "dann", "was", "wer", "welche", "wo",
-  "wann", "warum", "wie", "ich", "du", "er", "sie", "es", "wir", "ihr",
-  "mein", "dein", "sein", "ihr", "unser", "euer", "eure", "ihre", "seine",
+  "unter", "vor", "nach", "zwischen", "durch", "gegen", "ohne", "bis",
+  "seit", "neben", "ab", "um",
+  // --- Konjunktionen & Partikeln ---
+  "als", "und", "oder", "aber", "wenn", "dann", "auch", "noch", "schon",
+  "nur", "so", "da", "weil", "denn", "obwohl", "sondern", "falls",
+  "dass", "ob", "damit", "deshalb", "daher", "dabei", "davon",
+  "nicht", "kein", "keine", "keiner", "keines", "keinem", "keinen",
+  // --- Weitere Funktionswörter ---
+  "alle", "allem", "allen", "aller", "alles",
+  "selbst", "man", "hier", "dort", "jetzt",
 ]);
 
 export function extractQueryTerms(text: string): string[] {
