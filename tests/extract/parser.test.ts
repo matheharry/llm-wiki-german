@@ -49,6 +49,24 @@ describe("parseExtraction — 7B model quirks", () => {
     expect(parsed).not.toBeNull();
     expect(parsed!.entities[0].name).toBe("Bar");
   });
+
+  it("filters out null or invalid elements in arrays", () => {
+    const parsed = parseExtraction(
+      JSON.stringify({
+        source_summary: "summary",
+        entities: [null, { name: "Valid Entity", type: "person" }, "invalid string"],
+        concepts: [undefined, { name: "Valid Concept", definition: "def" }, 42],
+        connections: [null, { from: "A", to: "B", type: "uses" }]
+      })
+    );
+    expect(parsed).not.toBeNull();
+    expect(parsed!.entities).toHaveLength(1);
+    expect(parsed!.entities[0].name).toBe("Valid Entity");
+    expect(parsed!.concepts).toHaveLength(1);
+    expect(parsed!.concepts[0].name).toBe("Valid Concept");
+    expect(parsed!.connections).toHaveLength(1);
+    expect(parsed!.connections[0].from).toBe("A");
+  });
 });
 
 describe("parseExtraction — failure modes", () => {

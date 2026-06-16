@@ -69,10 +69,14 @@ export function parseExtraction(raw: string): ParsedExtraction | null {
   return {
     source_summary:
       typeof d.source_summary === "string" ? d.source_summary : "",
-    entities: Array.isArray(d.entities) ? (d.entities as RawEntity[]) : [],
-    concepts: Array.isArray(d.concepts) ? (d.concepts as RawConcept[]) : [],
+    entities: Array.isArray(d.entities)
+      ? (d.entities.filter((e) => e && typeof e === "object") as RawEntity[])
+      : [],
+    concepts: Array.isArray(d.concepts)
+      ? (d.concepts.filter((c) => c && typeof c === "object") as RawConcept[])
+      : [],
     connections: Array.isArray(d.connections)
-      ? (d.connections as RawConnection[])
+      ? (d.connections.filter((c) => c && typeof c === "object") as RawConnection[])
       : [],
   };
 }
