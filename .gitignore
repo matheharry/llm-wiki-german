@@ -1,43 +1,71 @@
-# Worktrees
+﻿# Worktrees
 .worktrees/
 
-# Claude Code local settings (per-machine, user-specific)
+# ============================================================
+# Claude Code / AI local settings (per-machine, user-specific)
+# ============================================================
 GEMINI.md
 geminiresume.txt
 
-# macOS
+# ============================================================
+# OS files
+# ============================================================
 .DS_Store
 **/.DS_Store
+Thumbs.db
+Desktop.ini
 
-# Node.js
+# ============================================================
+# Node.js / npm
+# ============================================================
 node_modules/
+npm-debug.log*
+*.log
+
+# ============================================================
+# Build output
+# ============================================================
 dist/
 main.js
 main.js.map
-*.log
-npm-debug.log*
+*.tsbuildinfo
 
-# Editor
+# ============================================================
+# Editor / IDE
+# ============================================================
 .vscode/
 .idea/
+.history/
 *.swp
 *.swo
+*~
+*.bak
+*.orig
 
-# Test
+# ============================================================
+# Test & coverage
+# ============================================================
 coverage/
 .vitest-cache/
 
+# ============================================================
 # Plugin runtime data (vault-specific, not source)
+# ============================================================
 data.json
 embeddings-cache.json
 chats.json
 interactions/
 
+# ============================================================
 # Internal dev docs (plans, specs, runbooks)
+# ============================================================
 docs/superpowers/
 
-# Env
+# ============================================================
+# Environment
+# ============================================================
 .env
 .env.local
-chats.json
-/interactions
+.env.development
+.env.production
+.env.test
