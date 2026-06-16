@@ -73,7 +73,15 @@ export function parseExtraction(raw: string): ParsedExtraction | null {
       ? (d.entities.filter((e) => e && typeof e === "object") as RawEntity[])
       : [],
     concepts: Array.isArray(d.concepts)
-      ? (d.concepts.filter((c) => c && typeof c === "object") as RawConcept[])
+      ? (d.concepts
+          .filter((c) => c && typeof c === "object")
+          .map((c) => ({
+            ...c,
+            definition:
+              typeof c.definition === "string"
+                ? c.definition
+                : String(c.definition ?? ""),
+          })) as RawConcept[])
       : [],
     connections: Array.isArray(d.connections)
       ? (d.connections.filter((c) => c && typeof c === "object") as RawConnection[])

@@ -50,6 +50,6 @@ export function isQualityEntity(e: Entity): boolean {
 export function isQualityConcept(c: Concept): boolean {
   const lower = c.name.trim().toLowerCase();
   if (CONCEPT_BLACKLIST.has(lower)) return false;
-  if (!c.definition || c.definition.trim().length === 0) return false;
+  if (!c.definition || typeof c.definition !== "string" || c.definition.trim().length === 0) return false;
   return true;
 }

@@ -75,7 +75,7 @@ export function qualityMultiplier(id: string, kb: KnowledgeBase): number {
     const concept = kb.allConcepts().find((c) => c.id === conceptId);
     if (!concept) return 1.0;
     let m = 1.0;
-    const hasDef = (concept.definition ?? "").trim().length > 0;
+    const hasDef = typeof concept.definition === "string" && concept.definition.trim().length > 0;
     const hasRelated = (concept.related?.length ?? 0) > 0;
     if (hasDef && hasRelated) m *= 1.2;
     if (!hasDef) m *= 0.5;

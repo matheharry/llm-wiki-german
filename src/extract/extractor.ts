@@ -201,7 +201,7 @@ export async function extractFile(
     if (!name) continue;
     args.kb.addConcept({
       name,
-      definition: con.definition ?? "",
+      definition: String(con.definition ?? "").trim(),
       related: con.related ?? [],
       source: args.file.path,
     });
