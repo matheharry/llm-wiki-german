@@ -227,7 +227,7 @@ export default class LlmWikiPlugin extends Plugin {
     this.addCommand({
       id: "lint-kb",
       name: "Lint knowledge base",
-      callback: () => openLintModal(this.app, this.kb),
+      callback: () => openLintModal(this.app, this.kb, this),
     });
 
     this.addCommand({

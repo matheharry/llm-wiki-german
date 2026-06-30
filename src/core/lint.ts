@@ -140,6 +140,29 @@ export function runLint(kb: KnowledgeBase): LintResult {
     }
   }
 
+  // 5. Redundant Facts Check
+  for (const ent of entities) {
+    if (ent.facts.length < 2) continue;
+    const reportedPairs = new Set<string>();
+    for (let i = 0; i < ent.facts.length; i++) {
+      for (let j = i + 1; j < ent.facts.length; j++) {
+        const sim = wordSimilarity(ent.facts[i], ent.facts[j]);
+        if (sim >= 0.4) {
+          const pairKey = [ent.facts[i], ent.facts[j]].sort().join("|||");
+          if (!reportedPairs.has(pairKey)) {
+            reportedPairs.add(pairKey);
+            issues.push({
+              severity: "warning",
+              category: "Duplikate",
+              message: `Mögliche redundante Fakten bei "${ent.name}"`,
+              detail: `Ähnliche Fakten gefunden: "${ent.facts[i]}" und "${ent.facts[j]}" (Ähnlichkeit: ${Math.round(sim * 100)}%).`,
+            });
+          }
+        }
+      }
+    }
+  }
+
   return {
     issues,
     stats: {
@@ -152,3 +175,27 @@ export function runLint(kb: KnowledgeBase): LintResult {
     },
   };
 }
+
+function getWords(s: string): Set<string> {
+  return new Set(
+    s.toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "")
+      .split(/\s+/)
+      .filter((w) => w.length > 2)
+  );
+}
+
+export function wordSimilarity(s1: string, s2: string): number {
+  const w1 = getWords(s1);
+  const w2 = getWords(s2);
+  if (w1.size === 0 || w2.size === 0) return 0;
+  let intersection = 0;
+  for (const w of w1) {
+    if (w2.has(w)) {
+      intersection++;
+    }
+  }
+  const union = w1.size + w2.size - intersection;
+  return intersection / union;
+}
+

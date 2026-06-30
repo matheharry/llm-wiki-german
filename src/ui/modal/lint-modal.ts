@@ -1,19 +1,25 @@
 import { App, Modal, Notice } from "obsidian";
 import { KnowledgeBase } from "../../core/kb.js";
-import { runLint, type LintResult } from "../../core/lint.js";
+import { runLint, type LintResult, wordSimilarity } from "../../core/lint.js";
 import { safeWritePage } from "../../vault/safe-write.js";
 import { appendWikiLog } from "../../vault/wiki-log.js";
+import type LlmWikiPlugin from "../../plugin.js";
+import { deduplicateEntityFacts } from "../../core/dedupe.js";
+import { saveKB, loadKB } from "../../vault/kb-store.js";
+import { generatePages } from "../../pages/generator.js";
 
-export function openLintModal(app: App, kb: KnowledgeBase): void {
-  new LintModal(app, kb).open();
+export function openLintModal(app: App, kb: KnowledgeBase, plugin: LlmWikiPlugin): void {
+  new LintModal(app, kb, plugin).open();
 }
 
 class LintModal extends Modal {
   private result: LintResult;
+  private isCleaning = false;
 
   constructor(
     app: App,
     private readonly kb: KnowledgeBase,
+    private readonly plugin: LlmWikiPlugin,
   ) {
     super(app);
     this.result = runLint(this.kb);
@@ -65,11 +71,13 @@ class LintModal extends Modal {
     btnContainer.style.marginBottom = "15px";
     btnContainer.style.display = "flex";
     btnContainer.style.gap = "10px";
+    btnContainer.style.flexWrap = "wrap";
 
     const exportBtn = btnContainer.createEl("button", {
       text: "Report in wiki/lint-report.md speichern",
       cls: "mod-cta",
     });
+    exportBtn.disabled = this.isCleaning;
     exportBtn.addEventListener("click", async () => {
       try {
         await this.exportReport();
@@ -80,7 +88,85 @@ class LintModal extends Modal {
     });
 
     const closeBtn = btnContainer.createEl("button", { text: "Schließen" });
+    closeBtn.disabled = this.isCleaning;
     closeBtn.addEventListener("click", () => this.close());
+
+    // Find entities with potential redundancies
+    const entitiesWithRedundancies = this.kb.allEntities().filter(ent => {
+      if (ent.facts.length < 2) return false;
+      for (let i = 0; i < ent.facts.length; i++) {
+        for (let j = i + 1; j < ent.facts.length; j++) {
+          if (wordSimilarity(ent.facts[i], ent.facts[j]) >= 0.4) {
+            return true;
+          }
+        }
+      }
+      return false;
+    });
+
+    if (entitiesWithRedundancies.length > 0 && !this.isCleaning) {
+      const cleanBtn = btnContainer.createEl("button", {
+        text: `Redundante Fakten bereinigen (${entitiesWithRedundancies.length} Entitäten)`,
+        cls: "mod-warning",
+      });
+      
+      cleanBtn.addEventListener("click", async () => {
+        this.isCleaning = true;
+        this.onOpen(); // Re-render to show disabled state and progress UI
+        
+        const progressEl = contentEl.createDiv();
+        progressEl.style.marginTop = "15px";
+        progressEl.style.marginBottom = "15px";
+        progressEl.style.padding = "12px";
+        progressEl.style.backgroundColor = "var(--background-secondary)";
+        progressEl.style.border = "1px solid var(--background-modifier-border)";
+        progressEl.style.borderRadius = "4px";
+        
+        const statusText = progressEl.createEl("div", { text: `Bereinigung gestartet...` });
+        statusText.style.fontWeight = "bold";
+        
+        const subStatusText = progressEl.createEl("div", { text: `` });
+        subStatusText.style.fontSize = "0.9em";
+        subStatusText.style.color = "var(--text-muted)";
+        subStatusText.style.marginTop = "4px";
+
+        try {
+          let count = 0;
+          for (const ent of entitiesWithRedundancies) {
+            statusText.setText(`Bereinige Fakten: ${count + 1} von ${entitiesWithRedundancies.length} Entitäten`);
+            subStatusText.setText(`Entität: "${ent.name}"`);
+            
+            const newFacts = await deduplicateEntityFacts(
+              this.plugin.provider,
+              this.plugin.activeModel,
+              ent.name,
+              ent.type,
+              ent.facts
+            );
+            
+            ent.facts = newFacts;
+            count++;
+          }
+          
+          statusText.setText("Speichere Änderungen und aktualisiere Wiki...");
+          subStatusText.setText("");
+          
+          await saveKB(this.app, this.kb, this.plugin.kbMtime);
+          const reloaded = await loadKB(this.app);
+          this.plugin.kbMtime = reloaded.mtime;
+          await generatePages(this.app, this.kb);
+          
+          new Notice("Bereinigung erfolgreich abgeschlossen!");
+        } catch (err) {
+          new Notice(`Fehler bei der Bereinigung: ${(err as Error).message}`);
+        } finally {
+          this.isCleaning = false;
+          // Refresh lint results and modal
+          this.result = runLint(this.kb);
+          this.onOpen();
+        }
+      });
+    }
 
     // Issues list
     const listContainer = contentEl.createDiv({ cls: "llm-wiki-lint-issues" });
