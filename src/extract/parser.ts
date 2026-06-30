@@ -36,6 +36,19 @@ export interface ParsedExtraction {
   connections: RawConnection[];
 }
 
+/** Coerce an unknown value to a trimmed string. */
+function toStr(v: unknown): string {
+  if (typeof v === "string") return v.trim();
+  if (v === null || v === undefined) return "";
+  return String(v).trim();
+}
+
+/** Coerce an unknown value to a string array. */
+function toStrArr(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.map((item) => toStr(item)).filter((s) => s.length > 0);
+}
+
 export function parseExtraction(raw: string): ParsedExtraction | null {
   if (!raw) return null;
   let text = raw.trim();
@@ -67,24 +80,35 @@ export function parseExtraction(raw: string): ParsedExtraction | null {
 
   const d = data as Record<string, unknown>;
   return {
-    source_summary:
-      typeof d.source_summary === "string" ? d.source_summary : "",
+    source_summary: toStr(d.source_summary),
     entities: Array.isArray(d.entities)
-      ? (d.entities.filter((e) => e && typeof e === "object") as RawEntity[])
+      ? d.entities
+          .filter((e): e is Record<string, unknown> => e !== null && typeof e === "object")
+          .map((e) => ({
+            name: toStr(e.name),
+            type: toStr(e.type),
+            aliases: toStrArr(e.aliases),
+            facts: toStrArr(e.facts),
+          }))
       : [],
     concepts: Array.isArray(d.concepts)
-      ? (d.concepts
-          .filter((c) => c && typeof c === "object")
+      ? d.concepts
+          .filter((c): c is Record<string, unknown> => c !== null && typeof c === "object")
           .map((c) => ({
-            ...c,
-            definition:
-              typeof c.definition === "string"
-                ? c.definition
-                : String(c.definition ?? ""),
-          })) as RawConcept[])
+            name: toStr(c.name),
+            definition: toStr(c.definition),
+            related: toStrArr(c.related),
+          }))
       : [],
     connections: Array.isArray(d.connections)
-      ? (d.connections.filter((c) => c && typeof c === "object") as RawConnection[])
+      ? d.connections
+          .filter((c): c is Record<string, unknown> => c !== null && typeof c === "object")
+          .map((c) => ({
+            from: toStr(c.from),
+            to: toStr(c.to),
+            type: toStr(c.type),
+            description: toStr(c.description),
+          }))
       : [],
   };
 }

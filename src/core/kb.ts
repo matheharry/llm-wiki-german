@@ -25,6 +25,57 @@ function emptyKb(): KBData {
   };
 }
 
+/** Coerce a raw JSON value to a trimmed string. */
+function toStr(v: unknown): string {
+  if (typeof v === "string") return v.trim();
+  if (v === null || v === undefined) return "";
+  return String(v).trim();
+}
+
+/** Coerce a raw JSON value to a string array. */
+function toStrArr(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v.map((item) => toStr(item)).filter((s) => s.length > 0);
+}
+
+/**
+ * Sanitize KB data loaded from disk.  Older versions of the plugin or the
+ * Python CLI could write non-string values (arrays, objects, numbers) for
+ * string-typed fields.  This function coerces them to valid strings so the
+ * rest of the codebase never sees e.g. `definition` as an array.
+ */
+function sanitizeKbData(raw: KBData): KBData {
+  const concepts: Record<string, Concept> = {};
+  for (const [id, c] of Object.entries(raw.concepts)) {
+    concepts[id] = {
+      id: c.id,
+      name: toStr(c.name),
+      definition: toStr(c.definition),
+      related: toStrArr(c.related),
+      sources: toStrArr(c.sources),
+    };
+  }
+  const entities: Record<string, Entity> = {};
+  for (const [id, e] of Object.entries(raw.entities)) {
+    entities[id] = {
+      id: e.id,
+      name: toStr(e.name),
+      type: toStr(e.type) as EntityType,
+      aliases: toStrArr(e.aliases),
+      facts: toStrArr(e.facts),
+      sources: toStrArr(e.sources),
+    };
+  }
+  const connections: Connection[] = raw.connections.map((c) => ({
+    from: toStr(c.from),
+    to: toStr(c.to),
+    type: toStr(c.type) as ConnectionType,
+    description: toStr(c.description),
+    sources: toStrArr(c.sources),
+  }));
+  return { ...raw, concepts, entities, connections };
+}
+
 export interface AddEntityArgs {
   name: string;
   type: EntityType;
@@ -62,7 +113,7 @@ export class KnowledgeBase {
   data: KBData;
 
   constructor(data?: KBData) {
-    this.data = data ?? emptyKb();
+    this.data = data ? sanitizeKbData(data) : emptyKb();
   }
 
   addEntity(args: AddEntityArgs): Entity {
