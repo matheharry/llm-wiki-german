@@ -48,8 +48,8 @@ describe("generatePages", () => {
   it("returns correct written count", async () => {
     const { app } = createMockApp();
     const result = await generatePages(app, buildRichKb());
-    // 2 entities + 1 concept + 3 sources = 6
-    expect(result.written).toBe(6);
+    // 2 entities + 1 concept + 3 sources + 1 index = 7
+    expect(result.written).toBe(7);
   });
 
   it("deletes stale entity pages after regeneration", async () => {

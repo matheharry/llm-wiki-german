@@ -3,6 +3,7 @@ import { KnowledgeBase } from "./core/kb.js";
 import { loadKB, saveKB } from "./vault/kb-store.js";
 import { walkVaultFiles, type WalkOptions } from "./vault/walker.js";
 import { openVocabularyModal } from "./ui/modal/vocabulary-modal.js";
+import { openLintModal } from "./ui/modal/lint-modal.js";
 import { WelcomeModal } from "./ui/modal/welcome-modal.js";
 import { OllamaProvider } from "./llm/ollama.js";
 import { OpenAIProvider } from "./llm/openai.js";
@@ -43,6 +44,7 @@ import { buildEmbeddingIndex, EMBEDDING_MODEL } from "./query/embeddings.js";
 import { EmbeddingIndexController } from "./query/embedding-index-controller.js";
 import { generatePages, sourcePagePath } from "./pages/generator.js";
 import { safeDeletePage } from "./vault/safe-write.js";
+import { appendWikiLog } from "./vault/wiki-log.js";
 
 /** Per-provider API keys, keyed by CloudProvider. */
 export type ApiKeys = Partial<Record<CloudProvider, string>>;
@@ -220,6 +222,12 @@ export default class LlmWikiPlugin extends Plugin {
       id: "show-vocabulary",
       name: "Show vocabulary",
       callback: () => openVocabularyModal(this.app, this.kb),
+    });
+
+    this.addCommand({
+      id: "lint-kb",
+      name: "Lint knowledge base",
+      callback: () => openLintModal(this.app, this.kb),
     });
 
     this.addCommand({
@@ -695,6 +703,7 @@ export default class LlmWikiPlugin extends Plugin {
 
       this.settings.lastExtractionRunIso = new Date().toISOString();
       await this.saveSettings();
+      await appendWikiLog(this.app, `Ingest | Batch-Extraktion durchgeführt: ${stats.succeeded} erfolgreich, ${stats.failed} fehlgeschlagen, ${stats.skipped} übersprungen`);
       new Notice(
         `LLM Wiki: ${stats.succeeded} extracted, ${stats.failed} failed, ${stats.skipped} skipped (${Math.round(stats.elapsedMs / 1000)}s).`,
       );
@@ -760,6 +769,7 @@ export default class LlmWikiPlugin extends Plugin {
           conceptCount: bundle.concepts.length,
           elapsedMs,
         });
+        void appendWikiLog(this.app, `Anfrage | Frage: "${question}" (${bundle.entities.length} Entitäten, ${bundle.concepts.length} Konzepte geliefert, ${Math.round(elapsedMs / 100) / 10}s)`);
       },
     });
     modal.open();
@@ -831,6 +841,7 @@ export default class LlmWikiPlugin extends Plugin {
       await saveKB(this.app, this.kb, this.kbMtime);
       const reloaded = await loadKB(this.app);
       this.kbMtime = reloaded.mtime;
+      await appendWikiLog(this.app, `Ingest | Datei extrahiert: [[wiki/sources/${file.path}|${file.path}]]`);
       await generatePages(this.app, this.kb);
 
       // Re-index the embedding cache so on-save extractions are immediately

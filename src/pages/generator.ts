@@ -3,6 +3,7 @@ import { isQualityEntity, isQualityConcept } from "../core/filters.js";
 import { renderEntityPage } from "./render-entity.js";
 import { renderConceptPage } from "./render-concept.js";
 import { renderSourcePage } from "./render-source.js";
+import { renderIndexPage } from "./render-index.js";
 import {
   safeWritePage,
   safeDeletePage,
@@ -20,6 +21,11 @@ export async function generatePages(
   kb: KnowledgeBase,
 ): Promise<GenerateResult> {
   const written = new Set<string>();
+
+  // Index page
+  const indexPath = "wiki/index.md";
+  await safeWritePage(app, indexPath, renderIndexPage(kb));
+  written.add(indexPath);
 
   // Entities — only quality items get pages
   for (const entity of kb.allEntities()) {
