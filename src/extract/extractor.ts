@@ -9,6 +9,8 @@ import type { LLMProvider } from "../llm/provider.js";
 import { DEFAULT_CHAR_LIMIT } from "./defaults.js";
 import { buildExtractionPrompt } from "./prompts.js";
 import { parseExtraction, type ParsedExtraction } from "./parser.js";
+import { wordSimilarity } from "../core/lint.js";
+import { deduplicateEntityFacts } from "../core/dedupe.js";
 
 export interface ExtractFileInput {
   path: string;
@@ -183,6 +185,8 @@ export async function extractFile(
   const parsed = parseExtraction(raw);
   if (!parsed) return null;
 
+  const extractedEntityNames = new Set<string>();
+
   for (const ent of parsed.entities) {
     const name = (ent.name ?? "").trim();
     if (!name) continue;
@@ -194,6 +198,7 @@ export async function extractFile(
       facts: ent.facts ?? [],
       source: args.file.path,
     });
+    extractedEntityNames.add(name);
   }
 
   for (const con of parsed.concepts) {
@@ -228,6 +233,35 @@ export async function extractFile(
     contentHash: args.file.contentHash,
     origin: args.file.origin,
   });
+
+  // Deduplicate facts for modified/added entities
+  for (const name of extractedEntityNames) {
+    const ent = args.kb.getEntity(name);
+    if (ent && ent.facts.length >= 2) {
+      let hasRedundancy = false;
+      for (let i = 0; i < ent.facts.length; i++) {
+        for (let j = i + 1; j < ent.facts.length; j++) {
+          if (wordSimilarity(ent.facts[i], ent.facts[j]) >= 0.4) {
+            hasRedundancy = true;
+            break;
+          }
+        }
+        if (hasRedundancy) break;
+      }
+
+      if (hasRedundancy) {
+        const cleanFacts = await deduplicateEntityFacts(
+          args.provider,
+          args.model,
+          ent.name,
+          ent.type,
+          ent.facts,
+          args.signal
+        );
+        ent.facts = cleanFacts;
+      }
+    }
+  }
 
   return parsed;
 }

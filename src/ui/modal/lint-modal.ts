@@ -64,17 +64,17 @@ class LintModal extends Modal {
     const warnings = this.result.issues.filter((i) => i.severity === "warning").length;
     const infos = this.result.issues.filter((i) => i.severity === "info").length;
 
-    summaryEl.innerHTML = `Gefunden: <b>${errors}</b> Fehler, <b>${warnings}</b> Warnungen, <b>${infos}</b> Hinweise.`;
+    summaryEl.innerHTML = `Status: <b>${errors}</b> Fehler, <b>${warnings}</b> Warnungen, <b>${infos}</b> Hinweise.`;
 
-    // Action buttons
+    // Action buttons (Admin actions only)
     const btnContainer = contentEl.createDiv();
-    btnContainer.style.marginBottom = "15px";
+    btnContainer.style.marginBottom = "20px";
     btnContainer.style.display = "flex";
     btnContainer.style.gap = "10px";
     btnContainer.style.flexWrap = "wrap";
 
     const exportBtn = btnContainer.createEl("button", {
-      text: "Report in wiki/lint-report.md speichern",
+      text: "Bericht in wiki/lint-report.md speichern",
       cls: "mod-cta",
     });
     exportBtn.disabled = this.isCleaning;
@@ -104,71 +104,144 @@ class LintModal extends Modal {
       return false;
     });
 
-    if (entitiesWithRedundancies.length > 0 && !this.isCleaning) {
-      const cleanBtn = btnContainer.createEl("button", {
-        text: `Redundante Fakten bereinigen (${entitiesWithRedundancies.length} Entitäten)`,
-        cls: "mod-warning",
-      });
-      
-      cleanBtn.addEventListener("click", async () => {
-        this.isCleaning = true;
-        this.onOpen(); // Re-render to show disabled state and progress UI
-        
-        const progressEl = contentEl.createDiv();
-        progressEl.style.marginTop = "15px";
-        progressEl.style.marginBottom = "15px";
-        progressEl.style.padding = "12px";
-        progressEl.style.backgroundColor = "var(--background-secondary)";
-        progressEl.style.border = "1px solid var(--background-modifier-border)";
-        progressEl.style.borderRadius = "4px";
-        
-        const statusText = progressEl.createEl("div", { text: `Bereinigung gestartet...` });
-        statusText.style.fontWeight = "bold";
-        
-        const subStatusText = progressEl.createEl("div", { text: `` });
-        subStatusText.style.fontSize = "0.9em";
-        subStatusText.style.color = "var(--text-muted)";
-        subStatusText.style.marginTop = "4px";
+    // Find dangling connections
+    const entityIds = new Set(this.kb.allEntities().map(e => e.id));
+    const conceptIds = new Set(this.kb.allConcepts().map(c => c.id));
+    const exists = (id: string) => entityIds.has(id) || conceptIds.has(id);
+    const danglingConnections = this.kb.allConnections().filter(c => !exists(c.from) || !exists(c.to));
 
-        try {
-          let count = 0;
-          for (const ent of entitiesWithRedundancies) {
-            statusText.setText(`Bereinige Fakten: ${count + 1} von ${entitiesWithRedundancies.length} Entitäten`);
-            subStatusText.setText(`Entität: "${ent.name}"`);
-            
-            const newFacts = await deduplicateEntityFacts(
-              this.plugin.provider,
-              this.plugin.activeModel,
-              ent.name,
-              ent.type,
-              ent.facts
-            );
-            
-            ent.facts = newFacts;
-            count++;
-          }
-          
-          statusText.setText("Speichere Änderungen und aktualisiere Wiki...");
-          subStatusText.setText("");
-          
-          await saveKB(this.app, this.kb, this.plugin.kbMtime);
-          const reloaded = await loadKB(this.app);
-          this.plugin.kbMtime = reloaded.mtime;
-          await generatePages(this.app, this.kb);
-          
-          new Notice("Bereinigung erfolgreich abgeschlossen!");
-        } catch (err) {
-          new Notice(`Fehler bei der Bereinigung: ${(err as Error).message}`);
-        } finally {
-          this.isCleaning = false;
-          // Refresh lint results and modal
-          this.result = runLint(this.kb);
-          this.onOpen();
-        }
+    // --- SECTION 1: Automatic Fixes ---
+    if (entitiesWithRedundancies.length > 0 || danglingConnections.length > 0 || this.isCleaning) {
+      const autoFixSection = contentEl.createDiv();
+      autoFixSection.style.border = "1px solid var(--background-modifier-border-focus)";
+      autoFixSection.style.borderRadius = "6px";
+      autoFixSection.style.padding = "15px";
+      autoFixSection.style.marginBottom = "20px";
+      autoFixSection.style.backgroundColor = "var(--background-secondary-alt)";
+
+      autoFixSection.createEl("h3", { text: "⚡ Automatische Fehlerbehebung" }).style.marginTop = "0px";
+      
+      const descText = autoFixSection.createEl("p", {
+        text: "Einige der gefundenen Integritätsprobleme können direkt automatisch bereinigt werden. Wähle eine der folgenden Aktionen aus:",
       });
+      descText.style.fontSize = "0.9em";
+      descText.style.color = "var(--text-muted)";
+
+      if (!this.isCleaning) {
+        const actionBtnContainer = autoFixSection.createDiv();
+        actionBtnContainer.style.display = "flex";
+        actionBtnContainer.style.gap = "10px";
+        actionBtnContainer.style.flexWrap = "wrap";
+
+        if (entitiesWithRedundancies.length > 0) {
+          const cleanBtn = actionBtnContainer.createEl("button", {
+            text: `Redundante Fakten bereinigen (${entitiesWithRedundancies.length} Entitäten)`,
+            cls: "mod-warning",
+          });
+          
+          cleanBtn.addEventListener("click", async () => {
+            this.isCleaning = true;
+            this.onOpen(); // Re-render to show disabled state and progress UI
+            
+            const progressEl = contentEl.createDiv();
+            progressEl.style.marginTop = "15px";
+            progressEl.style.marginBottom = "15px";
+            progressEl.style.padding = "12px";
+            progressEl.style.backgroundColor = "var(--background-secondary)";
+            progressEl.style.border = "1px solid var(--background-modifier-border)";
+            progressEl.style.borderRadius = "4px";
+            
+            const statusText = progressEl.createEl("div", { text: `Bereinigung gestartet...` });
+            statusText.style.fontWeight = "bold";
+            
+            const subStatusText = progressEl.createEl("div", { text: `` });
+            subStatusText.style.fontSize = "0.9em";
+            subStatusText.style.color = "var(--text-muted)";
+            subStatusText.style.marginTop = "4px";
+
+            try {
+              let count = 0;
+              for (const ent of entitiesWithRedundancies) {
+                statusText.setText(`Bereinige Fakten: ${count + 1} von ${entitiesWithRedundancies.length} Entitäten`);
+                subStatusText.setText(`Entität: "${ent.name}"`);
+                
+                const newFacts = await deduplicateEntityFacts(
+                  this.plugin.provider,
+                  this.plugin.activeModel,
+                  ent.name,
+                  ent.type,
+                  ent.facts
+                );
+                
+                ent.facts = newFacts;
+                count++;
+              }
+              
+              statusText.setText("Speichere Änderungen und aktualisiere Wiki...");
+              subStatusText.setText("");
+              
+              await saveKB(this.app, this.kb, this.plugin.kbMtime);
+              const reloaded = await loadKB(this.app);
+              this.plugin.kbMtime = reloaded.mtime;
+              await generatePages(this.app, this.kb);
+              
+              new Notice("Bereinigung erfolgreich abgeschlossen!");
+            } catch (err) {
+              new Notice(`Fehler bei der Bereinigung: ${(err as Error).message}`);
+            } finally {
+              this.isCleaning = false;
+              // Refresh lint results and modal
+              this.result = runLint(this.kb);
+              this.onOpen();
+            }
+          });
+        }
+
+        if (danglingConnections.length > 0) {
+          const cleanConnBtn = actionBtnContainer.createEl("button", {
+            text: `Ungültige Verbindungen entfernen (${danglingConnections.length} Verbindungen)`,
+            cls: "mod-warning",
+          });
+
+          cleanConnBtn.addEventListener("click", async () => {
+            this.isCleaning = true;
+            this.onOpen();
+
+            try {
+              // Filter connections to keep only those where both from and to exist
+              this.kb.data.connections = this.kb.data.connections.filter(c => exists(c.from) && exists(c.to));
+
+              await saveKB(this.app, this.kb, this.plugin.kbMtime);
+              const reloaded = await loadKB(this.app);
+              this.plugin.kbMtime = reloaded.mtime;
+              await generatePages(this.app, this.kb);
+
+              new Notice(`${danglingConnections.length} ungültige Verbindungen erfolgreich gelöscht!`);
+            } catch (err) {
+              new Notice(`Fehler beim Löschen der Verbindungen: ${(err as Error).message}`);
+            } finally {
+              this.isCleaning = false;
+              this.result = runLint(this.kb);
+              this.onOpen();
+            }
+          });
+        }
+      } else {
+        // Cleaning in progress placeholder
+        const cleanStatus = autoFixSection.createEl("div", { text: "Bereinigung läuft gerade..." });
+        cleanStatus.style.fontWeight = "bold";
+      }
     }
 
-    // Issues list
+    // --- SECTION 2: Issues List ---
+    contentEl.createEl("h3", { text: "📋 Gefundene Probleme & Hinweise" });
+    const issuesDesc = contentEl.createEl("p", {
+      text: "Die Liste zeigt alle Integritätsprobleme der Wissensdatenbank. Probleme mit dem Label '[Auto-Fix verfügbar]' können automatisch bereinigt werden. Andere müssen manuell in deinen Notizen behoben werden.",
+    });
+    issuesDesc.style.fontSize = "0.9em";
+    issuesDesc.style.color = "var(--text-muted)";
+    issuesDesc.style.marginBottom = "10px";
+
     const listContainer = contentEl.createDiv({ cls: "llm-wiki-lint-issues" });
     listContainer.style.maxHeight = "350px";
     listContainer.style.overflowY = "auto";
@@ -194,9 +267,15 @@ class LintModal extends Modal {
         const header = item.createDiv();
         header.style.display = "flex";
         header.style.justifyContent = "space-between";
+        header.style.alignItems = "center";
         header.style.fontWeight = "bold";
 
-        const badge = header.createSpan({ text: issue.severity.toUpperCase() });
+        const leftHeader = header.createDiv();
+        leftHeader.style.display = "flex";
+        leftHeader.style.alignItems = "center";
+        leftHeader.style.gap = "8px";
+
+        const badge = leftHeader.createSpan({ text: issue.severity.toUpperCase() });
         badge.style.padding = "2px 6px";
         badge.style.borderRadius = "3px";
         badge.style.fontSize = "0.75em";
@@ -212,9 +291,26 @@ class LintModal extends Modal {
           badge.style.color = "var(--text-normal)";
         }
 
-        const title = header.createSpan({ text: `[${issue.category}] ${issue.message}` });
-        title.style.flex = "1";
-        title.style.marginLeft = "10px";
+        const title = leftHeader.createSpan({ text: `[${issue.category}] ${issue.message}` });
+
+        // Add Auto-Fix status label
+        const isAutofixable = 
+          (issue.category === "Duplikate" && issue.message.startsWith("Mögliche redundante Fakten")) ||
+          (issue.category === "Verbindungen" && (issue.message.startsWith("Ungültiger Ausgangspunkt") || issue.message.startsWith("Ungültiges Ziel")));
+        const fixLabel = header.createSpan();
+        fixLabel.style.padding = "2px 6px";
+        fixLabel.style.borderRadius = "3px";
+        fixLabel.style.fontSize = "0.75em";
+
+        if (isAutofixable) {
+          fixLabel.setText("Auto-Fix verfügbar");
+          fixLabel.style.backgroundColor = "var(--text-success)";
+          fixLabel.style.color = "#fff";
+        } else {
+          fixLabel.setText("Manuell beheben");
+          fixLabel.style.backgroundColor = "var(--background-modifier-border)";
+          fixLabel.style.color = "var(--text-muted)";
+        }
 
         const detail = item.createDiv({ text: issue.detail });
         detail.style.fontSize = "0.9em";
