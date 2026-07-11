@@ -15,6 +15,7 @@ export function openLintModal(app: App, kb: KnowledgeBase, plugin: LlmWikiPlugin
 class LintModal extends Modal {
   private result: LintResult;
   private isCleaning = false;
+  private abortController: AbortController | null = null;
   private progressContainer: HTMLDivElement | null = null;
   private statusTextEl: HTMLDivElement | null = null;
   private subStatusTextEl: HTMLDivElement | null = null;
@@ -99,7 +100,7 @@ class LintModal extends Modal {
       if (ent.facts.length < 2) return false;
       for (let i = 0; i < ent.facts.length; i++) {
         for (let j = i + 1; j < ent.facts.length; j++) {
-          if (wordSimilarity(ent.facts[i], ent.facts[j]) >= 0.4) {
+          if (wordSimilarity(ent.facts[i], ent.facts[j]) >= 0.51) {
             return true;
           }
         }
@@ -144,15 +145,22 @@ class LintModal extends Modal {
           
           cleanBtn.addEventListener("click", async () => {
             this.isCleaning = true;
+            this.abortController = new AbortController();
+            const { signal } = this.abortController;
             this.onOpen(); // Re-render to show disabled state and progress UI
             
             if (this.statusTextEl) {
               this.statusTextEl.setText("Bereinigung gestartet...");
             }
 
+            let aborted = false;
             try {
               let count = 0;
               for (const ent of entitiesWithRedundancies) {
+                if (signal.aborted) {
+                  aborted = true;
+                  break;
+                }
                 if (this.statusTextEl) {
                   this.statusTextEl.setText(`Bereinige Fakten: ${count + 1} von ${entitiesWithRedundancies.length} Entitäten`);
                 }
@@ -165,30 +173,47 @@ class LintModal extends Modal {
                   this.plugin.activeModel,
                   ent.name,
                   ent.type,
-                  ent.facts
+                  ent.facts,
+                  signal,
                 );
-                
+
+                // Don't apply changes if aborted during the LLM call
+                if (signal.aborted) {
+                  aborted = true;
+                  break;
+                }
+
                 ent.facts = newFacts;
                 count++;
               }
               
-              if (this.statusTextEl) {
-                this.statusTextEl.setText("Speichere Änderungen und aktualisiere Wiki...");
+              if (aborted) {
+                new Notice("Bereinigung abgebrochen. Keine Änderungen wurden gespeichert.");
+              } else {
+                if (this.statusTextEl) {
+                  this.statusTextEl.setText("Speichere Änderungen und aktualisiere Wiki...");
+                }
+                if (this.subStatusTextEl) {
+                  this.subStatusTextEl.setText("");
+                }
+                
+                await saveKB(this.app, this.kb, this.plugin.kbMtime);
+                const reloaded = await loadKB(this.app);
+                this.plugin.kbMtime = reloaded.mtime;
+                await generatePages(this.app, this.kb);
+                
+                new Notice("Bereinigung erfolgreich abgeschlossen!");
               }
-              if (this.subStatusTextEl) {
-                this.subStatusTextEl.setText("");
-              }
-              
-              await saveKB(this.app, this.kb, this.plugin.kbMtime);
-              const reloaded = await loadKB(this.app);
-              this.plugin.kbMtime = reloaded.mtime;
-              await generatePages(this.app, this.kb);
-              
-              new Notice("Bereinigung erfolgreich abgeschlossen!");
             } catch (err) {
-              new Notice(`Fehler bei der Bereinigung: ${(err as Error).message}`);
+              const isAbort = (err as Error).name === "AbortError" || signal.aborted;
+              if (isAbort) {
+                new Notice("Bereinigung abgebrochen. Keine Änderungen wurden gespeichert.");
+              } else {
+                new Notice(`Fehler bei der Bereinigung: ${(err as Error).message}`);
+              }
             } finally {
               this.isCleaning = false;
+              this.abortController = null;
               // Refresh lint results and modal
               this.result = runLint(this.kb);
               this.onOpen();
@@ -226,7 +251,7 @@ class LintModal extends Modal {
           });
         }
       } else {
-        // Cleaning in progress placeholder
+        // Cleaning in progress: show progress panel + cancel button
         this.progressContainer = autoFixSection.createDiv();
         this.progressContainer.style.marginTop = "10px";
         this.progressContainer.style.padding = "12px";
@@ -241,6 +266,14 @@ class LintModal extends Modal {
         this.subStatusTextEl.style.fontSize = "0.9em";
         this.subStatusTextEl.style.color = "var(--text-muted)";
         this.subStatusTextEl.style.marginTop = "4px";
+
+        const cancelBtn = this.progressContainer.createEl("button", { text: "Abbrechen" });
+        cancelBtn.style.marginTop = "10px";
+        cancelBtn.addEventListener("click", () => {
+          this.abortController?.abort();
+          cancelBtn.setText("Wird abgebrochen...");
+          cancelBtn.disabled = true;
+        });
       }
     }
 
@@ -332,6 +365,8 @@ class LintModal extends Modal {
   }
 
   onClose(): void {
+    // Abort any running deduplication when the modal is closed
+    this.abortController?.abort();
     this.contentEl.empty();
   }
 

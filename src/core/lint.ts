@@ -143,11 +143,16 @@ export function runLint(kb: KnowledgeBase): LintResult {
   // 5. Redundant Facts Check
   for (const ent of entities) {
     if (ent.facts.length < 2) continue;
+    const enumerationGroups = buildEnumerationGroups(ent.facts);
     const reportedPairs = new Set<string>();
     for (let i = 0; i < ent.facts.length; i++) {
       for (let j = i + 1; j < ent.facts.length; j++) {
+        // Skip pairs that belong to the same enumeration group (same leading prefix)
+        const groupI = enumerationGroups.get(i);
+        if (groupI !== undefined && groupI === enumerationGroups.get(j)) continue;
+
         const sim = wordSimilarity(ent.facts[i], ent.facts[j]);
-        if (sim >= 0.4) {
+        if (sim >= 0.51) {
           const pairKey = [ent.facts[i], ent.facts[j]].sort().join("|||");
           if (!reportedPairs.has(pairKey)) {
             reportedPairs.add(pairKey);
@@ -199,3 +204,41 @@ export function wordSimilarity(s1: string, s2: string): number {
   return intersection / union;
 }
 
+/**
+ * Extracts the first `n` normalised words of a fact string as a prefix key.
+ */
+function getPrefix(fact: string, n = 2): string {
+  return fact
+    .toLowerCase()
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "")
+    .split(/\s+/)
+    .filter((w) => w.length > 0)
+    .slice(0, n)
+    .join(" ");
+}
+
+/**
+ * Groups facts by their 2-word prefix. Returns a Map from fact-index to
+ * group-key for every fact that belongs to a group of >= 2 facts sharing the
+ * same prefix. Facts that are the sole member of their prefix group are not
+ * included (they go through normal duplicate checking).
+ */
+export function buildEnumerationGroups(facts: string[]): Map<number, string> {
+  const prefixBuckets = new Map<string, number[]>();
+  for (let i = 0; i < facts.length; i++) {
+    const prefix = getPrefix(facts[i]);
+    if (!prefix) continue;
+    if (!prefixBuckets.has(prefix)) prefixBuckets.set(prefix, []);
+    prefixBuckets.get(prefix)!.push(i);
+  }
+
+  const result = new Map<number, string>();
+  for (const [prefix, indices] of prefixBuckets) {
+    if (indices.length >= 2) {
+      for (const idx of indices) {
+        result.set(idx, prefix);
+      }
+    }
+  }
+  return result;
+}
