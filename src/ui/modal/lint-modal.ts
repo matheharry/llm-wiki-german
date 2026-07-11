@@ -15,6 +15,9 @@ export function openLintModal(app: App, kb: KnowledgeBase, plugin: LlmWikiPlugin
 class LintModal extends Modal {
   private result: LintResult;
   private isCleaning = false;
+  private progressContainer: HTMLDivElement | null = null;
+  private statusTextEl: HTMLDivElement | null = null;
+  private subStatusTextEl: HTMLDivElement | null = null;
 
   constructor(
     app: App,
@@ -143,27 +146,19 @@ class LintModal extends Modal {
             this.isCleaning = true;
             this.onOpen(); // Re-render to show disabled state and progress UI
             
-            const progressEl = contentEl.createDiv();
-            progressEl.style.marginTop = "15px";
-            progressEl.style.marginBottom = "15px";
-            progressEl.style.padding = "12px";
-            progressEl.style.backgroundColor = "var(--background-secondary)";
-            progressEl.style.border = "1px solid var(--background-modifier-border)";
-            progressEl.style.borderRadius = "4px";
-            
-            const statusText = progressEl.createEl("div", { text: `Bereinigung gestartet...` });
-            statusText.style.fontWeight = "bold";
-            
-            const subStatusText = progressEl.createEl("div", { text: `` });
-            subStatusText.style.fontSize = "0.9em";
-            subStatusText.style.color = "var(--text-muted)";
-            subStatusText.style.marginTop = "4px";
+            if (this.statusTextEl) {
+              this.statusTextEl.setText("Bereinigung gestartet...");
+            }
 
             try {
               let count = 0;
               for (const ent of entitiesWithRedundancies) {
-                statusText.setText(`Bereinige Fakten: ${count + 1} von ${entitiesWithRedundancies.length} Entitäten`);
-                subStatusText.setText(`Entität: "${ent.name}"`);
+                if (this.statusTextEl) {
+                  this.statusTextEl.setText(`Bereinige Fakten: ${count + 1} von ${entitiesWithRedundancies.length} Entitäten`);
+                }
+                if (this.subStatusTextEl) {
+                  this.subStatusTextEl.setText(`Entität: "${ent.name}"`);
+                }
                 
                 const newFacts = await deduplicateEntityFacts(
                   this.plugin.provider,
@@ -177,8 +172,12 @@ class LintModal extends Modal {
                 count++;
               }
               
-              statusText.setText("Speichere Änderungen und aktualisiere Wiki...");
-              subStatusText.setText("");
+              if (this.statusTextEl) {
+                this.statusTextEl.setText("Speichere Änderungen und aktualisiere Wiki...");
+              }
+              if (this.subStatusTextEl) {
+                this.subStatusTextEl.setText("");
+              }
               
               await saveKB(this.app, this.kb, this.plugin.kbMtime);
               const reloaded = await loadKB(this.app);
@@ -228,8 +227,20 @@ class LintModal extends Modal {
         }
       } else {
         // Cleaning in progress placeholder
-        const cleanStatus = autoFixSection.createEl("div", { text: "Bereinigung läuft gerade..." });
-        cleanStatus.style.fontWeight = "bold";
+        this.progressContainer = autoFixSection.createDiv();
+        this.progressContainer.style.marginTop = "10px";
+        this.progressContainer.style.padding = "12px";
+        this.progressContainer.style.backgroundColor = "var(--background-secondary)";
+        this.progressContainer.style.border = "1px solid var(--background-modifier-border)";
+        this.progressContainer.style.borderRadius = "4px";
+        
+        this.statusTextEl = this.progressContainer.createDiv({ text: `Bereinigung läuft gerade...` });
+        this.statusTextEl.style.fontWeight = "bold";
+        
+        this.subStatusTextEl = this.progressContainer.createDiv({ text: `` });
+        this.subStatusTextEl.style.fontSize = "0.9em";
+        this.subStatusTextEl.style.color = "var(--text-muted)";
+        this.subStatusTextEl.style.marginTop = "4px";
       }
     }
 
