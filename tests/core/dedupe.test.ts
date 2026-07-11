@@ -67,3 +67,55 @@ describe("deduplicateEntityFacts", () => {
     expect(result).toEqual(originalFacts);
   });
 });
+
+import { extractFile } from "../../src/extract/extractor.js";
+import { KnowledgeBase } from "../../src/core/kb.js";
+
+describe("extractFile inline deduplication", () => {
+  it("should run deduplication inline during extractFile", async () => {
+    const kb = new KnowledgeBase();
+    let callCount = 0;
+    const mockProviderDual: LLMProvider = {
+      async *complete() {
+        callCount++;
+        if (callCount === 1) {
+          yield JSON.stringify({
+            source_summary: "Extracted information",
+            entities: [
+              {
+                name: "Gemma",
+                type: "tool",
+                facts: ["Hat ein neues Model trainiert", "Trainierte ein neues Model"],
+              }
+            ],
+            concepts: [],
+            connections: [],
+          });
+        } else {
+          yield `[\n  "Trainierte ein neues Model"\n]`;
+        }
+      },
+      async embed() { return []; },
+      async ping() { return true; },
+      async showModel() { return { contextLength: 2048 }; },
+    };
+
+    await extractFile({
+      provider: mockProviderDual,
+      kb,
+      file: {
+        path: "test-note.md",
+        content: "Some dummy content",
+        mtime: Date.now(),
+        contentHash: "hash123",
+        origin: "user-note",
+      },
+      model: "dummy-model",
+    });
+
+    const entity = kb.getEntity("Gemma");
+    expect(entity).toBeDefined();
+    expect(entity?.facts).toEqual(["Trainierte ein neues Model"]);
+    expect(callCount).toBe(2);
+  });
+});
