@@ -23,7 +23,7 @@ Darüber hinaus wurden zahlreiche zusätzliche Features eingebaut, die über das
 Deine Notizen enthalten bereits eine Fülle an Wissen — verteilt über viele Dateien, lose verbunden, schwer durchsuchbar.
 LLM Wiki German liest dein Obsidian-Vault, extrahiert die Personen, Ideen und Zusammenhänge und lässt dich Fragen in natürlicher Sprache stellen.
 
-TLDR: Chatte privat mit deinen Notizen.
+**Chatte privat mit deinen Notizen.**
 Alles läuft lokal auf deinem Rechner. Kein Cloud-Konto erforderlich. Deine Notizen verlassen nie deinen Computer. Du kannst aber auch Anthropic, OpenAI, Google oder Mistral nutzen, wenn du möchtest.
 
 ![LLM Wiki demo — Fragen an deine Notizen stellen](docs/assets/hero-demo.gif)
@@ -67,20 +67,20 @@ Lege sie in `<dein-vault>/.obsidian/plugins/llm-wiki-german/` ab — erstelle de
 
 **3. Deine Wissensdatenbank indizieren**
 
-Öffne die Befehlspalette (`Cmd+P` / `Ctrl+P`) und führe **LLM Wiki German: Extraktion jetzt ausführen** aus. Das Plugin durchsucht deinen Vault, sendet jede Notiz an das lokale Modell und baut eine strukturierte Wissensdatenbank auf. Der Fortschritt wird in der Statusleiste angezeigt.
+Öffne die Befehlspalette (`Cmd+P` / `Ctrl+P`) und führe **LLM Wiki German: Extrahierung starten** aus. Das Plugin durchsucht deinen Vault, sendet jede Notiz an das lokale Modell und baut eine strukturierte Wissensdatenbank auf. Der Fortschritt wird in der Statusleiste angezeigt.
 
-> **Das dauert eine Weile.** Die erste Extraktion verarbeitet jede Notiz einzeln. Bei einem Vault mit 600 Notizen auf einem MacBook Air M2 (16 GB) mit lokalem `gemma4:e4b-it-qat` dauerte es etwa **4 Stunden**. Größere Vaults oder ältere Maschinen brauchen länger. 
+> **Das dauert eine Weile.** Die erste Extrahierung verarbeitet jede Notiz einzeln, was schnell einmal einige Stunden dauern kann. 
 > Nach dem ersten Durchlauf werden nur geänderte Notizen neu extrahiert — Updates dauern Sekunden, nicht Stunden.
 
 **4. Stelle deinem Vault eine Frage**
 
-Führe den Befehl **Wissensdatenbank befragen** aus (oder klicke auf das Ribbon-Symbol). Gib eine Frage ein. Die Antworten werden gestreamt und enthalten klickbare Links zurück zu den Quellnotizen.
+Führe den Befehl **Wissensdatenbank abfragen** aus (oder klicke auf das Ribbon-Symbol). Gib eine Frage ein. Die Antworten werden gestreamt und enthalten klickbare Links zurück zu den Quellnotizen.
 
-> **Tipp:** Lege einen Hotkey für schnellen Zugriff fest. Gehe zu Einstellungen > Hotkeys, suche nach "Wissensdatenbank befragen" und weise eine Tastenkombination zu — `Shift+Cmd+K` funktioniert gut.
+> **Tipp:** Lege einen Hotkey für schnellen Zugriff fest. Gehe zu Einstellungen > Hotkeys, suche nach "Wissensdatenbank abfragen" und weise eine Tastenkombination zu — `Alt+W` funktioniert gut.
 
 Das war's. Du bist startklar.
 
-## Was es kann
+## Was das Plugin kann
 
 - **Extrahiert Wissen aus deinen Notizen** — Entitäten (Personen, Organisationen, Werkzeuge, Bücher, Orte, Ereignisse), Konzepte (Ideen, Theorien, Frameworks) und 9 Arten von Verbindungen zwischen ihnen.
 - **Beantwortet Fragen in natürlicher Sprache** — ein Chat-Interface, das auf deinen eigenen Texten basiert, mit Quellenangaben, damit du jede Antwort überprüfen kannst.
@@ -93,7 +93,7 @@ Das war's. Du bist startklar.
 - **OpenAI-kompatibler Provider** — verwende jeden beliebigen OpenAI-kompatiblen Endpunkt (z. B. eigene Server, LM Studio, etc.).
 - **LlamaCpp-Unterstützung** — alternative lokale LLM-Backend-Option.
 - **Integritätsprüfung (Lint)** — analysiert die Wissensdatenbank auf Probleme und bietet automatische Fehlerbehebung (z. B. redundante Fakten, verwaiste Verbindungen).
-- **Wiki-Log** — alle Extraktionen, Löschungen und Abfragen werden in `wiki/wiki-log.md` protokolliert.
+- **Wiki-Log** — alle Extraktionen, Löschungen und Abfragen werden in `wiki/log.md` protokolliert.
 - **Extraktionssprache wählbar** — lege fest, in welcher Sprache extrahiert werden soll (App-Sprache, Deutsch, Englisch, Französisch, Spanisch, Italienisch, Niederländisch, Portugiesisch).
 
 | | |
@@ -149,11 +149,11 @@ wiki/
   entities/               eine Seite pro Entität
   concepts/               eine Seite pro Konzept
   sources/                eine Seite pro Quellnotiz
-  wiki-log.md             Protokoll aller Extraktionen und Abfragen
+  log.md             Protokoll aller Extraktionen und Abfragen
   lint-report.md          Bericht der Integritätsprüfung (optional)
 ```
 
-Standardmäßig ist der `wiki/`-Ordner vor Suche, Quick Switcher und Graph-Ansicht versteckt — er überlädt deinen Vault nicht und bringt deine Links nicht durcheinander. Falls du neugierig bist und die generierten Seiten durchstöbern möchtest, kannst du sie in den Einstellungen unter LLM Wiki German > Darstellung sichtbar machen. Deine ursprünglichen Notizen bleiben in jedem Fall genau so, wie sie waren.
+Standardmäßig ist der `wiki/`-Ordner vor Suche, Quick Switcher und Graph-Ansicht versteckt — er überlädt deinen Vault nicht und bringt deine Links nicht durcheinander. Falls du neugierig bist und die generierten Seiten durchstöbern möchtest, kannst du sie in den Einstellungen unter LLM Wiki German > Darstellung sichtbar machen. Deine ursprünglichen Notizen bleiben in jedem Fall genau so, wie sie waren - es kommen "nur" Verknüpfungen zu den Überbegriffen im Wiki hinzu, wodurch *Zusammenhänge zwischen den Notizen automatisch hergestellt* werden.
 
 ## Wie es funktioniert
 
@@ -175,9 +175,9 @@ Die Ergebnisse werden mit einer Technik namens Reciprocal Rank Fusion zusammenge
 
 **Auf dem Laufenden bleiben.** Wenn du eine Notiz speicherst, extrahiert das Plugin nur diese Datei im Hintergrund neu — kein erneutes Indizieren des gesamten Vaults nötig. Es gibt auch einen optionalen nächtlichen Planer für eine vollständige Aktualisierung.
 
-**Integritätsprüfung (Lint).** Der Befehl "Wissensdatenbank prüfen" analysiert die gesamte Wissensdatenbank auf Probleme wie verwaiste Verbindungen, fehlende Quellen, doppelte Einträge und redundante Fakten. Für einige Probleme bietet das Plugin eine automatische Bereinigung an, z. B. das Entfernen verwaister Verbindungen oder das Zusammenführen redundanter Fakten mittels LLM.
+**Integritätsprüfung (Lint).** Der Befehl "Wissensdatenbank aufräumen und prüfen" analysiert die gesamte Wissensdatenbank auf Probleme wie verwaiste Verbindungen, fehlende Quellen, doppelte Einträge und redundante Fakten. Für einige Probleme bietet das Plugin eine automatische Bereinigung an, z. B. das Entfernen verwaister Verbindungen oder das Zusammenführen redundanter Fakten mittels LLM.
 
-**Protokollierung.** Alle Extraktionen, Dateilöschungen und Abfragen werden in `wiki/wiki-log.md` protokolliert, sodass du jederzeit nachvollziehen kannst, was mit deiner Wissensdatenbank passiert ist.
+**Protokollierung.** Alle Extraktionen, Dateilöschungen und Abfragen werden in `wiki/log.md` protokolliert, sodass du jederzeit nachvollziehen kannst, was mit deiner Wissensdatenbank passiert ist.
 
 ## Datenschutz
 
