@@ -205,14 +205,14 @@ export default class LlmWikiPlugin extends Plugin {
     this.addSettingTab(new LlmWikiSettingsTab(this.app, this));
 
     // Ribbon icon — open the query modal
-    this.addRibbonIcon("rainbow", "Ask knowledge base", () => {
+    this.addRibbonIcon("rainbow", "Wissensdatenbank abfragen", () => {
       this.openQueryModal();
     });
 
     // Commands
     this.addCommand({
       id: "run-query",
-      name: "Ask knowledge base",
+      name: "Wissensdatenbank abfragen",
       callback: () => {
         this.openQueryModal();
       },
@@ -220,19 +220,19 @@ export default class LlmWikiPlugin extends Plugin {
 
     this.addCommand({
       id: "show-vocabulary",
-      name: "Show vocabulary",
+      name: "Wortschatz anzeigen",
       callback: () => openVocabularyModal(this.app, this.kb),
     });
 
     this.addCommand({
       id: "lint-kb",
-      name: "Lint knowledge base",
+      name: "Wissensdatenbank aufräumen und prüfen",
       callback: () => openLintModal(this.app, this.kb, this),
     });
 
     this.addCommand({
       id: "reload-kb",
-      name: "Reload knowledge base from disk",
+      name: "Wissensdatenbank von der Festplatte neu laden",
       callback: () => {
         void this.reloadKB();
       },
@@ -240,7 +240,7 @@ export default class LlmWikiPlugin extends Plugin {
 
     this.addCommand({
       id: "extract-all",
-      name: "Run extraction now",
+      name: "Extrahierung starten",
       callback: () => {
         void this.runExtractAll();
       },
@@ -248,7 +248,7 @@ export default class LlmWikiPlugin extends Plugin {
 
     this.addCommand({
       id: "extract-current",
-      name: "Extract current file",
+      name: "aktuelle Datei extrahieren",
       checkCallback: (checking) => {
         const file = this.app.workspace.getActiveFile();
         if (!file || file.extension !== "md") return false;
@@ -260,7 +260,7 @@ export default class LlmWikiPlugin extends Plugin {
 
     this.addCommand({
       id: "extract-cancel",
-      name: "Cancel running extraction",
+      name: "laufende Extrahierung abbrechen",
       checkCallback: (checking) => {
         if (checking) return this.running;
         this.cancelExtraction();
@@ -270,7 +270,7 @@ export default class LlmWikiPlugin extends Plugin {
 
     this.addCommand({
       id: "regenerate-pages",
-      name: "Regenerate pages from knowledge base",
+      name: "Seiten aus Wissensdatenbank neu generieren",
       callback: () => {
         void this.runRegeneratePages();
       },
