@@ -18,6 +18,8 @@ Darüber hinaus wurden zahlreiche zusätzliche Features eingebaut, die über das
 - **Willkommens-Modal** für die Ersteinrichtung
 - **Deutsche Standard-Skip-Verzeichnisse** (z. B. "Vorlagen")
 
+Gedacht war dieses Projekt als Proof of Concept, ob die LLM-Wiki-Idee auch mit deutschen Texten hilfreiche Ergebnisse bringt.  
+
 ---
 
 Deine Notizen enthalten bereits eine Fülle an Wissen — verteilt über viele Dateien, lose verbunden, schwer durchsuchbar.
