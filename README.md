@@ -2,7 +2,7 @@
 
 **Deutsche Wissensdatenbank für Obsidian — lokal, privat, LLM-gestützt.**
 
-Dieses Plugin ist ein Fork von [domleca/llm-wiki](https://github.com/domleca/llm-wiki) und wurde stark an die deutsche Sprache angepasst. Während das Original rein auf die englische Sprache ausgelegt ist, nutzt LLM Wiki German vollständig deutsche Prompts für Extraktion und Abfrage, deutsche UI-Elemente und für den deutschen Sprachraum optimierte Standardmodelle.
+Dieses Plugin ist ein Fork von [domleca/llm-wiki](https://github.com/domleca/llm-wiki) und wurde stark an die deutsche Sprache angepasst. Während das Original rein auf die englische Sprache ausgelegt ist, nutzt LLM Wiki German vollständig deutsche Prompts für Extraktion und Abfrage, deutsche UI-Elemente und für den deutschen Sprachraum optimierte Standardmodelle. Die für englische Texte optimierte Indizierung wurde erweitert, damit die Eigenheiten und die größere Komplexität der deutschen Texte und Grammatik berücksichtigt werden. 
 
 Darüber hinaus wurden zahlreiche zusätzliche Features eingebaut, die über das Original hinausgehen:
 
