@@ -165,11 +165,11 @@ LLM Wiki German verwandelt deine unstrukturierten Notizen in eine strukturierte 
 
 **Seitengenerierung.** Aus dieser Wissensdatenbank schreibt das Plugin eine Markdown-Seite pro Entität, Konzept und Quellnotiz in den `wiki/`-Ordner. Diese Seiten sind einfaches Markdown mit Frontmatter, sodass sie mit Obsidians Bases-Funktion zum Filtern und Sortieren funktionieren. Du erhältst ein durchsuchbares Wiki deines eigenen Wissens, automatisch gepflegt.
 
-**Abruf.** Wenn du eine Frage stellst, sendet das Plugin nicht dein gesamtes Vault an das LLM — das wäre zu langsam und zu umfangreich. Stattdessen durchsucht es die Wissensdatenbank nach den relevantesten Kontexten. Es verwendet drei Strategien parallel: 
+**Abruf.** Wenn du eine Frage stellst, sendet das Plugin nicht deinen gesamten Vault an das LLM — das wäre zu langsam und zu umfangreich. Stattdessen durchsucht es die Wissensdatenbank nach den relevantesten Kontexten. Es verwendet drei Strategien parallel: 
 
-- Stichwortsuche (findet Notizen mit denselben Begriffen), 
-- semantische Ähnlichkeit (findet Notizen mit ähnlicher Bedeutung, auch mit anderen Wörtern — das macht das Embedding-Modell) und 
-- Vault-Struktur (bevorzugt Notizen in Ordnern, die du ausgewählt hast). 
+- *Stichwortsuche* (findet Notizen mit denselben Begriffen), 
+- *semantische Ähnlichkeit* (findet Notizen mit ähnlicher Bedeutung, auch mit anderen Wörtern — das macht das Embedding-Modell) und 
+- *Vault-Struktur* (bevorzugt Notizen in Ordnern, die du ausgewählt hast). 
  
 Die Ergebnisse werden mit einer Technik namens Reciprocal Rank Fusion zusammengeführt, die mehrere Ranglisten zu einer kombiniert.
 
