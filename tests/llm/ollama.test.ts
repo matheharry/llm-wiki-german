@@ -24,7 +24,7 @@ describe("OllamaProvider.complete", () => {
     const tokens: string[] = [];
     for await (const chunk of provider.complete({
       prompt: "hi",
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
     })) {
       tokens.push(chunk);
     }
@@ -34,7 +34,7 @@ describe("OllamaProvider.complete", () => {
     expect(mock.calls[0].url).toBe("http://localhost:11434/api/chat");
     expect(mock.calls[0].method).toBe("POST");
     const body = JSON.parse(mock.calls[0].body!);
-    expect(body.model).toBe("qwen2.5:7b");
+    expect(body.model).toBe("gemma4:e4b-it-qat");
     expect(body.messages).toEqual([{ role: "user", content: "hi" }]);
     expect(body.stream).toBe(true);
     expect(body.options.temperature).toBe(0.1);
@@ -58,7 +58,7 @@ describe("OllamaProvider.complete", () => {
     const out: string[] = [];
     for await (const chunk of provider.complete({
       prompt: "x",
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
     })) {
       out.push(chunk);
     }
@@ -81,7 +81,7 @@ describe("OllamaProvider.complete", () => {
     const tokens: string[] = [];
     for await (const chunk of provider.complete({
       prompt: "x",
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
     })) {
       tokens.push(chunk);
     }
@@ -97,7 +97,7 @@ describe("OllamaProvider.complete", () => {
     const tokens: string[] = [];
     for await (const _ of provider.complete({
       prompt: "x",
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
     })) {
       tokens.push(_);
     }
@@ -118,7 +118,7 @@ describe("OllamaProvider.complete", () => {
     await expect(async () => {
       for await (const _ of provider.complete({
         prompt: "x",
-        model: "qwen2.5:7b",
+        model: "gemma4:e4b-it-qat",
         signal: controller.signal,
       })) {
         void _;
@@ -134,7 +134,7 @@ describe("OllamaProvider.complete", () => {
     await expect(async () => {
       for await (const _ of provider.complete({
         prompt: "x",
-        model: "qwen2.5:7b",
+        model: "gemma4:e4b-it-qat",
       })) {
         void _;
       }

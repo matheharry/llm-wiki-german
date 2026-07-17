@@ -16,7 +16,7 @@ describe("chat types", () => {
       createdAt: 1,
       updatedAt: 1,
       folder: "",
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
       turns: [turn],
     };
     expect(chat.turns[0].question).toBe("q");

@@ -74,7 +74,7 @@ describe("Phase 2 integration", () => {
       provider,
       kb,
       files: queueFiles,
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
       saveKB: async () => {
         await saveKB(app, kb, kbMtime);
         const r = await loadKB(app);
@@ -130,7 +130,7 @@ describe("Phase 2 integration", () => {
       provider,
       kb,
       files: queueFiles,
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
       saveKB: async () => {
         await saveKB(app, kb, kbMtime);
         kbMtime = (await loadKB(app)).mtime;
@@ -145,7 +145,7 @@ describe("Phase 2 integration", () => {
       provider,
       kb: reloaded.kb,
       files: queueFiles,
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
       saveKB: async () => {
         await saveKB(app, reloaded.kb, reloaded.mtime);
       },
@@ -213,7 +213,7 @@ describe("Phase 2 integration", () => {
       provider,
       kb,
       files: queueFiles,
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
       saveKB: saveKbWrapper,
       emitter,
       checkpointEvery: 2,

@@ -18,7 +18,7 @@ export interface CompletionOptions {
    * Extraction pipelines do not set this — they embed instructions in prompt.
    */
   system?: string;
-  /** Model identifier — e.g. "qwen2.5:7b" for Ollama. */
+  /** Model identifier — e.g. "gemma4:e4b-it-qat" for Ollama. */
   model: string;
   /** Sampling temperature. Extraction uses 0.1 (ported from Python). */
   temperature?: number;
@@ -31,7 +31,7 @@ export interface CompletionOptions {
 export interface EmbedOptions {
   /** Text to embed. */
   text: string;
-  /** Embedding model identifier — e.g. "nomic-embed-text" for Ollama. */
+  /** Embedding model identifier — e.g. "qllama/multilingual-e5-base" for Ollama. */
   model: string;
   /** Caller-owned AbortSignal. If it fires, the provider throws LLMAbortError. */
   signal?: AbortSignal;

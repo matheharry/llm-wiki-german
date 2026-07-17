@@ -67,7 +67,7 @@ describe("Phase 4 integration: extraction → page generation", () => {
         { path: "Books/Watts.md", content: longBody("Alan Watts"), mtime: now, contentHash: "watts", origin: "user-note" },
         { path: "Learn/Zen.md", content: longBody("Zen Buddhism"), mtime: now, contentHash: "zen", origin: "user-note" },
       ],
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
       saveKB: async () => {
         await saveKB(app, kb, kbMtime);
         kbMtime = (await loadKB(app)).mtime;
@@ -103,7 +103,7 @@ describe("Phase 4 integration: extraction → page generation", () => {
         { path: "Books/Watts.md", content: longBody("Alan Watts"), mtime: now, contentHash: "watts", origin: "user-note" },
         { path: "Learn/Zen.md", content: longBody("Zen"), mtime: now, contentHash: "zen-short", origin: "user-note" },
       ],
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
       saveKB: async () => {
         await saveKB(app, kb, kbMtime);
         kbMtime = (await loadKB(app)).mtime;

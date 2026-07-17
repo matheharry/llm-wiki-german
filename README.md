@@ -1,6 +1,4 @@
-# LLM Wiki
-
-## LLM Wiki German
+# LLM Wiki German
 
 Da das geforkte Projekt rein die englische Sprache als Grundlage für die Erstellung eines Wikis verwendet und die deutsche Sprache sehr unterschiedlich aufgebaut ist, habe ich hier versucht, die Funktionalität zu erweitern. Im Original dürften in diesem frühen Entwicklungsstadium wenig Ressourcen dafür zur Verfügung stehen, deshalb experimentiere ich hier für mich in diese Richtung - eine Art Proof of Concept.
 
@@ -40,11 +38,11 @@ curl -fsSL https://ollama.com/install.sh | sh
 Then pull the models:
 
 ```bash
-ollama pull qwen2.5:7b
-ollama pull nomic-embed-text
+ollama pull gemma4:e4b-it-qat
+ollama pull qllama/multilingual-e5-base
 ```
 
-The first model (`qwen2.5:7b`, ~4.7 GB) reads your notes and answers your questions. The second (`nomic-embed-text`, ~275 MB) powers semantic search — it's what lets the plugin find relevant notes even when you don't use the exact same words.
+The first model (`gemma4:e4b-it-qat`, ~4.7 GB) reads your notes and answers your questions. The second (`qllama/multilingual-e5-base`, ~275 MB) powers semantic search — it's what lets the plugin find relevant notes even when you don't use the exact same words.
 
 As of April 2026, both models are the most reasonable option for an average local setup.
 
@@ -68,7 +66,7 @@ Place them in `<your-vault>/.obsidian/plugins/llm-wiki-german/` — create the f
 
 Open the command palette (`Cmd+P` / `Ctrl+P`) and run **LLM Wiki: Run extraction now**. The plugin walks your vault, sends each note to the local model, and builds a structured knowledge base. Progress shows in the status bar.
 
-> **This takes a while.** The first extraction processes every note one by one. On a 600-note vault with a MacBook Air M2 (16 GB) running `qwen2.5:7b` locally, it took about **4 hours**. Larger vaults or older machines will take longer. Good time to start it before bed. If you're on a Mac laptop, keep it awake with `caffeinate` in a terminal:
+> **This takes a while.** The first extraction processes every note one by one. On a 600-note vault with a MacBook Air M2 (16 GB) running `gemma4:e4b-it-qat` locally, it took about **4 hours**. Larger vaults or older machines will take longer. Good time to start it before bed. If you're on a Mac laptop, keep it awake with `caffeinate` in a terminal:
 >
 > ```bash
 > caffeinate -i
@@ -118,7 +116,7 @@ The default setup is fully local — nothing to sign up for, nothing to pay for.
 
 | Provider | Chat models | Embedding |
 |---|---|---|
-| Ollama (default) | qwen2.5:7b and others | nomic-embed-text |
+| Ollama (default) | gemma4:e4b-it-qat and others | qllama/multilingual-e5-base |
 | OpenAI | GPT-4o, GPT-4o mini | text-embedding-3-small |
 | Anthropic | Claude Sonnet, Haiku | uses Ollama fallback |
 | Google | Gemini 2.0 Flash | text-embedding-004 |

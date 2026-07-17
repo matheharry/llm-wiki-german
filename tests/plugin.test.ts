@@ -37,10 +37,10 @@ describe("LlmWikiPlugin embedding model selection", () => {
       customOpenAIBaseUrl: "",
       customOpenAIEmbeddingModel: "text-embedding-3-small",
       customOpenAIModel: "gpt-4o-mini",
-      ollamaModel: "qwen2.5:7b",
+      ollamaModel: "gemma4:e4b-it-qat",
     } as never;
 
-    expect(plugin.activeModel).toBe("qwen2.5:7b");
+    expect(plugin.activeModel).toBe("gemma4:e4b-it-qat");
     expect(plugin.activeEmbeddingModel).toBe("qllama/multilingual-e5-base:latest");
   });
 

@@ -13,7 +13,7 @@ describe("OllamaProvider.showModel", () => {
         model_info: { "qwen2.context_length": 32768 },
       }),
     });
-    const r = await p.showModel("qwen2.5:7b");
+    const r = await p.showModel("gemma4:e4b-it-qat");
     expect(r.contextLength).toBe(32768);
   });
 

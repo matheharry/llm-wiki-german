@@ -3,7 +3,7 @@
  * `/v1/messages` streaming endpoint.
  *
  * Anthropic has no embedding API, so `embed()` delegates to an injected
- * fallback provider (typically Ollama with nomic-embed-text).
+ * fallback provider (typically Ollama with qllama/multilingual-e5-base).
  */
 
 import {

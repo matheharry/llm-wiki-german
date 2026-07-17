@@ -31,7 +31,7 @@ describe("extractFile", () => {
         contentHash: "watts-hash",
         origin: "user-note",
       },
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
       outputLanguage: "French",
     });
 
@@ -47,7 +47,7 @@ describe("extractFile", () => {
 
     expect(provider.calls).toHaveLength(1);
     const call = provider.calls[0];
-    expect(call.model).toBe("qwen2.5:7b");
+    expect(call.model).toBe("gemma4:e4b-it-qat");
     expect(call.prompt).toContain("DOKUMENT (Books/watts.md):");
     expect(call.prompt).toContain("Alan Watts wrote about Zen.");
     expect(call.prompt).toContain(
@@ -68,7 +68,7 @@ describe("extractFile", () => {
         contentHash: "h1",
         origin: "user-note",
       },
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
     });
     expect(result).toBeNull();
     expect(kb.stats().entities).toBe(0);
@@ -89,7 +89,7 @@ describe("extractFile", () => {
         contentHash: "big-hash",
         origin: "user-note",
       },
-      model: "qwen2.5:7b",
+      model: "gemma4:e4b-it-qat",
     });
     const prompt = provider.calls[0].prompt;
     expect(prompt).toContain("[... truncated ...]");
@@ -112,7 +112,7 @@ describe("extractFile", () => {
           contentHash: "y-hash",
           origin: "user-note",
         },
-        model: "qwen2.5:7b",
+        model: "gemma4:e4b-it-qat",
         signal: controller.signal,
       }),
     ).rejects.toMatchObject({ name: "LLMAbortError" });

@@ -56,7 +56,7 @@ export function renderIndexingSection(
       .addText((text) => {
         let prevValue = plugin.settings.ollamaEmbeddingModel;
         text
-          .setPlaceholder("nomic-embed-text")
+          .setPlaceholder("qllama/multilingual-e5-base")
           .setValue(plugin.settings.ollamaEmbeddingModel)
           .onChange(async (value) => {
             plugin.settings.ollamaEmbeddingModel = value.trim() || "nomic-embed-text";
