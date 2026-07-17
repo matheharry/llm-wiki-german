@@ -1,31 +1,40 @@
 # LLM Wiki German
 
-Da das geforkte Projekt rein die englische Sprache als Grundlage für die Erstellung eines Wikis verwendet und die deutsche Sprache sehr unterschiedlich aufgebaut ist, habe ich hier versucht, die Funktionalität zu erweitern. Im Original dürften in diesem frühen Entwicklungsstadium wenig Ressourcen dafür zur Verfügung stehen, deshalb experimentiere ich hier für mich in diese Richtung - eine Art Proof of Concept.
+**Deutsche Wissensdatenbank für Obsidian — lokal, privat, LLM-gestützt.**
 
-Außerdem sehe ich das als optimale Gelegenheit, Vibe Coding anzuwenden und auszuprobieren und spiele mich mit der GeminiCLI.
+Dieses Plugin ist ein Fork von [domleca/llm-wiki](https://github.com/domleca/llm-wiki) und wurde stark an die deutsche Sprache angepasst. Während das Original rein auf die englische Sprache ausgelegt ist, nutzt LLM Wiki German vollständig deutsche Prompts für Extraktion und Abfrage, deutsche UI-Elemente und für den deutschen Sprachraum optimierte Standardmodelle.
 
-## LLM Wiki Original
+Darüber hinaus wurden zahlreiche zusätzliche Features eingebaut, die über das Original hinausgehen:
 
-This project was inspired by [Andrej Karpathy's post on LLM knowledge bases](https://x.com/karpathy/status/2039805659525644595) — using LLMs to compile personal notes into a structured, queryable wiki. 
-LLM Wiki is an attempt to package that workflow into something anyone can use, privately, right inside Obsidian.
+- **Mistral** als integrierter LLM-Provider
+- **LlamaCpp** als lokaler Provider
+- **OpenAI-kompatibler Provider** — nutze jeden OpenAI-kompatiblen Endpunkt
+- **Extraktionssprache** einstellbar (Deutsch, Englisch, Französisch, Spanisch, Italienisch, Niederländisch, Portugiesisch)
+- **Multi-Folder-Index** — wähle bestimmte Ordner für die Wissensdatenbank aus
+- **Inhaltsbasierte Deduplizierung** mittels SHA-256-Hashes
+- **Integritätsprüfung (Lint)** der Wissensdatenbank mit automatischer Fehlerbehebung
+- **Wiki-Log** — protokolliert alle Änderungen in `wiki/wiki-log.md`
+- **Interaktions-Log** — zeichnet Fragen und Antworten auf
+- **Willkommens-Modal** für die Ersteinrichtung
+- **Deutsche Standard-Skip-Verzeichnisse** (z. B. "Vorlagen")
 
 ---
 
-Your notes already contain a wealth of knowledge — scattered across files, half-connected, hard to query. 
-LLM Wiki reads your Obsidian vault, extracts the people, ideas & connections, and lets you ask questions in natural language. 
+Deine Notizen enthalten bereits eine Fülle an Wissen — verteilt über viele Dateien, lose verbunden, schwer durchsuchbar.
+LLM Wiki German liest dein Obsidian-Vault, extrahiert die Personen, Ideen und Zusammenhänge und lässt dich Fragen in natürlicher Sprache stellen.
 
-TLDR: privately chat with your notes.
-Everything runs locally on your machine. No cloud account required. Your notes never leave your computer. You can also use Anthropic, OpenAI or Gemini if you wish.
+TLDR: Chatte privat mit deinen Notizen.
+Alles läuft lokal auf deinem Rechner. Kein Cloud-Konto erforderlich. Deine Notizen verlassen nie deinen Computer. Du kannst aber auch Anthropic, OpenAI, Google oder Mistral nutzen, wenn du möchtest.
 
-![LLM Wiki demo — asking questions about your notes](docs/assets/hero-demo.gif)
+![LLM Wiki demo — Fragen an deine Notizen stellen](docs/assets/hero-demo.gif)
 
-## Quick start
+## Quick Start
 
-You need two things: [Ollama](https://ollama.com) (a free, local LLM runtime) and the plugin itself.
+Du brauchst zwei Dinge: [Ollama](https://ollama.com) (eine kostenlose, lokale LLM-Laufzeitumgebung) und das Plugin selbst.
 
-**1. Install Ollama and pull the models**
+**1. Ollama installieren und die Modelle laden**
 
-Download Ollama from [ollama.com](https://ollama.com), or install it from the terminal:
+Lade Ollama von [ollama.com](https://ollama.com) herunter oder installiere es via Terminal:
 
 ```bash
 # Mac
@@ -35,160 +44,142 @@ brew install ollama
 curl -fsSL https://ollama.com/install.sh | sh
 ```
 
-Then pull the models:
+Dann die Modelle laden:
 
 ```bash
 ollama pull gemma4:e4b-it-qat
 ollama pull qllama/multilingual-e5-base
 ```
 
-The first model (`gemma4:e4b-it-qat`, ~4.7 GB) reads your notes and answers your questions. The second (`qllama/multilingual-e5-base`, ~275 MB) powers semantic search — it's what lets the plugin find relevant notes even when you don't use the exact same words.
+Das erste Modell (`gemma4:e4b-it-qat`) liest deine Notizen und beantwortet deine Fragen. Das zweite (`qllama/multilingual-e5-base`) ermöglicht die semantische Suche — es findet relevante Notizen, selbst wenn du nicht die exakt gleichen Wörter verwendest.
 
-As of April 2026, both models are the most reasonable option for an average local setup.
+Stand Juli 2026 sind beide Modelle die vernünftigste Option für ein lokales Setup unter Berücksichtigung der Sprache Deutsch.
 
-**2. Install the plugin**
+**2. Plugin installieren**
 
-You have two options.
-
-*From the Community Plugins browser (once accepted).* In Obsidian, go to Settings > Community plugins, browse, search for "LLM Wiki", click Install, then Enable.
-
-*Manual install (works today, before community-store acceptance).* Download these three files from the latest [release](https://github.com/domleca/llm-wiki/releases):
+*Manuelle Installation:* Lade diese drei Dateien aus dem aktuellen [Release](https://github.com/matheharry/llm-wiki-german/releases) herunter:
 
 - `main.js`
 - `manifest.json`
 - `styles.css`
 
-Place them in `<your-vault>/.obsidian/plugins/llm-wiki-german/` — create the folder if it doesn't exist. Then in Obsidian, go to Settings > Community plugins, make sure Community plugins are enabled (turn off Restricted mode if prompted), and toggle **LLM Wiki** on. If you don't see it in the list right away, hit the refresh button next to "Installed plugins".
+Lege sie in `<dein-vault>/.obsidian/plugins/llm-wiki-german/` ab — erstelle den Ordner, falls er nicht existiert. Dann in Obsidian: Einstellungen > Community-Plugins, stelle sicher, dass Community-Plugins aktiviert sind (ggf. Eingeschränkten Modus deaktivieren), und aktiviere **LLM Wiki German**. Falls es nicht sofort in der Liste erscheint, klicke auf den Aktualisieren-Button neben "Installierte Plugins".
 
-<!-- Once accepted in the community directory, users can also install via: obsidian://show-plugin?id=llm-wiki -->
+**3. Deine Wissensdatenbank indizieren**
 
-**3. Index your knowledge base**
+Öffne die Befehlspalette (`Cmd+P` / `Ctrl+P`) und führe **LLM Wiki German: Extraktion jetzt ausführen** aus. Das Plugin durchsucht deinen Vault, sendet jede Notiz an das lokale Modell und baut eine strukturierte Wissensdatenbank auf. Der Fortschritt wird in der Statusleiste angezeigt.
 
-Open the command palette (`Cmd+P` / `Ctrl+P`) and run **LLM Wiki: Run extraction now**. The plugin walks your vault, sends each note to the local model, and builds a structured knowledge base. Progress shows in the status bar.
+> **Das dauert eine Weile.** Die erste Extraktion verarbeitet jede Notiz einzeln. Bei einem Vault mit 600 Notizen auf einem MacBook Air M2 (16 GB) mit lokalem `gemma4:e4b-it-qat` dauerte es etwa **4 Stunden**. Größere Vaults oder ältere Maschinen brauchen länger. 
+> Nach dem ersten Durchlauf werden nur geänderte Notizen neu extrahiert — Updates dauern Sekunden, nicht Stunden.
 
-> **This takes a while.** The first extraction processes every note one by one. On a 600-note vault with a MacBook Air M2 (16 GB) running `gemma4:e4b-it-qat` locally, it took about **4 hours**. Larger vaults or older machines will take longer. Good time to start it before bed. If you're on a Mac laptop, keep it awake with `caffeinate` in a terminal:
->
-> ```bash
-> caffeinate -i
-> ```
->
-> After the first run, only changed notes are re-extracted — updates take seconds, not hours.
+**4. Stelle deinem Vault eine Frage**
 
-**4. Ask your vault a question**
+Führe den Befehl **Wissensdatenbank befragen** aus (oder klicke auf das Ribbon-Symbol). Gib eine Frage ein. Die Antworten werden gestreamt und enthalten klickbare Links zurück zu den Quellnotizen.
 
-Run the command **Ask knowledge base** (or click the ribbon icon). Type a question. Answers stream in with clickable links back to the source notes.
+> **Tipp:** Lege einen Hotkey für schnellen Zugriff fest. Gehe zu Einstellungen > Hotkeys, suche nach "Wissensdatenbank befragen" und weise eine Tastenkombination zu — `Shift+Cmd+K` funktioniert gut.
 
-> **Tip:** Set a hotkey for quick access. Go to Settings > Hotkeys, search for "Ask knowledge base", and assign a shortcut — `Shift+Cmd+K` works well.
+Das war's. Du bist startklar.
 
-That's it. You're running.
+## Was es kann
 
-## What it does
-
-- **Extracts knowledge from your notes** — entities (people, organizations, tools, books, places, events), concepts (ideas, theories, frameworks), and 9 types of connections between them.
-- **Answers questions in natural language** — a chat interface grounded in your own writing, with source links so you can verify every answer.
-- **Hybrid search** — combines keyword matching, semantic similarity, and vault structure to find the right context, even when your question uses different words than your notes.
-- **Knows when it doesn't know** — if your vault doesn't have enough on a topic, it says so instead of making things up.
-- **Generates wiki pages** — structured markdown pages for every entity, concept, and source, organized in `wiki/` folders compatible with Obsidian [Bases](https://obsidian.md/bases).
-- **Keeps up with your writing** — saving a note triggers background re-extraction. Optional nightly full re-index of new items.
-- **Multi-turn conversations** — chats are saved and resumable. Pick up where you left off.
-- **Multiple providers** — Ollama (local, free) by default. OpenAI, Anthropic, and Google available as options in settings.
+- **Extrahiert Wissen aus deinen Notizen** — Entitäten (Personen, Organisationen, Werkzeuge, Bücher, Orte, Ereignisse), Konzepte (Ideen, Theorien, Frameworks) und 9 Arten von Verbindungen zwischen ihnen.
+- **Beantwortet Fragen in natürlicher Sprache** — ein Chat-Interface, das auf deinen eigenen Texten basiert, mit Quellenangaben, damit du jede Antwort überprüfen kannst.
+- **Hybride Suche** — kombiniert Stichwortsuche, semantische Ähnlichkeit und Vault-Struktur, um den richtigen Kontext zu finden, selbst wenn deine Frage andere Wörter verwendet als deine Notizen.
+- **Weiß, wenn es etwas nicht weiß** — wenn dein Vault nicht genug zu einem Thema enthält, sagt es das, anstatt etwas zu erfinden.
+- **Generiert Wiki-Seiten** — strukturierte Markdown-Seiten für jede Entität, jedes Konzept und jede Quelle, organisiert in `wiki/`-Ordnern, kompatibel mit Obsidian [Bases](https://obsidian.md/bases).
+- **Bleibt auf dem Laufenden** — das Speichern einer Notiz löst eine Hintergrund-Neuxtraktion aus. Optionaler nächtlicher Voll-Durchlauf.
+- **Mehrere Gesprächsrunden** — Chats werden gespeichert und sind fortsetzbar. Setze dort fort, wo du aufgehört hast.
+- **Mehrere Anbieter** — Ollama (lokal, kostenlos) standardmäßig. OpenAI, Anthropic, Google und Mistral als Optionen in den Einstellungen.
+- **OpenAI-kompatibler Provider** — verwende jeden beliebigen OpenAI-kompatiblen Endpunkt (z. B. eigene Server, LM Studio, etc.).
+- **LlamaCpp-Unterstützung** — alternative lokale LLM-Backend-Option.
+- **Integritätsprüfung (Lint)** — analysiert die Wissensdatenbank auf Probleme und bietet automatische Fehlerbehebung (z. B. redundante Fakten, verwaiste Verbindungen).
+- **Wiki-Log** — alle Extraktionen, Löschungen und Abfragen werden in `wiki/wiki-log.md` protokolliert.
+- **Extraktionssprache wählbar** — lege fest, in welcher Sprache extrahiert werden soll (App-Sprache, Deutsch, Englisch, Französisch, Spanisch, Italienisch, Niederländisch, Portugiesisch).
 
 | | |
 |---|---|
-| ![Query modal](docs/assets/query-modal.png) | ![Chat answer](docs/assets/chat-answer.png) |
-| ![Sources](docs/assets/chat-sources.png) | ![Settings](docs/assets/settings.png) |
+| ![Abfrage-Modal](docs/assets/query-modal.png) | ![Chat-Antwort](docs/assets/chat-answer.png) |
+| ![Quellen](docs/assets/chat-sources.png) | ![Einstellungen](docs/assets/settings.png) |
 
-## Commands
+## Befehle
 
-| Command | What it does |
+| Befehl | Funktion |
 |---|---|
-| Ask knowledge base | Open the chat modal |
-| Run extraction now | Re-index your entire vault |
-| Extract current file | Re-extract only the active note |
-| Cancel running extraction | Stop an in-progress extraction |
-| Regenerate pages from KB | Rebuild all wiki pages |
-| Reload knowledge base from disk | Reload the KB without re-extracting |
-| Show vocabulary | Inspect the raw knowledge base |
+| Wissensdatenbank befragen | Öffnet das Chat-Modal |
+| Extraktion jetzt ausführen | Indiziert das gesamte Vault neu |
+| Aktuelle Datei extrahieren | Extrahiert nur die aktive Notiz neu |
+| Laufende Extraktion abbrechen | Bricht eine laufende Extraktion ab |
+| Seiten aus Wissensdatenbank neu generieren | Baut alle Wiki-Seiten neu auf |
+| Wissensdatenbank von Festplatte neu laden | Lädt die Wissensdatenbank ohne Neu-Extraktion |
+| Vokabular anzeigen | Zeigt die rohe Wissensdatenbank an |
+| Wissensdatenbank prüfen (Lint) | Führt eine Integritätsprüfung durch |
 
-## Cloud providers (optional)
+## Cloud-Anbieter (optional)
 
-The default setup is fully local — nothing to sign up for, nothing to pay for. If you want to use a cloud model instead (faster, or for larger vaults), go to Settings > LLM Wiki, pick a provider, and enter your API key.
+Der Standard-Setup ist komplett lokal — nichts zum Anmelden, nichts zu bezahlen. Wenn du stattdessen ein Cloud-Modell verwenden möchtest (schneller oder für größere Vaults), gehe zu Einstellungen > LLM Wiki German, wähle einen Anbieter und gib deinen API-Schlüssel ein.
 
-| Provider | Chat models | Embedding |
+| Anbieter | Chat-Modelle | Embedding |
 |---|---|---|
-| Ollama (default) | gemma4:e4b-it-qat and others | qllama/multilingual-e5-base |
-| OpenAI | GPT-4o, GPT-4o mini | text-embedding-3-small |
-| Anthropic | Claude Sonnet, Haiku | uses Ollama fallback |
-| Google | Gemini 2.0 Flash | text-embedding-004 |
+| Ollama (Standard) | gemma4:e4b-it-qat u. a. | qllama/multilingual-e5-base |
+| OpenAI | GPT-4o, GPT-4o mini, GPT-4.1, o3-mini | text-embedding-3-small / large |
+| Anthropic | Claude Sonnet 4, Claude Haiku 4, Claude 3.5 Haiku | verwendet Ollama-Fallback |
+| Google | Gemini 2.5 Flash, Gemini 2.0 Flash, Gemini 2.0 Flash Lite | text-embedding-004 |
+| Mistral | Ministral 3B, Ministral 8B, Mistral Small | mistral-embed |
+| LlamaCpp | Lokales Modell (z. B. gemma-4-E4B_q4_0-it) | Lokales Embedding-Modell |
+| OpenAI-kompatibel | Eigenes Modell (z. B. über LM Studio, vLLM, etc.) | Eigenes Embedding-Modell |
 
-Cloud providers send note content to the provider's API. If privacy matters, stick with Ollama.
+Cloud-Anbieter senden Notiz-Inhalte an die API des Anbieters. Wenn dir Privatsphäre wichtig ist, bleib bei Ollama.
 
-## Your notes, the wiki, and your chats
+## Deine Notizen, das Wiki und deine Chats
 
-**Your existing notes are never modified. Everything the plugin generates lives in a single `wiki/` folder.**
+**Deine vorhandenen Notizen werden niemals verändert. Alles, was das Plugin generiert, lebt in einem einzigen `wiki/`-Ordner.**
 
-LLM Wiki keeps three things cleanly separated in your head and on disk:
+LLM Wiki German trennt drei Dinge sauber in deinem Kopf und auf der Festplatte:
 
-- **Your notes** — the raw material. Everything you've already written in your vault. LLM Wiki reads them but never touches them.
-- **The wiki** — a structured knowledge base built *from* your notes. It lives in a single `wiki/` folder inside your vault and is what queries search against.
-- **Your chats** — the answers LLM Wiki gives you. Saved so you can resume conversations, kept apart from both your notes and the wiki.
+- **Deine Notizen** — das Rohmaterial. Alles, was du bereits in deinem Vault geschrieben hast. LLM Wiki German liest sie, verändert sie aber nie.
+- **Das Wiki** — eine strukturierte Wissensdatenbank, die *aus* deinen Notizen erstellt wurde. Sie lebt in einem `wiki/`-Ordner in deinem Vault und wird für Abfragen durchsucht.
+- **Deine Chats** — die Antworten, die LLM Wiki German dir gibt. Gespeichert, damit du Gespräche fortsetzen kannst, getrennt von deinen Notizen und dem Wiki.
 
-The `wiki/` folder looks like this:
+Der `wiki/`-Ordner sieht so aus:
 
 ```
 wiki/
-  kb.json            knowledge base (the structured data)
-  index.md           catalog page
-  entities/          one page per entity
-  concepts/          one page per concept
-  sources/           one page per source note
+  kb.json                 Wissensdatenbank (die strukturierten Daten)
+  index.md                Katalogseite
+  entities/               eine Seite pro Entität
+  concepts/               eine Seite pro Konzept
+  sources/                eine Seite pro Quellnotiz
+  wiki-log.md             Protokoll aller Extraktionen und Abfragen
+  lint-report.md          Bericht der Integritätsprüfung (optional)
 ```
 
-By default, the `wiki/` folder is hidden from search, Quick Switcher, and graph view — it won't clutter your vault or interfere with your links. If you're curious and want to browse the generated pages, you can make them visible in Settings > LLM Wiki > Appearance. Either way, your original notes stay exactly as they were.
+Standardmäßig ist der `wiki/`-Ordner vor Suche, Quick Switcher und Graph-Ansicht versteckt — er überladt dein Vault nicht und stört deine Links nicht. Falls du neugierig bist und die generierten Seiten durchstöbern möchtest, kannst du sie in den Einstellungen unter LLM Wiki German > Darstellung sichtbar machen. Deine ursprünglichen Notizen bleiben in jedem Fall genau so, wie sie waren.
 
-## How it works
+## Wie es funktioniert
 
-LLM Wiki turns your unstructured notes into a structured knowledge base, then uses that structure to answer questions. Here's what happens under the hood:
+LLM Wiki German verwandelt deine unstrukturierten Notizen in eine strukturierte Wissensdatenbank und nutzt diese Struktur, um Fragen zu beantworten. Hier ist, was unter der Haube passiert:
 
-**Extraction.** When you run extraction, the plugin reads each note in your vault and sends it to an LLM with a prompt like "what entities, concepts, and connections are in this text?" The model returns structured data — names, types, descriptions, relationships — which gets merged into a single knowledge base (`wiki/kb.json`). Think of it as the plugin reading all your notes and building a mental map of everything in them.
+**Extraktion.** Wenn du die Extraktion ausführst, liest das Plugin jede Notiz in deinem Vault und sendet sie an ein LLM mit einem Prompt wie "welche Entitäten, Konzepte und Verbindungen sind in diesem Text?" Das Modell gibt strukturierte Daten zurück — Namen, Typen, Beschreibungen, Beziehungen — die in einer einzigen Wissensdatenbank (`wiki/kb.json`) zusammengeführt werden. Stell es dir vor, als würde das Plugin alle deine Notizen lesen und eine mentale Karte von allem darin erstellen.
 
-**Page generation.** From that knowledge base, the plugin writes one markdown page per entity, concept, and source note into `wiki/` folders. These pages are plain markdown with frontmatter, so they work with Obsidian's Bases feature for filtering and sorting. You get a browsable wiki of your own knowledge, automatically maintained.
+**Seitengenerierung.** Aus dieser Wissensdatenbank schreibt das Plugin eine Markdown-Seite pro Entität, Konzept und Quellnotiz in `wiki/`-Ordner. Diese Seiten sind einfaches Markdown mit Frontmatter, sodass sie mit Obsidians Bases-Funktion zum Filtern und Sortieren funktionieren. Du erhältst ein durchsuchbares Wiki deines eigenen Wissens, automatisch gepflegt.
 
-**Retrieval.** When you ask a question, the plugin doesn't send your entire vault to the LLM — that would be too slow and too large. Instead, it searches the knowledge base to find the most relevant pieces of context. It uses three strategies in parallel: keyword matching (finding notes that contain the same terms), semantic similarity (finding notes that mean similar things, even with different words — this is what the embedding model does), and vault structure (prioritizing notes in folders you've scoped). The results are merged using a technique called Reciprocal Rank Fusion, which combines multiple ranked lists into one.
+**Abruf.** Wenn du eine Frage stellst, sendet das Plugin nicht dein gesamtes Vault an das LLM — das wäre zu langsam und zu umfangreich. Stattdessen durchsucht es die Wissensdatenbank nach den relevantesten Kontexten. Es verwendet drei Strategien parallel: Stichwortsuche (findet Notizen mit denselben Begriffen), semantische Ähnlichkeit (findet Notizen mit ähnlicher Bedeutung, auch mit anderen Wörtern — das macht das Embedding-Modell) und Vault-Struktur (bevorzugt Notizen in Ordnern, die du ausgewählt hast). Die Ergebnisse werden mit einer Technik namens Reciprocal Rank Fusion zusammengeführt, die mehrere Ranglisten zu einer kombiniert.
 
-**Answering.** The top-ranked context gets bundled into a prompt along with your question and any conversation history, then sent to the LLM. The answer streams back token by token. Afterward, the plugin cross-references the answer against the retrieved sources and shows them as clickable links so you can verify the grounding yourself.
+**Beantwortung.** Der am höchsten bewertete Kontext wird zusammen mit deiner Frage und dem Gesprächsverlauf in einen Prompt verpackt und an das LLM gesendet. Die Antwort wird Token für Token gestreamt. Anschließend gleicht das Plugin die Antwort mit den abgerufenen Quellen ab und zeigt sie als klickbare Links an, damit du die Fundierung selbst überprüfen kannst.
 
-**Keeping up to date.** When you save a note, the plugin re-extracts just that file in the background — no need to re-index the whole vault. There's also an optional nightly scheduler for a full refresh.
+**Auf dem Laufenden bleiben.** Wenn du eine Notiz speicherst, extrahiert das Plugin nur diese Datei im Hintergrund neu — kein erneutes Indizieren des gesamten Vaults nötig. Es gibt auch einen optionalen nächtlichen Planer für eine vollständige Aktualisierung.
 
-## Privacy
+**Integritätsprüfung (Lint).** Der Befehl "Wissensdatenbank prüfen" analysiert die gesamte Wissensdatenbank auf Probleme wie verwaiste Verbindungen, fehlende Quellen, doppelte Einträge und redundante Fakten. Für einige Probleme bietet das Plugin eine automatische Bereinigung an, z. B. das Entfernen verwaister Verbindungen oder das Zusammenführen redundanter Fakten mittels LLM.
 
-- With Ollama (the default), all processing happens on your machine. Nothing is sent anywhere.
-- Cloud providers require sending note content to their APIs. This is opt-in and clearly labeled in settings.
-- No telemetry, analytics, or tracking of any kind.
+**Protokollierung.** Alle Extraktionen, Dateilöschungen und Abfragen werden in `wiki/wiki-log.md` protokolliert, sodass du jederzeit nachvollziehen kannst, was mit deiner Wissensdatenbank passiert ist.
 
-## Development
+## Datenschutz
+
+- Mit Ollama (der Standardeinstellung) erfolgt die gesamte Verarbeitung auf deinem Rechner. Es wird nichts irgendwohin gesendet.
+- Cloud-Anbieter erfordern das Senden von Notiz-Inhalten an deren APIs. Dies ist opt-in und in den Einstellungen klar gekennzeichnet.
+- Keine Telemetrie, kein Analytics, kein Tracking irgendeiner Art.
+
+## Entwicklung
 
 ```bash
 npm install
-npm test           # 476 tests
-npm run typecheck  # strict TypeScript
-npm run lint
-npm run build      # production build
-npm run dev        # watch mode
-```
-
-## 🛠 Installation
-From source
-
-```
-git clone https://github.com/domleca/llm-wiki
-cd llm-wiki
-npm install
-npm run build
-```
-
-Then copy the plugin folder into your Obsidian plugins directory.
-
-## License
-
-[MIT](LICENSE)
