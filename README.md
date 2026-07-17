@@ -60,7 +60,7 @@ You have two options.
 - `manifest.json`
 - `styles.css`
 
-Place them in `<your-vault>/.obsidian/plugins/llm-wiki/` — create the folder if it doesn't exist. Then in Obsidian, go to Settings > Community plugins, make sure Community plugins are enabled (turn off Restricted mode if prompted), and toggle **LLM Wiki** on. If you don't see it in the list right away, hit the refresh button next to "Installed plugins".
+Place them in `<your-vault>/.obsidian/plugins/llm-wiki-german/` — create the folder if it doesn't exist. Then in Obsidian, go to Settings > Community plugins, make sure Community plugins are enabled (turn off Restricted mode if prompted), and toggle **LLM Wiki** on. If you don't see it in the list right away, hit the refresh button next to "Installed plugins".
 
 <!-- Once accepted in the community directory, users can also install via: obsidian://show-plugin?id=llm-wiki -->
 
