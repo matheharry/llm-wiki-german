@@ -169,6 +169,8 @@ Standardmäßig ist der `wiki/`-Ordner vor Suche, Quick Switcher und Graph-Ansic
 
 LLM Wiki German verwandelt deine unstrukturierten Notizen in eine strukturierte Wissensdatenbank und nutzt diese Struktur, um Fragen zu beantworten. Hier eine kurze Beschreibung, was unter der Haube passiert:
 
+![LLM Wiki Workflow](https://res.cloudinary.com/dbb1diepu/image/upload/v1779641515/a3gf94cd7jqdj4matkpx.png)
+
 **Extrahierung.** Wenn du die Extrahierung ausführst, liest das Plugin jede Notiz in deinem Vault und sendet sie an ein LLM mit einem Prompt wie "welche Entitäten, Konzepte und Verbindungen sind in diesem Text?" Das Modell gibt strukturierte Daten zurück — Namen, Typen, Beschreibungen, Beziehungen — die in einer einzigen Wissensdatenbank (`wiki/kb.json`) zusammengeführt werden. Stell es dir so vor, als würde das Plugin alle deine Notizen lesen und eine mentale Karte von allem darin erstellen.
 
 **Seitengenerierung.** Aus dieser Wissensdatenbank schreibt das Plugin eine Markdown-Seite pro Entität, Konzept und Quellnotiz in den `wiki/`-Ordner. Diese Seiten sind einfaches Markdown mit Frontmatter, sodass sie mit Obsidians Bases-Funktion zum Filtern und Sortieren funktionieren. Du erhältst ein durchsuchbares Wiki deines eigenen Wissens, automatisch gepflegt.
