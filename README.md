@@ -106,9 +106,10 @@ Das war's. Du bist startklar.
 - **LlamaCpp-Unterstützung** — alternative lokale LLM-Backend-Option.
 - **Integritätsprüfung (Lint)** — analysiert die Wissensdatenbank auf Probleme und bietet automatische Fehlerbehebung (z. B. redundante Fakten, verwaiste Verbindungen).
 ![Linting](https://res.cloudinary.com/dbb1diepu/image/upload/v1784377558/nc2gvs16uwij9usxp13a.png)
-
+- **Inhaltsverzeichnis** - in der Datei `wiki/index.md` sind alle Begriffe das Wikis aufgelistet und verlinkt.
+  ![Index](https://res.cloudinary.com/dbb1diepu/image/upload/v1784391130/ene9ft4gllt4fl2wbdh8.png)
 - **Wiki-Log** — alle Extraktionen, Löschungen und Abfragen werden in `wiki/log.md` protokolliert.
-- **Extraktionssprache wählbar** — lege fest, in welcher Sprache extrahiert werden soll (App-Sprache, Deutsch, Englisch, Französisch, Spanisch, Italienisch, Niederländisch, Portugiesisch).
+- **Extraktionssprache wählbar** — lege fest, in welcher Sprache die extrahierten Inhalte generiert werden sollen (Deutsch, Englisch, Französisch, Spanisch, Italienisch, Niederländisch, Portugiesisch). 
 
 | | |
 |---|---|
@@ -117,7 +118,7 @@ Das war's. Du bist startklar.
 
 ## Befehle
 
-![Befehle](https://res.cloudinary.com/dbb1diepu/image/upload/v1784376236/kvgxagbpmw96ftvn57gm.png)
+![Befehle](https://res.cloudinary.com/dbb1diepu/image/upload/v1784392095/txmwzs2cku5uazsytbk7.png)
 
 | Befehl | Funktion |
 |---|---|
@@ -127,7 +128,6 @@ Das war's. Du bist startklar.
 | laufende Extrahierung abbrechen | Bricht eine laufende Extraktion ab |
 | Seiten aus Wissensdatenbank neu generieren | Baut alle Wiki-Seiten neu auf |
 | Wissensdatenbank von der Festplatte neu laden | Lädt die Wissensdatenbank ohne Neu-Extraktion |
-| Wortschatz anzeigen | Zeigt die rohe Wissensdatenbank an |
 | Wissensdatenbank aufräumen und prüfen | Führt eine Integritätsprüfung und Reparatur durch |
 
 ## Cloud-Anbieter (optional)
