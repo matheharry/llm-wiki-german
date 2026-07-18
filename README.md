@@ -105,13 +105,15 @@ Das war's. Du bist startklar.
 - **OpenAI-kompatibler Provider** — verwende jeden beliebigen OpenAI-kompatiblen Endpunkt (z. B. eigene Server, LM Studio, etc.).
 - **LlamaCpp-Unterstützung** — alternative lokale LLM-Backend-Option.
 - **Integritätsprüfung (Lint)** — analysiert die Wissensdatenbank auf Probleme und bietet automatische Fehlerbehebung (z. B. redundante Fakten, verwaiste Verbindungen).
+![Linting](https://res.cloudinary.com/dbb1diepu/image/upload/v1784377558/nc2gvs16uwij9usxp13a.png)
+
 - **Wiki-Log** — alle Extraktionen, Löschungen und Abfragen werden in `wiki/log.md` protokolliert.
 - **Extraktionssprache wählbar** — lege fest, in welcher Sprache extrahiert werden soll (App-Sprache, Deutsch, Englisch, Französisch, Spanisch, Italienisch, Niederländisch, Portugiesisch).
 
 | | |
 |---|---|
 | ![Abfrage-Modal](docs/assets/query-modal.png) | ![Chat-Antwort](docs/assets/chat-answer.png) |
-| ![Quellen](docs/assets/chat-sources.png) | ![Einstellungen](docs/assets/settings.png) |
+| ![Quellen](docs/assets/chat-sources.png) | ![Einstellungen](https://res.cloudinary.com/dbb1diepu/image/upload/v1784389433/tiufxnvf8jhdur5rroaf.png) |
 
 ## Befehle
 
