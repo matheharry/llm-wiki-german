@@ -218,11 +218,11 @@ export default class LlmWikiPlugin extends Plugin {
       },
     });
 
-    this.addCommand({
-      id: "show-vocabulary",
-      name: "Wortschatz anzeigen",
-      callback: () => openVocabularyModal(this.app, this.kb),
-    });
+   // this.addCommand({
+   //   id: "show-vocabulary",
+   //   name: "Wortschatz anzeigen",
+   //   callback: () => openVocabularyModal(this.app, this.kb),
+   // });
 
     this.addCommand({
       id: "lint-kb",
@@ -413,7 +413,7 @@ export default class LlmWikiPlugin extends Plugin {
             this.startScheduler();
           }
           new Notice(
-            `LLM Wiki: extraction will run tonight at ${String(this.settings.nightlyExtractionHour).padStart(2, "0")}:00.`,
+            `LLM Wiki: Extraktion startet um ${String(this.settings.nightlyExtractionHour).padStart(2, "0")}:00.`,
           );
         },
       },
@@ -622,7 +622,7 @@ export default class LlmWikiPlugin extends Plugin {
 
   async runExtractAll(): Promise<void> {
     if (this.running) {
-      new Notice("Extraction already running.");
+      new Notice("Extrahierung läuft bereits.");
       return;
     }
     // Preflight: provider reachable + model available.
@@ -632,7 +632,7 @@ export default class LlmWikiPlugin extends Plugin {
         this.settings.providerType === "ollama"
           ? `Ollama at ${this.settings.ollamaUrl}`
           : `${this.settings.providerType} API`;
-      new Notice(`LLM Wiki: ${target} unreachable. Check your connection and retry.`);
+      new Notice(`LLM Wiki: ${target} nicht erreichbar. Überprüfe die Verbindung und versuchen es erneut.`);
       return;
     }
     if (this.provider.listModels) {
@@ -643,7 +643,7 @@ export default class LlmWikiPlugin extends Plugin {
             ? ` Run \`ollama pull ${this.activeModel}\`.`
             : " Choose a different model in settings.";
         new Notice(
-          `LLM Wiki: model "${this.activeModel}" not available.${hint}`,
+          `LLM Wiki: Model "${this.activeModel}" nicht verfügbar.${hint}`,
         );
         return;
       }
@@ -663,7 +663,7 @@ export default class LlmWikiPlugin extends Plugin {
       const walked = await walkVaultFiles(this.app, walkOpts);
       if (walked.length === 0) {
         new Notice(
-          "Nothing to extract (all files filtered by folders, skip dirs, min size, or dailies cutoff).",
+          "Es gibt nichts zu extrahieren (alle Dateien wurden nach Ordnern, auszuschließenden Verzeichnissen, Mindestgröße oder Tagesgrenzen gefiltert).",
         );
         return;
       }
@@ -712,7 +712,7 @@ export default class LlmWikiPlugin extends Plugin {
       this.progress.emit("batch-errored", {
         message: (e as Error).message ?? "Unknown error",
       });
-      new Notice(`LLM Wiki: extraction failed — ${(e as Error).message}`);
+      new Notice(`LLM Wiki: Extraktion fehlgeschlagen — ${(e as Error).message}`);
     } finally {
       this.setRunning(false);
       this.abortController = null;
@@ -721,7 +721,7 @@ export default class LlmWikiPlugin extends Plugin {
 
   private openQueryModal(): void {
     if (!this.kb) {
-      new Notice("Knowledge base not loaded yet.");
+      new Notice("Knowledge base noch nicht geladen.");
       return;
     }
     if (!this.embeddingIndexController) {
@@ -779,10 +779,10 @@ export default class LlmWikiPlugin extends Plugin {
     try {
       const result = await generatePages(this.app, this.kb);
       new Notice(
-        `LLM Wiki: ${result.written} pages written, ${result.deleted} deleted.`,
+        `LLM Wiki: ${result.written} Seiten geschrieben, ${result.deleted} gelöscht.`,
       );
     } catch (e) {
-      new Notice(`LLM Wiki: page generation failed — ${(e as Error).message}`);
+      new Notice(`LLM Wiki: Seiten-Generierung fehlgeschlagen — ${(e as Error).message}`);
     }
   }
 
@@ -814,7 +814,7 @@ export default class LlmWikiPlugin extends Plugin {
 
   async runExtractCurrent(file: TFile): Promise<void> {
     if (this.running) {
-      new Notice("Wait for the current extraction to finish.");
+      new Notice("Warte auf Abschluss der aktuellen Extraktion.");
       return;
     }
     this.setRunning(true);
@@ -849,7 +849,7 @@ export default class LlmWikiPlugin extends Plugin {
       this.embeddingsCache = await loadEmbeddingsCache(this.app);
       await this.embeddingIndexController?.ensureBuilt();
     } catch (e) {
-      new Notice(`LLM Wiki: extract failed — ${(e as Error).message}`);
+      new Notice(`LLM Wiki: extrahieren fehlgeschlagen — ${(e as Error).message}`);
     } finally {
       this.setRunning(false);
       this.abortController = null;
