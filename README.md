@@ -36,7 +36,15 @@ Du brauchst zwei Dinge: [Ollama](https://ollama.com) (eine kostenlose, lokale LL
 
 **1. Ollama installieren und die Modelle laden**
 
-Lade Ollama von [ollama.com](https://ollama.com) herunter oder installiere es via Terminal:
+Lade Ollama von [ollama.com](https://ollama.com) herunter oder installiere via Terminal:
+
+```powershell
+
+# Falls `winget` verfügbar:
+winget install Ollama.Ollama
+
+# Hinweis: Öffne PowerShell als Administrator, falls die Installation erhöhte Rechte benötigt.
+```
 
 ```bash
 # Mac
@@ -53,19 +61,9 @@ ollama pull gemma4:e4b-it-qat
 ollama pull qllama/multilingual-e5-base
 ```
 
-```powershell
-# Windows (Installer)
-Lade das offizielle Windows‑Installationsprogramm von https://ollama.com herunter und führe es aus (Exe/Installer).
-
-# Optional: Falls `winget` verfügbar, kann Ollama damit installiert werden:
-winget install Ollama.Ollama
-
-# Hinweis: Öffne PowerShell als Administrator, falls die Installation erhöhte Rechte benötigt.
-```
-
 Das erste Modell (`gemma4:e4b-it-qat`) liest deine Notizen und beantwortet deine Fragen. Das zweite (`qllama/multilingual-e5-base`) ermöglicht die semantische Suche — es findet relevante Notizen, selbst wenn du nicht die exakt gleichen Wörter verwendest.
 
-Stand Juli 2026 sind beide Modelle die vernünftigste Option für ein lokales Setup unter Berücksichtigung der Sprache Deutsch.
+Stand Juli 2026 sind beide Modelle die vernünftigste Option für ein lokales Setup unter Berücksichtigung der Sprache Deutsch und liefern auch schon mit 8 GB dediziertem Speicher eine gute Leistung.
 
 **2. Plugin installieren**
 
