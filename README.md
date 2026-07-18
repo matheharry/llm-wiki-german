@@ -90,6 +90,8 @@ Führe den Befehl **Wissensdatenbank abfragen** aus (oder klicke auf das Ribbon-
 
 Das war's. Du bist startklar.
 
+![Abfrage](https://res.cloudinary.com/dbb1diepu/image/upload/v1784377116/bil59vci4d9ufdqy45do.png)
+
 ## Was das Plugin kann
 
 - **Extrahiert Wissen aus deinen Notizen** — Entitäten (Personen, Organisationen, Werkzeuge, Bücher, Orte, Ereignisse), Konzepte (Ideen, Theorien, Frameworks) und 9 Arten von Verbindungen zwischen ihnen.
@@ -112,6 +114,8 @@ Das war's. Du bist startklar.
 | ![Quellen](docs/assets/chat-sources.png) | ![Einstellungen](docs/assets/settings.png) |
 
 ## Befehle
+
+![Befehle](https://res.cloudinary.com/dbb1diepu/image/upload/v1784376236/kvgxagbpmw96ftvn57gm.png)
 
 | Befehl | Funktion |
 |---|---|
