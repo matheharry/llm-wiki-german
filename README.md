@@ -18,7 +18,7 @@ Darüber hinaus wurden zahlreiche zusätzliche Features eingebaut, die über das
 - **Willkommens-Modal** für die Ersteinrichtung
 - **Deutsche Standard-Skip-Verzeichnisse** (z. B. "Vorlagen")
 
-Gedacht war dieses Projekt als Proof of Concept, ob die LLM-Wiki-Idee auch mit deutschen Texten hilfreiche Ergebnisse bringt.  
+Gedacht war dieses Projekt als Proof of Concept, ob die LLM-Wiki-Idee auch mit deutschen Texten hilfreiche Ergebnisse bringt.  Näheres zu Intention und Vorgehensweise unter [http://matheharry.bplaced.net/llmwikiprojekt](http://matheharry.bplaced.net/llmwikiprojekt)
 
 ---
 
