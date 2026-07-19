@@ -90,7 +90,7 @@ Führe den Befehl **Wissensdatenbank abfragen** aus (oder klicke auf das Ribbon-
 
 Das war's. Du bist startklar.
 
-![Abfrage](https://res.cloudinary.com/dbb1diepu/image/upload/v1784377116/bil59vci4d9ufdqy45do.png)
+![Abfrage](https://res.cloudinary.com/dbb1diepu/image/upload/v1784456952/aycs20x3qfsi2oymyzji.png)
 
 ## Was das Plugin kann
 
