@@ -160,7 +160,7 @@ Der `wiki/`-Ordner sieht so aus:
 
 ```
 wiki/
-  kb.json                 Wissensdatenbank (die strukturierten Daten)
+  knowledge.json                 Wissensdatenbank (die strukturierten Daten)
   index.md                Katalogseite
   entities/               eine Seite pro Entität
   concepts/               eine Seite pro Konzept
@@ -177,7 +177,7 @@ LLM Wiki German verwandelt deine unstrukturierten Notizen in eine strukturierte 
 
 ![LLM Wiki Workflow](https://res.cloudinary.com/dbb1diepu/image/upload/v1779641515/a3gf94cd7jqdj4matkpx.png)
 
-**Extrahierung.** Wenn du die Extrahierung ausführst, liest das Plugin jede Notiz in deinem Vault und sendet sie an ein LLM mit einem Prompt wie "welche Entitäten, Konzepte und Verbindungen sind in diesem Text?" Das Modell gibt strukturierte Daten zurück — Namen, Typen, Beschreibungen, Beziehungen — die in einer einzigen Wissensdatenbank (`wiki/kb.json`) zusammengeführt werden. Stell es dir so vor, als würde das Plugin alle deine Notizen lesen und eine mentale Karte von allem darin erstellen.
+**Extrahierung.** Wenn du die Extrahierung ausführst, liest das Plugin jede Notiz in deinem Vault und sendet sie an ein LLM mit einem Prompt wie "welche Entitäten, Konzepte und Verbindungen sind in diesem Text?" Das Modell gibt strukturierte Daten zurück — Namen, Typen, Beschreibungen, Beziehungen — die in einer einzigen Wissensdatenbank (`wiki/knowledge.json`) zusammengeführt werden. Stell es dir so vor, als würde das Plugin alle deine Notizen lesen und eine mentale Karte von allem darin erstellen.
 
 **Seitengenerierung.** Aus dieser Wissensdatenbank schreibt das Plugin eine Markdown-Seite pro Entität, Konzept und Quellnotiz in den `wiki/`-Ordner. Diese Seiten sind einfaches Markdown mit Frontmatter, sodass sie mit Obsidians Bases-Funktion zum Filtern und Sortieren funktionieren. Du erhältst ein durchsuchbares Wiki deines eigenen Wissens, automatisch gepflegt.
 
