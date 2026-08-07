@@ -15,7 +15,7 @@ Darüber hinaus wurden zahlreiche zusätzliche Features eingebaut, die über das
 - **Multi-Folder-Index** — wähle bestimmte Ordner für die Wissensdatenbank aus
 - **Inhaltsbasierte Deduplizierung** mittels SHA-256-Hashes
 - **Integritätsprüfung (Lint)** der Wissensdatenbank mit automatischer Fehlerbehebung
-- **Wiki-Log** — protokolliert alle Änderungen in `wiki/wiki-log.md`
+- **Wiki-Log** — protokolliert alle Änderungen in `wiki/log.md`
 - **Interaktions-Log** — zeichnet Fragen und Antworten auf
 - **Willkommens-Modal** für die Ersteinrichtung
 - **Deutsche Standard-Skip-Verzeichnisse** (z. B. "Vorlagen")
@@ -104,14 +104,10 @@ Das war's. Du bist startklar.
 - **Bleibt auf dem Laufenden** — das Speichern einer Notiz löst eine Hintergrund-Neuxtraktion aus. Optionaler nächtlicher Voll-Durchlauf.
 - **Mehrere Gesprächsrunden** — Chats werden gespeichert und sind fortsetzbar. Setze dort fort, wo du aufgehört hast.
 - **Mehrere Anbieter** — Ollama (lokal, kostenlos) standardmäßig. OpenAI, Anthropic, Google und Mistral als Optionen in den Einstellungen.
-- **OpenAI-kompatibler Provider** — verwende jeden beliebigen OpenAI-kompatiblen Endpunkt (z. B. eigene Server, LM Studio, etc.).
-- **LlamaCpp-Unterstützung** — alternative lokale LLM-Backend-Option.
-- **Integritätsprüfung (Lint)** — analysiert die Wissensdatenbank auf Probleme und bietet automatische Fehlerbehebung (z. B. redundante Fakten, verwaiste Verbindungen).
-![Linting](https://res.cloudinary.com/dbb1diepu/image/upload/v1784377558/nc2gvs16uwij9usxp13a.png)
 - **Inhaltsverzeichnis** - in der Datei `wiki/index.md` sind alle Begriffe das Wikis aufgelistet und verlinkt.
   ![Index](https://res.cloudinary.com/dbb1diepu/image/upload/v1784391130/ene9ft4gllt4fl2wbdh8.png)
-- **Wiki-Log** — alle Extraktionen, Löschungen und Abfragen werden in `wiki/log.md` protokolliert.
-- **Extraktionssprache wählbar** — lege fest, in welcher Sprache die extrahierten Inhalte generiert werden sollen (Deutsch, Englisch, Französisch, Spanisch, Italienisch, Niederländisch, Portugiesisch). 
+
+![Integritätsprüfung (Lint)](https://res.cloudinary.com/dbb1diepu/image/upload/v1784377558/nc2gvs16uwij9usxp13a.png)
 
 | | |
 |---|---|
@@ -171,6 +167,8 @@ wiki/
   lint-report.md          Bericht der Integritätsprüfung (optional)
 ```
 
+Die Ordnerstruktur folgt der OKF-Konvention: `index.md` (Katalog) und `log.md` (Änderungshistorie) sind reservierte Dateinamen, die von OKF-kompatiblen Werkzeugen erkannt werden.
+
 Standardmäßig ist der `wiki/`-Ordner vor Suche, Quick Switcher und Graph-Ansicht versteckt — er überlädt deinen Vault nicht und bringt deine Links nicht durcheinander. Falls du neugierig bist und die generierten Seiten durchstöbern möchtest, kannst du sie in den Einstellungen unter LLM Wiki German > Darstellung sichtbar machen. Deine ursprünglichen Notizen bleiben in jedem Fall genau so, wie sie waren - es kommen "nur" Verknüpfungen zu den Überbegriffen im Wiki hinzu, wodurch *Zusammenhänge zwischen den Notizen automatisch hergestellt* werden.
 
 ## Wie es funktioniert
@@ -182,6 +180,8 @@ LLM Wiki German verwandelt deine unstrukturierten Notizen in eine strukturierte 
 **Extrahierung.** Wenn du die Extrahierung ausführst, liest das Plugin jede Notiz in deinem Vault und sendet sie an ein LLM mit einem Prompt wie "welche Entitäten, Konzepte und Verbindungen sind in diesem Text?" Das Modell gibt strukturierte Daten zurück — Namen, Typen, Beschreibungen, Beziehungen — die in einer einzigen Wissensdatenbank (`wiki/knowledge.json`) zusammengeführt werden. Stell es dir so vor, als würde das Plugin alle deine Notizen lesen und eine mentale Karte von allem darin erstellen.
 
 **Seitengenerierung.** Aus dieser Wissensdatenbank schreibt das Plugin eine Markdown-Seite pro Entität, Konzept und Quellnotiz in den `wiki/`-Ordner. Diese Seiten sind einfaches Markdown mit Frontmatter, sodass sie mit Obsidians Bases-Funktion zum Filtern und Sortieren funktionieren. Du erhältst ein durchsuchbares Wiki deines eigenen Wissens, automatisch gepflegt.
+
+Die generierten Seiten folgen dem **Open Knowledge Format (OKF) v0.2**: Jede Seite trägt strukturiertes Frontmatter mit `type`, `title`, `description`, `sources` (Provenienz), `generated` (Erzeuger) und `status` (Lebenszyklus). Damit sind die Wiki-Seiten nicht nur in Obsidian nutzbar, sondern auch für andere OKF-kompatible Werkzeuge und Agenten portabel.
 
 **Abruf.** Wenn du eine Frage stellst, sendet das Plugin nicht deinen gesamten Vault an das LLM — das wäre zu langsam und zu umfangreich. Stattdessen durchsucht es die Wissensdatenbank nach den relevantesten Kontexten. Es verwendet drei Strategien parallel: 
 
