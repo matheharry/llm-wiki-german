@@ -17,6 +17,7 @@ const ENTITY_TYPE_LABELS: Record<string, string> = {
 export function renderIndexPage(kb: KnowledgeBase, today?: string): string {
   const dateStr = today ?? new Date().toISOString().slice(0, 10);
   const fm = {
+    okf_version: "0.2",
     typ: "index",
     tags: ["llm-wiki/index"],
     "aktualisiert": dateStr,

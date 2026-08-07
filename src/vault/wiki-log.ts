@@ -16,23 +16,26 @@ export async function appendWikiLog(
   const ts = now();
   const dateStr = ts.toISOString().slice(0, 10);
   const timeStr = ts.toTimeString().slice(0, 8);
-  const entry = `\n## [${dateStr} ${timeStr}] ${message}\n`;
+  const entryHeader = `## ${dateStr}`;
+  const logLine = `* **Update** [${timeStr}]: ${message}`;
 
   let content = "";
   if (await app.vault.adapter.exists(relPath)) {
     content = await app.vault.adapter.read(relPath);
   } else {
-    content = `---
-typ: log
-tags:
-  - llm-wiki/log
----
-
-# Aktivitäts-Logbuch
-
-Dieses Protokoll erfasst alle Aktivitäten der LLM-Wissensdatenbank.
-`;
+    content = `# Update Log\n\nProtokoll der Wissensdatenbank-Aktivitäten.\n`;
   }
 
-  await safeWritePage(app, relPath, content.trim() + "\n" + entry);
+  // If section for date already exists, append under it; otherwise create heading
+  let updatedContent = content.trim();
+  if (updatedContent.includes(entryHeader)) {
+    updatedContent = updatedContent.replace(
+      entryHeader,
+      `${entryHeader}\n${logLine}`,
+    );
+  } else {
+    updatedContent = `${updatedContent}\n\n${entryHeader}\n${logLine}`;
+  }
+
+  await safeWritePage(app, relPath, updatedContent.trim() + "\n");
 }
