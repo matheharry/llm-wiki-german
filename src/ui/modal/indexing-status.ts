@@ -3,18 +3,18 @@ import type { EmbeddingIndexState } from "../../query/embedding-index-controller
 export function formatIndexingStatus(state: EmbeddingIndexState): string {
   switch (state.kind) {
     case "idle":
-      return "Preparing…";
+      return "Vorbereitung…";
     case "building": {
       const { current, total } = state.progress;
-      if (total === 0) return "Building index…";
-      return `Building index… ${current} / ${total}`;
+      if (total === 0) return "Index wird aufgebaut…";
+      return `Index wird aufgebaut… ${current} / ${total}`;
     }
     case "ready":
-      return "Ready";
+      return "Bereit";
     case "error":
       if (state.reason === "connect") {
-        return "Ollama disconnected — click to retry";
+        return "Ollama getrennt — zum Wiederholen klicken";
       }
-      return `Embedding index unavailable (${state.message}) — keyword-only fallback`;
+      return `Embedding-Index nicht verfügbar (${state.message}) — Ausweichmodus nur mit Stichwörtern`;
   }
 }

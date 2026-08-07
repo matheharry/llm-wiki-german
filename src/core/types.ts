@@ -87,3 +87,44 @@ export interface KBData {
   connections: Connection[];
   sources: Record<string, SourceRecord>;
 }
+
+/** OKF v0.2 specific types */
+export type OKFTrustTier = "unverified" | "machine-confirmed" | "human-reviewed";
+export type OKFStatus = "draft" | "stable" | "deprecated";
+
+export interface OKFSourceEntry {
+  resource: string;
+  id?: string;
+  title?: string;
+  author?: string;
+  usage_count?: number;
+  last_modified?: string;
+  usage_window?: { from: string; to: string };
+}
+
+export interface OKFVerification {
+  by: string;
+  at: string;
+}
+
+export interface OKFGenerated {
+  by: string;
+  at: string;
+}
+
+export interface OKFFrontmatter {
+  type: string;
+  title?: string;
+  description?: string;
+  resource?: string;
+  tags?: string[];
+  status?: OKFStatus;
+  stale_after?: string;
+  generated?: OKFGenerated;
+  verified?: OKFVerification[] | OKFVerification;
+  sources?: OKFSourceEntry[];
+  usage_window?: { from: string; to: string };
+  okf_version?: string;
+  [key: string]: unknown;
+}
+

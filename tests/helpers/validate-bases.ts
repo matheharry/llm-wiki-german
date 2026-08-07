@@ -32,11 +32,13 @@ export function validateBasesFrontmatter(
       continue;
     }
 
-    // Nested objects
+    // Nested objects (OKF v0.2 permits nested structures like generated, verified, sources)
+    const OKF_NESTED_ALLOWED = new Set(["generated", "verified", "sources", "usage_window"]);
     if (
       value !== null &&
       typeof value === "object" &&
-      !Array.isArray(value)
+      !Array.isArray(value) &&
+      !OKF_NESTED_ALLOWED.has(key)
     ) {
       errors.push(`Field '${key}' is a nested object — flatten it.`);
       continue;

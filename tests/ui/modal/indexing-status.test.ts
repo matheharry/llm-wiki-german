@@ -2,17 +2,17 @@ import { describe, it, expect } from "vitest";
 import { formatIndexingStatus } from "../../../src/ui/modal/indexing-status.js";
 
 describe("formatIndexingStatus", () => {
-  it("returns 'Preparing…' for idle", () => {
-    expect(formatIndexingStatus({ kind: "idle" })).toBe("Preparing…");
+  it("returns 'Vorbereitung…' for idle", () => {
+    expect(formatIndexingStatus({ kind: "idle" })).toBe("Vorbereitung…");
   });
 
-  it("shows 'Building index…' before the first item is processed", () => {
+  it("shows 'Index wird aufgebaut…' before the first item is processed", () => {
     expect(
       formatIndexingStatus({
         kind: "building",
         progress: { current: 0, total: 0 },
       }),
-    ).toBe("Building index…");
+    ).toBe("Index wird aufgebaut…");
   });
 
   it("shows current/total when total is known", () => {
@@ -21,16 +21,16 @@ describe("formatIndexingStatus", () => {
         kind: "building",
         progress: { current: 3, total: 12 },
       }),
-    ).toBe("Building index… 3 / 12");
+    ).toBe("Index wird aufgebaut… 3 / 12");
   });
 
-  it("returns 'Ready' when ready", () => {
+  it("returns 'Bereit' when ready", () => {
     expect(
       formatIndexingStatus({
         kind: "ready",
         index: new Map(),
       }),
-    ).toBe("Ready");
+    ).toBe("Bereit");
   });
 
   it("returns a fallback warning when in a non-connect error", () => {
@@ -40,7 +40,7 @@ describe("formatIndexingStatus", () => {
         message: "ollama down",
         reason: "other",
       }),
-    ).toBe("Embedding index unavailable (ollama down) — keyword-only fallback");
+    ).toBe("Embedding-Index nicht verfügbar (ollama down) — Ausweichmodus nur mit Stichwörtern");
   });
 
   it("shows the disconnected hint when the error reason is connect", () => {
@@ -50,6 +50,6 @@ describe("formatIndexingStatus", () => {
         message: "fetch failed",
         reason: "connect",
       }),
-    ).toBe("Ollama disconnected — click to retry");
+    ).toBe("Ollama getrennt — zum Wiederholen klicken");
   });
 });

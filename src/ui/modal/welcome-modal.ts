@@ -25,40 +25,40 @@ export class WelcomeModal extends Modal {
     contentEl.empty();
     contentEl.addClass("llm-wiki-welcome-modal");
 
-    contentEl.createEl("h2", { text: "Welcome" });
+    contentEl.createEl("h2", { text: "Willkommen" });
 
     const introEl = contentEl.createEl("p");
-    introEl.appendText("Your vault needs to be indexed before you can ask questions.");
+    introEl.appendText("Dein Tresor muss erst indiziert werden, bevor du Fragen stellen kannst.");
     introEl.createEl("br");
     introEl.appendText(
-      "Extraction reads each note and builds a structured knowledge base — " +
-      "this only needs to happen once.",
+      "Die Extraktion liest jede Notiz und baut eine strukturierte Wissensdatenbank auf — " +
+      "dies muss nur einmal durchgeführt werden.",
     );
 
     const estimate = this.formatEstimate();
     const estimateEl = contentEl.createEl("p");
-    estimateEl.createEl("strong", { text: `${this.noteCount} notes found` });
-    estimateEl.appendText(` — estimated extraction time: ${estimate}.`);
+    estimateEl.createEl("strong", { text: `${this.noteCount} Notizen gefunden` });
+    estimateEl.appendText(` — geschätzte Verarbeitungsdauer: ${estimate}.`);
 
     if (this.isLocal) {
       contentEl.createEl("p", {
         text:
-          "This estimate is for local models. Cloud providers (OpenAI, Anthropic, Google) " +
-          "are much faster — configure one in Settings > LLM Wiki first if you prefer.",
+          "Diese Schätzung gilt für lokale Sprachmodelle. Cloud-Anbieter (OpenAI, Anthropic, Google) " +
+          "sind deutlich schneller — du kannst diese bei Bedarf in den Einstellungen > LLM Wiki konfigurieren.",
         cls: "mod-muted",
       });
     }
 
     const btnContainer = contentEl.createDiv({ cls: "modal-button-container" });
 
-    const laterBtn = btnContainer.createEl("button", { text: "Later" });
+    const laterBtn = btnContainer.createEl("button", { text: "Später" });
     laterBtn.addEventListener("click", () => {
       this.close();
       this.callbacks.onLater();
     });
 
     const startBtn = btnContainer.createEl("button", {
-      text: "Start now",
+      text: "Jetzt starten",
       cls: "mod-cta",
     });
     startBtn.addEventListener("click", () => {
@@ -72,21 +72,17 @@ export class WelcomeModal extends Modal {
   }
 
   /**
-   * Rough estimate based on provider type and note count.
-   *
-   * Local (Ollama on a typical machine): ~24s per note
-   *   (benchmark: 600 notes ≈ 4 hours on M2 Air, qwen2.5:7b)
-   * Cloud: ~2s per note (API latency, not compute-bound)
+   * Estimation based on provider type and note count.
    */
   private formatEstimate(): string {
     const secsPerNote = this.isLocal ? 24 : 2;
     const totalMins = Math.ceil((this.noteCount * secsPerNote) / 60);
 
-    if (totalMins < 2) return "under 2 minutes";
-    if (totalMins < 60) return `about ${totalMins} minutes`;
+    if (totalMins < 2) return "unter 2 Minuten";
+    if (totalMins < 60) return `ca. ${totalMins} Minuten`;
 
     const hours = totalMins / 60;
-    if (hours < 1.5) return "about 1 hour";
-    return `about ${Math.round(hours)} hours`;
+    if (hours < 1.5) return "ca. 1 Stunde";
+    return `ca. ${Math.round(hours)} Stunden`;
   }
 }

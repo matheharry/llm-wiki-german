@@ -23,7 +23,7 @@ describe("StatusBarWidget", () => {
     const emitter = new ProgressEmitter();
     new StatusBarWidget(el, emitter);
     emitter.emit("batch-started", { total: 10 });
-    expect(el.texts.at(-1)).toMatch(/Indexing 0\/10/);
+    expect(el.texts.at(-1)).toMatch(/Indizierung 0\/10/);
     emitter.emit("file-completed", {
       path: "a.md",
       index: 1,
@@ -31,7 +31,7 @@ describe("StatusBarWidget", () => {
       entitiesAdded: 0,
       conceptsAdded: 0,
     });
-    expect(el.texts.at(-1)).toMatch(/Indexing 1\/10/);
+    expect(el.texts.at(-1)).toMatch(/Indizierung 1\/10/);
   });
 
   it("returns to idle after batch-completed", () => {
