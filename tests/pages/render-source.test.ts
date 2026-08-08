@@ -39,9 +39,12 @@ describe("renderSourcePage", () => {
     expect(md).toContain("# Books/Watts.md");
   });
 
-  it("includes the summary as a paragraph", () => {
+  it("includes the summary in frontmatter description and as body paragraph", () => {
     const md = renderSourcePage(SOURCE, [], []);
-    expect(md).toContain("Notes on Watts' Wisdom of Insecurity");
+    expect(md).toContain("description:");
+    expect(md).toContain("Notes on Watts");
+    // summary also appears in body
+    expect(md).toContain("\nNotes on Watts' Wisdom of Insecurity\n");
   });
 
   it("lists related entities as wikilinks under ## Entitäten", () => {

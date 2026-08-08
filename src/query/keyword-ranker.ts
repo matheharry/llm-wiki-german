@@ -53,6 +53,23 @@ export function rankByKeyword(
     }
   }
 
+  for (const s of kb.allSources()) {
+    let score = 0;
+    const idLower = s.id.toLowerCase();
+    const summaryLower = (s.summary ?? "").toLowerCase();
+    for (const t of terms) {
+      if (idLower.includes(t)) score += NAME_HIT;
+      if (summaryLower.includes(t)) score += FACT_HIT;
+    }
+    if (score > 0) {
+      items.push({
+        id: `source:${s.id}`,
+        score,
+        richness: 1,
+      });
+    }
+  }
+
   items.sort((a, b) => b.score - a.score || b.richness - a.richness);
   return items.map(({ id, score }) => ({ id, score }));
 }

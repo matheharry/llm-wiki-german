@@ -63,4 +63,16 @@ describe("retrieve", () => {
     expect(bundle.entities.find((e) => e.name === "Alan Watts")).toBeUndefined();
   });
 
+  it("retrieves source files when searching for source title or summary", () => {
+    const kb = buildSampleKB();
+    kb.markSource({
+      path: "Beispieldateien/Whiteboards für den Unterricht.md",
+      summary: "15 Online-Whiteboard-Optionen für den Unterricht",
+      mtime: 12345,
+      origin: "user-note",
+    });
+
+    const bundle = retrieve({ question: "Gib eine Übersicht zu Whiteboards", kb });
+    expect(bundle.sources.some((s) => s.id.includes("Whiteboards"))).toBe(true);
+  });
 });

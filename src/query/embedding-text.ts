@@ -1,4 +1,4 @@
-import type { Concept, Entity } from "../core/types.js";
+import type { Concept, Entity, SourceRecord } from "../core/types.js";
 
 const MAX_FACTS = 5;
 const MAX_DEF = 200;
@@ -24,3 +24,10 @@ export function contextualTextForConcept(c: Concept): string {
   }
   return parts.join(" ");
 }
+
+export function contextualTextForSource(s: SourceRecord): string {
+  const parts: string[] = [`Quellseite: ${s.id}.`];
+  if (s.summary) parts.push(`Zusammenfassung: ${s.summary}.`);
+  return parts.join(" ");
+}
+

@@ -26,6 +26,13 @@ export function rankByPath(
     if (score > 0) items.push({ id: `concept:${c.id}`, score });
   }
 
+  for (const s of kb.allSources()) {
+    let score = 0;
+    const lower = s.id.toLowerCase();
+    for (const t of terms) if (lower.includes(t)) score += 1;
+    if (score > 0) items.push({ id: `source:${s.id}`, score });
+  }
+
   items.sort((a, b) => b.score - a.score);
   return items;
 }

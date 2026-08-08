@@ -52,11 +52,11 @@ export function renderIndexingSection(
 
     new Setting(containerEl)
       .setName("Ollama Embedding-Modell")
-      .setDesc("Lokales Modell zur Vektorisierung für die semantische Suche (z. B. qllama/multilingual-e5-base:latest). Standard: nomic-embed-text")
+      .setDesc("Lokales Modell zur Vektorisierung für die semantische Suche (z. B. embeddinggemma:latest). Standard: embeddinggemma:latest")
       .addText((text) => {
         let prevValue = plugin.settings.ollamaEmbeddingModel;
         text
-          .setPlaceholder("qllama/multilingual-e5-base")
+          .setPlaceholder("embeddinggemma:latest")
           .setValue(plugin.settings.ollamaEmbeddingModel)
           .onChange(async (value) => {
             plugin.settings.ollamaEmbeddingModel = value.trim() || "nomic-embed-text";

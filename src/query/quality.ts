@@ -69,6 +69,15 @@ export function detectTypeHint(terms: readonly string[]): EntityType | null {
  * `retrieve()` emit ids in this canonical form.
  */
 export function qualityMultiplier(id: string, kb: KnowledgeBase): number {
+  if (id.startsWith("source:")) {
+    const sourceId = id.slice("source:".length);
+    const source = kb.allSources().find((s) => s.id === sourceId);
+    if (!source) return 1.0;
+    let m = 1.2;
+    if (source.summary) m *= 1.2;
+    return m;
+  }
+
   // Concept ids are prefixed
   if (id.startsWith("concept:")) {
     const conceptId = id.slice("concept:".length);

@@ -114,7 +114,7 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   customOpenAIEmbeddingModel: "",
   ollamaUrl: "http://localhost:11434",
   ollamaModel: "gemma4:e4b-it-qat",
-  ollamaEmbeddingModel: "qllama/multilingual-e5-base:latest",
+  ollamaEmbeddingModel: "embeddinggemma:latest",
   ollamaNumCtx: 8192,
   llamaCppUrl: "http://localhost:8080",
   llamaCppModel: "gemma-4-E4B_q4_0-it",

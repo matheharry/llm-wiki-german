@@ -32,7 +32,7 @@ DOKUMENT ({source_path}):
 
 Antworte NUR mit einem JSON-Objekt, keine Markdown-Blöcke, kein Kommentar:
 {
-  "source_summary": "1-2 Sätze Zusammenfassung, worum es in diesem Dokument geht",
+  "source_summary": "2-5 Sätze Zusammenfassung, worum es in diesem Dokument geht, was die wichtigsten Punkte sind und welchen Wert es hat",
   "entities": [
     {
       "name": "Exakter Name",
@@ -44,7 +44,7 @@ Antworte NUR mit einem JSON-Objekt, keine Markdown-Blöcke, kein Kommentar:
   "concepts": [
     {
       "name": "Name des Konzepts",
-      "definition": "Kurze Definition basierend auf dem Dokumentinhalt",
+      "definition": "Definition in 2-5 Sätzen: Was ist das Konzept, wie wird es im Dokument beschrieben, und warum ist es relevant?",
       "related": ["Namen verwandter Konzepte oder Entitäten"]
     }
   ],

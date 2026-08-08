@@ -41,7 +41,7 @@ describe("LlmWikiPlugin embedding model selection", () => {
     } as never;
 
     expect(plugin.activeModel).toBe("gemma4:e4b-it-qat");
-    expect(plugin.activeEmbeddingModel).toBe("qllama/multilingual-e5-base:latest");
+    expect(plugin.activeEmbeddingModel).toBe("embeddinggemma:latest");
   });
 
   it("uses provider defaults for built-in cloud providers", () => {

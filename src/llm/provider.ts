@@ -31,7 +31,7 @@ export interface CompletionOptions {
 export interface EmbedOptions {
   /** Text to embed. */
   text: string;
-  /** Embedding model identifier — e.g. "qllama/multilingual-e5-base" for Ollama. */
+  /** Embedding model identifier — e.g. "embeddinggemma:latest" for Ollama. */
   model: string;
   /** Caller-owned AbortSignal. If it fires, the provider throws LLMAbortError. */
   signal?: AbortSignal;

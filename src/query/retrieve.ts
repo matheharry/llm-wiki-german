@@ -61,12 +61,14 @@ export function retrieve(args: RetrieveArgs): RetrievedBundle {
   for (const e of args.kb.allEntities()) entitiesById.set(e.id, e);
   const conceptsById = new Map<string, Concept>();
   for (const c of args.kb.allConcepts()) conceptsById.set(c.id, c);
+  const sourcesById = new Map<string, SourceRecord>();
+  for (const s of args.kb.allSources()) sourcesById.set(s.id, s);
 
   // Apply quality multipliers and type-hint boost
   const adjusted = fused
     .map((item) => {
       let score = item.score * qualityMultiplier(item.id, args.kb);
-      if (typeHint && !item.id.startsWith("concept:")) {
+      if (typeHint && !item.id.startsWith("concept:") && !item.id.startsWith("source:")) {
         const ent = entitiesById.get(item.id);
         if (ent && ent.type === typeHint) score *= TYPE_HINT_BOOST;
       }
@@ -74,32 +76,59 @@ export function retrieve(args: RetrieveArgs): RetrievedBundle {
     })
     .sort((a, b) => b.score - a.score);
 
-  // Resolve to entities and concepts, filtering blacklist
+  // Resolve to entities, concepts, and direct sources, filtering blacklist
   const entities: RetrievedBundle["entities"] = [];
   const concepts: RetrievedBundle["concepts"] = [];
+  const directSources: SourceRecord[] = [];
+  const seenEntities = new Set<string>();
+  const seenConcepts = new Set<string>();
+  const seenSources = new Set<string>();
+
   for (const item of adjusted) {
-    if (item.id.startsWith("concept:")) {
+    if (item.id.startsWith("source:")) {
+      const sourceId = item.id.slice("source:".length);
+      const s = sourcesById.get(sourceId);
+      if (!s || seenSources.has(s.id)) continue;
+      seenSources.add(s.id);
+      directSources.push(s);
+
+      // Pull in entities and concepts that reference this source
+      for (const e of args.kb.allEntities()) {
+        if (e.sources.includes(s.id) && !seenEntities.has(e.id) && entities.length < MAX_ENTITIES) {
+          seenEntities.add(e.id);
+          entities.push(e);
+        }
+      }
+      for (const c of args.kb.allConcepts()) {
+        if (c.sources.includes(s.id) && !seenConcepts.has(c.id) && concepts.length < MAX_CONCEPTS) {
+          seenConcepts.add(c.id);
+          concepts.push(c);
+        }
+      }
+    } else if (item.id.startsWith("concept:")) {
       if (concepts.length >= MAX_CONCEPTS) continue;
       const conceptId = item.id.slice("concept:".length);
       const c = conceptsById.get(conceptId);
-      if (!c) continue;
+      if (!c || seenConcepts.has(c.id)) continue;
       if (
         RETRIEVAL_CONCEPT_BLACKLIST.has(conceptId) ||
         RETRIEVAL_CONCEPT_BLACKLIST.has(c.name.toLowerCase())
       ) {
         continue;
       }
+      seenConcepts.add(c.id);
       concepts.push(c);
     } else {
       if (entities.length >= MAX_ENTITIES) continue;
       const e = entitiesById.get(item.id);
-      if (!e) continue;
+      if (!e || seenEntities.has(e.id)) continue;
       if (
         RETRIEVAL_ENTITY_BLACKLIST.has(item.id) ||
         RETRIEVAL_ENTITY_BLACKLIST.has(e.name.toLowerCase())
       ) {
         continue;
       }
+      seenEntities.add(e.id);
       entities.push(e);
     }
   }
@@ -110,8 +139,8 @@ export function retrieve(args: RetrieveArgs): RetrievedBundle {
     .allConnections()
     .filter((c) => entityIds.has(c.from) || entityIds.has(c.to));
 
-  // Gather source records referenced by surviving entities/concepts
-  const sourcePaths = new Set<string>();
+  // Gather source records referenced by surviving entities/concepts + direct sources
+  const sourcePaths = new Set<string>(directSources.map((s) => s.id));
   for (const e of entities) for (const s of e.sources) sourcePaths.add(s);
   for (const c of concepts) for (const s of c.sources) sourcePaths.add(s);
   const sources = args.kb

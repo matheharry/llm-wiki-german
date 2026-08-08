@@ -4,6 +4,7 @@ import type { EmbeddingsCache } from "../vault/plugin-data.js";
 import {
   contextualTextForConcept,
   contextualTextForEntity,
+  contextualTextForSource,
 } from "./embedding-text.js";
 
 /** Ollama model used to vectorize entities and questions. Hardcoded: the
@@ -23,11 +24,11 @@ export function e5PassagePrefix(model: string): string {
 }
 
 /**
- * Default embedding model. Changed from nomic-embed-text to
- * qllama/multilingual-e5-base for significantly better results on German texts.
- * nomic-embed-text is English-only; multilingual-e5 handles German natively.
+ * Default embedding model.
+ * embeddinggemma:latest is a Gemma-based multilingual embedding model available
+ * via Ollama and works well for German-language content without E5 instruction prefixes.
  */
-export const EMBEDDING_MODEL = "qllama/multilingual-e5-base:latest";
+export const EMBEDDING_MODEL = "embeddinggemma:latest";
 
 export function cosineSim(a: readonly number[], b: readonly number[]): number {
   const len = Math.min(a.length, b.length);
@@ -62,7 +63,7 @@ export interface BuildEmbeddingIndexArgs {
 /** How many embed requests to run in parallel during index building. */
 const EMBED_CONCURRENCY = 4;
 
-/** Build a list of (id, text) pairs for every uncached entity and concept. */
+/** Build a list of (id, text) pairs for every uncached entity, concept, and source. */
 function buildPendingList(
   args: BuildEmbeddingIndexArgs,
   index: Map<string, number[]>,
@@ -72,6 +73,7 @@ function buildPendingList(
   const pending: Array<{ id: string; text: string }> = [];
   const entities = args.kb.allEntities();
   const concepts = args.kb.allConcepts();
+  const sources = args.kb.allSources();
 
   for (const e of entities) {
     const id = e.id;
@@ -91,6 +93,19 @@ function buildPendingList(
   for (const c of concepts) {
     const id = `concept:${c.id}`;
     const text = prefix + contextualTextForConcept(c);
+    const cached = args.cache.entries[id];
+    const cachedModel = cached?.model ?? args.model;
+    if (cached && cached.sourceText === text && cachedModel === args.model) {
+      index.set(id, cached.vector);
+      onProgress();
+    } else {
+      pending.push({ id, text });
+    }
+  }
+
+  for (const s of sources) {
+    const id = `source:${s.id}`;
+    const text = prefix + contextualTextForSource(s);
     const cached = args.cache.entries[id];
     const cachedModel = cached?.model ?? args.model;
     if (cached && cached.sourceText === text && cachedModel === args.model) {
@@ -129,7 +144,8 @@ export async function buildEmbeddingIndex(
   const index = new Map<string, number[]>();
   const entities = args.kb.allEntities();
   const concepts = args.kb.allConcepts();
-  const total = entities.length + concepts.length;
+  const sources = args.kb.allSources();
+  const total = entities.length + concepts.length + sources.length;
   let current = 0;
 
   const tick = (): void => {

@@ -24,9 +24,10 @@ describe("renderConceptPage", () => {
     expect(md).toContain("\n# Zen Buddhism\n");
   });
 
-  it("includes the definition as a paragraph", () => {
+  it("includes the definition in frontmatter description and as body paragraph", () => {
     const md = renderConceptPage(CONCEPT, TODAY);
-    expect(md).toContain("Direct experience over scriptural study");
+    expect(md).toContain('description: "Direct experience over scriptural study, emphasizing meditation"');
+    expect(md).toContain("\nDirect experience over scriptural study, emphasizing meditation\n");
   });
 
   it("lists related items as wikilinks under ## Verwandte Begriffe", () => {

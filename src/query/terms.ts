@@ -116,7 +116,7 @@ function stemGerman(word: string): string {
     stem.endsWith("em")
   ) {
     stem = stem.slice(0, -2);
-  } else if (stem.endsWith("e") || stem.endsWith("n")) {
+  } else if (stem.endsWith("e") || stem.endsWith("n") || stem.endsWith("s")) {
     stem = stem.slice(0, -1);
   }
 
