@@ -181,6 +181,23 @@ export function renderIndexingSection(
       });
     });
 
+  new Setting(containerEl)
+    .setName("Parallele Extraktions-Worker")
+    .setDesc(
+      "Anzahl der Notizen, die gleichzeitig extrahiert werden (1\u20138). Standard: 3. Höhere Werte nutzen leistungsfähige Hardware besser aus.",
+    )
+    .addText((text) =>
+      text
+        .setPlaceholder("3")
+        .setValue(String(plugin.settings.extractionConcurrency ?? 3))
+        .onChange(async (value) => {
+          const parsed = Number.parseInt(value, 10);
+          plugin.settings.extractionConcurrency =
+            Number.isFinite(parsed) && parsed >= 1 && parsed <= 8 ? parsed : 3;
+          await plugin.saveSettings();
+        }),
+    );
+
   // ── Daily refresh ─────────────────────────────────────────────────
   new Setting(containerEl)
     .setName("Tägliche Aktualisierung")

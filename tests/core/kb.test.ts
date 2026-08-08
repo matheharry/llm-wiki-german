@@ -270,6 +270,20 @@ describe("KnowledgeBase.markSource and needsExtraction", () => {
       kb.needsExtraction("Books/Watts.md", 1700000001, "any"),
     ).toBe(true);
   });
+
+  it("needsExtractionFast returns false when stored contentHash exists and current mtime <= stored mtime", () => {
+    const kb = new KnowledgeBase();
+    kb.markSource({
+      path: "Books/Watts.md",
+      mtime: 1700000000,
+      contentHash: "h1",
+      origin: "user-note",
+    });
+    expect(kb.needsExtractionFast("Books/Watts.md", 1700000000)).toBe(false);
+    expect(kb.needsExtractionFast("Books/Watts.md", 1690000000)).toBe(false);
+    expect(kb.needsExtractionFast("Books/Watts.md", 1700000001)).toBe(true);
+    expect(kb.needsExtractionFast("Unknown.md", 1700000000)).toBe(true);
+  });
 });
 
 describe("KnowledgeBase.backfillContentHash", () => {

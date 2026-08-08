@@ -99,6 +99,7 @@ interface LlmWikiSettings {
   nightlyExtractionHour: number;
   showStatusBar: boolean;
   hideWikiFromSearch: boolean;
+  extractionConcurrency: number;
 }
 
 const DEFAULT_SETTINGS: LlmWikiSettings = {
@@ -129,6 +130,7 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   nightlyExtractionHour: 2,
   showStatusBar: true,
   hideWikiFromSearch: true,
+  extractionConcurrency: 3,
 };
 
 /** Delay before kicking off the background pre-build, so plugin load stays snappy. */
@@ -671,6 +673,19 @@ export default class LlmWikiPlugin extends Plugin {
       for (const w of walked) {
         const tfile = this.app.vault.getAbstractFileByPath(w.path);
         if (!(tfile instanceof TFile)) continue;
+        // Fast pre-check: if stored record has contentHash and mtime hasn't changed,
+        // we can skip reading file content and computing SHA-256 entirely.
+        if (!this.kb.needsExtractionFast(w.path, w.mtime)) {
+          // Still register hash backfill / skip in the queue with an empty content stub
+          files.push({
+            path: w.path,
+            content: "",
+            mtime: w.mtime,
+            contentHash: this.kb.data.sources[w.path]?.contentHash ?? "",
+            origin: w.origin,
+          });
+          continue;
+        }
         const content = await this.app.vault.cachedRead(tfile);
         const contentHash = await sha256Hex(content);
         files.push({
@@ -699,7 +714,7 @@ export default class LlmWikiPlugin extends Plugin {
         checkpointEvery: 5,
         charLimit: this.settings.extractionCharLimit,
         signal: this.abortController.signal,
-        concurrency: 3,
+        concurrency: this.settings.extractionConcurrency ?? 3,
       });
 
       this.settings.lastExtractionRunIso = new Date().toISOString();

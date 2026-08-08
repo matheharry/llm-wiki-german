@@ -245,6 +245,19 @@ export class KnowledgeBase {
   }
 
   /**
+   * Fast pre-check by mtime: if a stored record has a contentHash and current mtime <= stored mtime,
+   * we can skip reading the file and computing SHA-256 altogether.
+   */
+  needsExtractionFast(path: string, currentMtime: number): boolean {
+    const stored = this.data.sources[path];
+    if (!stored) return true;
+    if (stored.contentHash !== undefined && currentMtime <= stored.mtime) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
    * Decides whether a file needs (re-)extraction.
    *
    * The primary signal is the content hash: if the stored record has a

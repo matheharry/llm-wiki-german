@@ -6,6 +6,7 @@ import { KBStaleError } from "../vault/kb-store.js";
 import { extractFile, type ExtractFileInput } from "./extractor.js";
 import { deduplicateEntityFacts } from "../core/dedupe.js";
 import { wordSimilarity } from "../core/lint.js";
+import { exportVocabulary } from "../core/vocabulary.js";
 
 export type QueueFile = ExtractFileInput;
 
@@ -69,6 +70,11 @@ export async function runExtraction(
   let fileIndex = 0;
   let progressIndex = 0;
 
+  // Freeze the vocabulary once before workers start so every file in this
+  // batch uses the same KB snapshot. This avoids O(n²) re-exports and
+  // keeps the prompt size constant across the run.
+  const frozenVocabulary = exportVocabulary(kb);
+
   emitter.emit("batch-started", { total });
 
   const isCancelled = (): boolean => args.signal?.aborted === true;
@@ -128,6 +134,7 @@ export async function runExtraction(
           outputLanguage: args.outputLanguage,
           signal: args.signal,
           charLimit,
+          vocabulary: frozenVocabulary,
         });
 
         if (result) {

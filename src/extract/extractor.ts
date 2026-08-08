@@ -32,6 +32,13 @@ export interface ExtractFileArgs {
   outputLanguage?: string;
   signal?: AbortSignal;
   charLimit?: number;
+  /**
+   * Pre-computed vocabulary snapshot to include in the prompt.
+   * When provided, the per-file `exportVocabulary(kb)` call is skipped.
+   * Callers that process many files (e.g. `runExtraction`) should freeze
+   * this once at batch start to avoid O(n²) re-exports.
+   */
+  vocabulary?: string;
 }
 
 const ENTITY_TYPES: ReadonlySet<EntityType> = new Set<EntityType>([
@@ -165,7 +172,7 @@ export async function extractFile(
       : args.file.content;
 
   const prompt = buildExtractionPrompt({
-    vocabulary: exportVocabulary(args.kb),
+    vocabulary: args.vocabulary ?? exportVocabulary(args.kb),
     sourcePath: args.file.path,
     content,
     outputLanguage: args.outputLanguage ?? "English",
