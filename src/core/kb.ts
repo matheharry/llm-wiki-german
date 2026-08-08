@@ -7,6 +7,7 @@ import type {
   KBData,
   SourceOrigin,
   SourceRecord,
+  VerifiedRecord,
 } from "./types.js";
 import { makeId } from "./ids.js";
 
@@ -81,12 +82,20 @@ export interface AddEntityArgs {
   type: EntityType;
   aliases?: string[];
   facts?: string[];
+  shortDescription?: string;
+  generatedBy?: string;
+  verified?: VerifiedRecord | VerifiedRecord[];
+  staleAfter?: string;
   source?: string;
 }
 
 export interface AddConceptArgs {
   name: string;
   definition?: string;
+  shortDescription?: string;
+  generatedBy?: string;
+  verified?: VerifiedRecord | VerifiedRecord[];
+  staleAfter?: string;
   related?: string[];
   source?: string;
 }
@@ -104,6 +113,10 @@ export interface MarkSourceArgs {
   mtime: number;
   origin: SourceOrigin;
   summary?: string;
+  shortDescription?: string;
+  generatedBy?: string;
+  verified?: VerifiedRecord | VerifiedRecord[];
+  staleAfter?: string;
   date?: string;
   /** SHA-256 hex digest of the file's content at extraction time. */
   contentHash?: string;
@@ -123,6 +136,10 @@ export class KnowledgeBase {
       return this.mergeEntity(existing, {
         aliases: args.aliases,
         facts: args.facts,
+        shortDescription: args.shortDescription,
+        generatedBy: args.generatedBy,
+        verified: args.verified,
+        staleAfter: args.staleAfter,
         source: args.source,
       });
     }
@@ -132,6 +149,10 @@ export class KnowledgeBase {
       type: args.type,
       aliases: (args.aliases ?? []).filter((a) => a !== args.name),
       facts: args.facts ?? [],
+      shortDescription: args.shortDescription,
+      generatedBy: args.generatedBy,
+      verified: args.verified,
+      staleAfter: args.staleAfter,
       sources: args.source ? [args.source] : [],
     };
     this.data.entities[id] = entity;
@@ -140,8 +161,22 @@ export class KnowledgeBase {
 
   private mergeEntity(
     entity: Entity,
-    patch: { aliases?: string[]; facts?: string[]; source?: string },
+    patch: {
+      aliases?: string[];
+      facts?: string[];
+      shortDescription?: string;
+      generatedBy?: string;
+      verified?: VerifiedRecord | VerifiedRecord[];
+      staleAfter?: string;
+      source?: string;
+    },
   ): Entity {
+    if (patch.shortDescription && !entity.shortDescription) {
+      entity.shortDescription = patch.shortDescription;
+    }
+    if (patch.generatedBy) entity.generatedBy = patch.generatedBy;
+    if (patch.verified) entity.verified = patch.verified;
+    if (patch.staleAfter) entity.staleAfter = patch.staleAfter;
     if (patch.aliases) {
       for (const a of patch.aliases) {
         if (a !== entity.name && !entity.aliases.includes(a)) {
@@ -170,6 +205,10 @@ export class KnowledgeBase {
     if (existing) {
       return this.mergeConcept(existing, {
         definition: args.definition,
+        shortDescription: args.shortDescription,
+        generatedBy: args.generatedBy,
+        verified: args.verified,
+        staleAfter: args.staleAfter,
         related: args.related,
         source: args.source,
       });
@@ -178,6 +217,10 @@ export class KnowledgeBase {
       id,
       name: args.name,
       definition: args.definition ?? "",
+      shortDescription: args.shortDescription,
+      generatedBy: args.generatedBy,
+      verified: args.verified,
+      staleAfter: args.staleAfter,
       related: args.related ?? [],
       sources: args.source ? [args.source] : [],
     };
@@ -187,8 +230,22 @@ export class KnowledgeBase {
 
   private mergeConcept(
     concept: Concept,
-    patch: { definition?: string; related?: string[]; source?: string },
+    patch: {
+      definition?: string;
+      shortDescription?: string;
+      generatedBy?: string;
+      verified?: VerifiedRecord | VerifiedRecord[];
+      staleAfter?: string;
+      related?: string[];
+      source?: string;
+    },
   ): Concept {
+    if (patch.shortDescription && !concept.shortDescription) {
+      concept.shortDescription = patch.shortDescription;
+    }
+    if (patch.generatedBy) concept.generatedBy = patch.generatedBy;
+    if (patch.verified) concept.verified = patch.verified;
+    if (patch.staleAfter) concept.staleAfter = patch.staleAfter;
     if (patch.definition && patch.definition.length > concept.definition.length) {
       concept.definition = patch.definition;
     }
@@ -234,6 +291,10 @@ export class KnowledgeBase {
     const record: SourceRecord = {
       id: args.path,
       summary: args.summary ?? "",
+      shortDescription: args.shortDescription,
+      generatedBy: args.generatedBy,
+      verified: args.verified,
+      staleAfter: args.staleAfter,
       date: args.date ?? todayIso(),
       mtime: args.mtime,
       origin: args.origin,

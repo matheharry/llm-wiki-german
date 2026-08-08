@@ -4,10 +4,25 @@ import {
   conceptFrontmatter,
   sourceFrontmatter,
   serializeFrontmatter,
+  toFirstSentence,
 } from "../../src/pages/frontmatter.js";
 import type { Entity, Concept, SourceRecord } from "../../src/core/types.js";
 
 const TODAY = "2026-04-07";
+
+describe("toFirstSentence", () => {
+  it("extracts the first sentence ending in . ! or ?", () => {
+    expect(
+      toFirstSentence(
+        "Erster Satz. Zweiter Satz mit mehr Inhalt.",
+      ),
+    ).toBe("Erster Satz.");
+    expect(
+      toFirstSentence("Single sentence without ending"),
+    ).toBe("Single sentence without ending");
+    expect(toFirstSentence("")).toBe("");
+  });
+});
 
 const ENTITY: Entity = {
   id: "alan-watts",

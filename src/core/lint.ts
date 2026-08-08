@@ -140,7 +140,22 @@ export function runLint(kb: KnowledgeBase): LintResult {
     }
   }
 
-  // 5. Redundant Facts Check
+  // 5. OKF Freshness Check (stale_after)
+  const todayStr = new Date().toISOString().slice(0, 10);
+  for (const item of [...entities, ...concepts, ...sources]) {
+    const staleAfter = (item as { staleAfter?: string }).staleAfter;
+    if (staleAfter && todayStr >= staleAfter) {
+      const name = (item as { name?: string; id: string }).name ?? (item as { id: string }).id;
+      issues.push({
+        severity: "warning",
+        category: "Qualität",
+        message: `Veralteter OKF-Eintrag (stale_after überschritten)`,
+        detail: `Eintrag "${name}" ist seit ${staleAfter} veraltet und sollte neu evaluiert werden.`,
+      });
+    }
+  }
+
+  // 6. Redundant Facts Check
   for (const ent of entities) {
     if (ent.facts.length < 2) continue;
     const enumerationGroups = buildEnumerationGroups(ent.facts);

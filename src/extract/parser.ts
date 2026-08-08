@@ -14,11 +14,13 @@ export interface RawEntity {
   type?: string;
   aliases?: string[];
   facts?: string[];
+  short_description?: string;
 }
 
 export interface RawConcept {
   name?: string;
   definition?: string;
+  short_description?: string;
   related?: string[];
 }
 
@@ -31,6 +33,7 @@ export interface RawConnection {
 
 export interface ParsedExtraction {
   source_summary: string;
+  source_summary_short?: string;
   entities: RawEntity[];
   concepts: RawConcept[];
   connections: RawConnection[];
@@ -81,6 +84,7 @@ export function parseExtraction(raw: string): ParsedExtraction | null {
   const d = data as Record<string, unknown>;
   return {
     source_summary: toStr(d.source_summary),
+    source_summary_short: toStr(d.source_summary_short),
     entities: Array.isArray(d.entities)
       ? d.entities
           .filter((e): e is Record<string, unknown> => e !== null && typeof e === "object")
@@ -89,6 +93,7 @@ export function parseExtraction(raw: string): ParsedExtraction | null {
             type: toStr(e.type),
             aliases: toStrArr(e.aliases),
             facts: toStrArr(e.facts),
+            short_description: toStr(e.short_description),
           }))
       : [],
     concepts: Array.isArray(d.concepts)
@@ -97,6 +102,7 @@ export function parseExtraction(raw: string): ParsedExtraction | null {
           .map((c) => ({
             name: toStr(c.name),
             definition: toStr(c.definition),
+            short_description: toStr(c.short_description),
             related: toStrArr(c.related),
           }))
       : [],

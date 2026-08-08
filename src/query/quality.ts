@@ -62,6 +62,18 @@ export function detectTypeHint(terms: readonly string[]): EntityType | null {
   return null;
 }
 
+function getTrustBoost(verified: unknown): number {
+  if (!verified) return 1.0;
+  const list = Array.isArray(verified) ? verified : [verified];
+  if (list.some((v) => typeof v === "object" && v !== null && typeof (v as { by?: unknown }).by === "string" && (v as { by: string }).by.startsWith("human:"))) {
+    return 1.35; // Human-reviewed OKF Trust Tier
+  }
+  if (list.length > 0) {
+    return 1.15; // Machine-confirmed OKF Trust Tier
+  }
+  return 1.0;
+}
+
 /**
  * Soft re-ranking multiplier applied AFTER RRF.
  * Looks up the entity/concept by canonical id (the slug stored on the
@@ -75,6 +87,7 @@ export function qualityMultiplier(id: string, kb: KnowledgeBase): number {
     if (!source) return 1.0;
     let m = 1.2;
     if (source.summary) m *= 1.2;
+    m *= getTrustBoost(source.verified);
     return m;
   }
 
@@ -88,6 +101,7 @@ export function qualityMultiplier(id: string, kb: KnowledgeBase): number {
     const hasRelated = (concept.related?.length ?? 0) > 0;
     if (hasDef && hasRelated) m *= 1.2;
     if (!hasDef) m *= 0.5;
+    m *= getTrustBoost(concept.verified);
     return m;
   }
 
@@ -103,6 +117,8 @@ export function qualityMultiplier(id: string, kb: KnowledgeBase): number {
     entity.sources.length > 0 &&
     entity.sources.every((s) => s.toLowerCase().startsWith("twitter/"));
   if (allTwitter) m *= 0.3;
+
+  m *= getTrustBoost(entity.verified);
 
   return m;
 }

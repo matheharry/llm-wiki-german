@@ -32,19 +32,22 @@ DOKUMENT ({source_path}):
 
 Antworte NUR mit einem JSON-Objekt, keine Markdown-Blöcke, kein Kommentar:
 {
-  "source_summary": "2-5 Sätze Zusammenfassung, worum es in diesem Dokument geht, was die wichtigsten Punkte sind und welchen Wert es hat",
+  "source_summary": "2-5 Sätze ausführliche Zusammenfassung, worum es in diesem Dokument geht, was die wichtigsten Punkte sind und welchen Wert es hat (für den Notiz-Body)",
+  "source_summary_short": "Exakt 1 Satz als prägnante Kurzzusammenfassung des Dokuments (für OKF-Frontmatter description)",
   "entities": [
     {
       "name": "Exakter Name",
       "type": "person|org|tool|project|book|article|place|event|other",
       "aliases": ["optional", "andere Namen"],
-      "facts": ["Faktische Aussage aus diesem Dokument"]
+      "facts": ["Faktische Aussage aus diesem Dokument"],
+      "short_description": "Exakt 1 Satz Kurzbeschreibung der Rolle oder Funktion (für OKF-Frontmatter description)"
     }
   ],
   "concepts": [
     {
       "name": "Name des Konzepts",
-      "definition": "Definition in 2-5 Sätzen: Was ist das Konzept, wie wird es im Dokument beschrieben, und warum ist es relevant?",
+      "definition": "Ausführliche Definition/Erklärung in 2-5 Sätzen: Was ist das Konzept, wie wird es im Dokument beschrieben, und warum ist es relevant? (für den Notiz-Body)",
+      "short_description": "Exakt 1 Satz prägnante Definition (für OKF-Frontmatter description)",
       "related": ["Namen verwandter Konzepte oder Entitäten"]
     }
   ],

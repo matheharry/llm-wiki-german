@@ -278,6 +278,39 @@ export default class LlmWikiPlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: "mark-page-verified",
+      name: "Aktive Seite als menschlich verifiziert markieren (OKF)",
+      editorCallback: async (_editor, ctx) => {
+        const file = ctx.file;
+        if (!file || file.extension !== "md") {
+          new Notice("Kein aktives Markdown-Dokument geöffnet.");
+          return;
+        }
+        const username =
+          // @ts-ignore – Obsidian exposes account.name at runtime
+          (this.app as unknown as { account?: { name?: string } }).account?.name?.trim() ||
+          "user";
+        const verifiedEntry = `human:${username}`;
+        const nowIso = new Date().toISOString();
+
+        await this.app.fileManager.processFrontMatter(file, (fm) => {
+          if (!Array.isArray(fm["verified"])) fm["verified"] = [];
+          // avoid duplicate actor entries
+          const existing: { by: string; at: string }[] = fm["verified"];
+          const idx = existing.findIndex((v) => v.by === verifiedEntry);
+          if (idx !== -1) {
+            existing[idx] = { by: verifiedEntry, at: nowIso };
+          } else {
+            existing.push({ by: verifiedEntry, at: nowIso });
+          }
+          fm["verified"] = existing;
+        });
+
+        new Notice(`✅ Seite als verifiziert markiert (${verifiedEntry})`);
+      },
+    });
+
     // Vault event: delete — remove source from KB and regenerate pages
     this.registerEvent(
       this.app.vault.on("delete", (abstractFile) => {

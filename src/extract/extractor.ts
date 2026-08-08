@@ -197,6 +197,8 @@ export async function extractFile(
   const parsed = parseExtraction(raw);
   if (!parsed) return null;
 
+  const generatedBy = args.model ? `${args.model}` : "llm-wiki-german/1.1.0b";
+
   for (const ent of parsed.entities) {
     const name = (ent.name ?? "").trim();
     if (!name) continue;
@@ -206,6 +208,8 @@ export async function extractFile(
       type,
       aliases: ent.aliases ?? [],
       facts: ent.facts ?? [],
+      shortDescription: ent.short_description,
+      generatedBy,
       source: args.file.path,
     });
   }
@@ -216,6 +220,8 @@ export async function extractFile(
     args.kb.addConcept({
       name,
       definition: String(con.definition ?? "").trim(),
+      shortDescription: con.short_description,
+      generatedBy,
       related: con.related ?? [],
       source: args.file.path,
     });
@@ -243,6 +249,8 @@ export async function extractFile(
   args.kb.markSource({
     path: args.file.path,
     summary: parsed.source_summary,
+    shortDescription: parsed.source_summary_short,
+    generatedBy,
     mtime: args.file.mtime,
     contentHash: finalHash,
     origin: args.file.origin,

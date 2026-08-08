@@ -4,65 +4,98 @@ function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+/**
+ * Extracts the first sentence from a text string (ending in . ! or ?).
+ * Used to guarantee OKF v0.2 §4.1 compliance (`description` MUST be a single sentence).
+ */
+export function toFirstSentence(text: string | undefined | null): string {
+  if (!text) return "";
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+  const match = trimmed.match(/^([^.!?]+[.!?])/);
+  if (match && match[1]) {
+    return match[1].trim();
+  }
+  return trimmed;
+}
+
 export function entityFrontmatter(
   entity: Entity,
   today = todayIso(),
 ): Record<string, unknown> {
-  return {
+  const desc =
+    toFirstSentence(entity.shortDescription || entity.facts[0]) ||
+    `Entität vom Typ ${entity.type}`;
+  const fm: Record<string, unknown> = {
     type: `Entity/${entity.type}`,
     title: entity.name,
-    description: entity.facts[0] || `Entität vom Typ ${entity.type}`,
+    description: desc,
     typ: "entität",
     "entitäts-typ": entity.type,
     name: entity.name,
     aliases: [...entity.aliases],
     tags: ["llm-wiki/entity", `llm-wiki/entity/${entity.type}`],
     sources: entity.sources.map((s) => ({ resource: s, id: s })),
-    generated: { by: "llm-wiki-german/1.1.0b", at: `${today}T00:00:00Z` },
+    generated: { by: entity.generatedBy || "llm-wiki-german/1.1.0b", at: `${today}T00:00:00Z` },
     status: "stable",
     "quellen-anzahl": entity.sources.length,
     "aktualisiert": today,
     cssclasses: [],
   };
+  if (entity.verified) fm["verified"] = entity.verified;
+  if (entity.staleAfter) fm["stale_after"] = entity.staleAfter;
+  return fm;
 }
 
 export function conceptFrontmatter(
   concept: Concept,
   today = todayIso(),
 ): Record<string, unknown> {
-  return {
+  const desc =
+    toFirstSentence(concept.shortDescription || concept.definition) ||
+    `Konzept ${concept.name}`;
+  const fm: Record<string, unknown> = {
     type: "Concept",
     title: concept.name,
-    description: concept.definition || `Konzept ${concept.name}`,
+    description: desc,
     typ: "konzept",
     name: concept.name,
     aliases: [],
     tags: ["llm-wiki/concept"],
     sources: concept.sources.map((s) => ({ resource: s, id: s })),
-    generated: { by: "llm-wiki-german/1.1.0b", at: `${today}T00:00:00Z` },
+    generated: { by: concept.generatedBy || "llm-wiki-german/1.1.0b", at: `${today}T00:00:00Z` },
     status: "stable",
     "quellen-anzahl": concept.sources.length,
     "aktualisiert": today,
     cssclasses: [],
   };
+  if (concept.verified) fm["verified"] = concept.verified;
+  if (concept.staleAfter) fm["stale_after"] = concept.staleAfter;
+  return fm;
 }
 
 export function sourceFrontmatter(
   source: SourceRecord,
 ): Record<string, unknown> {
-  return {
+  const desc =
+    toFirstSentence(source.shortDescription || source.summary) ||
+    `Quelle ${source.id}`;
+  const fm: Record<string, unknown> = {
     type: "Source",
     title: source.id,
-    description: source.summary,
+    description: desc,
     typ: "quelle",
     herkunft: source.origin,
     datum: source.date,
     tags: ["llm-wiki/source"],
-    generated: { by: "llm-wiki-german/1.1.0b", at: `${source.date}T00:00:00Z` },
+    generated: { by: source.generatedBy || "llm-wiki-german/1.1.0b", at: `${source.date}T00:00:00Z` },
     status: "stable",
     aliases: [],
     cssclasses: [],
   };
+  if (source.verified) fm["verified"] = source.verified;
+  if (source.staleAfter) fm["stale_after"] = source.staleAfter;
+  return fm;
 }
 
 function yamlScalar(value: unknown): string {

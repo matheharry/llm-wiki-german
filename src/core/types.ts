@@ -33,12 +33,21 @@ export type ConnectionType =
 /** Where a source file came from in the vault. */
 export type SourceOrigin = "user-note" | "promoted" | "daily";
 
+export interface VerifiedRecord {
+  by: string;
+  at: string;
+}
+
 export interface Entity {
   id: string;
   name: string;
   type: EntityType;
   aliases: string[];
   facts: string[];
+  shortDescription?: string;
+  generatedBy?: string;
+  verified?: VerifiedRecord | VerifiedRecord[];
+  staleAfter?: string;
   sources: string[];
 }
 
@@ -46,6 +55,10 @@ export interface Concept {
   id: string;
   name: string;
   definition: string;
+  shortDescription?: string;
+  generatedBy?: string;
+  verified?: VerifiedRecord | VerifiedRecord[];
+  staleAfter?: string;
   related: string[];
   sources: string[];
 }
@@ -61,6 +74,10 @@ export interface Connection {
 export interface SourceRecord {
   id: string;
   summary: string;
+  shortDescription?: string;
+  generatedBy?: string;
+  verified?: VerifiedRecord | VerifiedRecord[];
+  staleAfter?: string;
   date: string;
   mtime: number;
   /**
