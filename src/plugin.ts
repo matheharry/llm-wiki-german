@@ -699,6 +699,7 @@ export default class LlmWikiPlugin extends Plugin {
         checkpointEvery: 5,
         charLimit: this.settings.extractionCharLimit,
         signal: this.abortController.signal,
+        concurrency: 3,
       });
 
       this.settings.lastExtractionRunIso = new Date().toISOString();

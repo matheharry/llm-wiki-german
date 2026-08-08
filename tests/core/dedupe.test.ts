@@ -68,17 +68,19 @@ describe("deduplicateEntityFacts", () => {
   });
 });
 
-import { extractFile } from "../../src/extract/extractor.js";
+import { runExtraction } from "../../src/extract/queue.js";
 import { KnowledgeBase } from "../../src/core/kb.js";
+import { ProgressEmitter } from "../../src/runtime/progress.js";
 
-describe("extractFile inline deduplication", () => {
-  it("should run deduplication inline during extractFile", async () => {
+describe("runExtraction post-batch deduplication", () => {
+  it("should deduplicate redundant facts after all files are extracted", async () => {
     const kb = new KnowledgeBase();
     let callCount = 0;
     const mockProviderDual: LLMProvider = {
       async *complete() {
         callCount++;
         if (callCount === 1) {
+          // First call: extraction — returns an entity with redundant facts
           yield JSON.stringify({
             source_summary: "Extracted information",
             entities: [
@@ -92,6 +94,7 @@ describe("extractFile inline deduplication", () => {
             connections: [],
           });
         } else {
+          // Second call: deduplication
           yield `[\n  "Trainierte ein neues Model"\n]`;
         }
       },
@@ -100,22 +103,29 @@ describe("extractFile inline deduplication", () => {
       async showModel() { return { contextLength: 2048 }; },
     };
 
-    await extractFile({
+    const emitter = new ProgressEmitter();
+    await runExtraction({
       provider: mockProviderDual,
       kb,
-      file: {
+      files: [{
         path: "test-note.md",
         content: "Some dummy content",
         mtime: Date.now(),
         contentHash: "hash123",
         origin: "user-note",
-      },
+      }],
       model: "dummy-model",
+      saveKB: async () => {},
+      emitter,
+      concurrency: 1,
     });
 
     const entity = kb.getEntity("Gemma");
     expect(entity).toBeDefined();
+    // After post-batch dedup: redundant facts collapsed to one
     expect(entity?.facts).toEqual(["Trainierte ein neues Model"]);
+    // Call 1 = extraction, call 2 = deduplication
     expect(callCount).toBe(2);
   });
 });
+
