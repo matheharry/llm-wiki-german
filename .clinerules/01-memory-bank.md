@@ -15,7 +15,7 @@
 - **Core Tech:** TypeScript, Obsidian API, LLMs (Ollama, OpenAI, Anthropic, Gemini, Mistral, LlamaCpp, OpenAI-compatible).
 - **Format:** Open Knowledge Format (OKF) v0.2 — see `SPEC.md`.
 - **Privacy:** Local-first. Default provider is Ollama (everything stays local). Cloud providers are opt-in.
-- **Package name:** `llm-wiki-de-plugin`, version `1.1.0`.
+- **Package name:** `llm-wiki-de-plugin`, version `1.1.0b`.
 
 ### Distinctive Features (beyond upstream)
 

@@ -12,15 +12,13 @@ import { parseExtraction, type ParsedExtraction } from "./parser.js";
 
 export interface ExtractFileInput {
   path: string;
-  content: string;
+  /** Explicit content string. Optional if `getContent` lazy reader is provided. */
+  content?: string;
+  /** Lazy reader function that resolves the content string on demand. */
+  getContent?: () => Promise<string>;
   mtime: number;
-  /**
-   * SHA-256 hex digest of `content`. Computed by the caller so we can
-   * skip re-extraction when the hash matches the stored record, and
-   * stored alongside the extraction so future runs can compare against
-   * it. See `sha256Hex` in `./content-hash.ts`.
-   */
-  contentHash: string;
+  /** SHA-256 hex digest of `content`. Optional; computed on demand if missing. */
+  contentHash?: string;
   origin: SourceOrigin;
 }
 
@@ -39,6 +37,10 @@ export interface ExtractFileArgs {
    * this once at batch start to avoid O(n²) re-exports.
    */
   vocabulary?: string;
+  /** Resolved content string if already loaded by caller. */
+  resolvedContent?: string;
+  /** Resolved content hash if already computed by caller. */
+  resolvedContentHash?: string;
 }
 
 const ENTITY_TYPES: ReadonlySet<EntityType> = new Set<EntityType>([
@@ -165,11 +167,16 @@ function normalizeConnectionType(raw: string | undefined): ConnectionType {
 export async function extractFile(
   args: ExtractFileArgs,
 ): Promise<ParsedExtraction | null> {
+  const rawContent =
+    args.resolvedContent ??
+    args.file.content ??
+    (args.file.getContent ? await args.file.getContent() : "");
+
   const limit = args.charLimit ?? DEFAULT_CHAR_LIMIT;
   const content =
-    args.file.content.length > limit
-      ? args.file.content.slice(0, limit) + "\n\n[... truncated ...]"
-      : args.file.content;
+    rawContent.length > limit
+      ? rawContent.slice(0, limit) + "\n\n[... truncated ...]"
+      : rawContent;
 
   const prompt = buildExtractionPrompt({
     vocabulary: args.vocabulary ?? exportVocabulary(args.kb),
@@ -228,11 +235,16 @@ export async function extractFile(
     });
   }
 
+  const finalHash =
+    args.resolvedContentHash ??
+    args.file.contentHash ??
+    (await sha256Hex(rawContent));
+
   args.kb.markSource({
     path: args.file.path,
     summary: parsed.source_summary,
     mtime: args.file.mtime,
-    contentHash: args.file.contentHash,
+    contentHash: finalHash,
     origin: args.file.origin,
   });
 

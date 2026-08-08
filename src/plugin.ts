@@ -673,27 +673,13 @@ export default class LlmWikiPlugin extends Plugin {
       for (const w of walked) {
         const tfile = this.app.vault.getAbstractFileByPath(w.path);
         if (!(tfile instanceof TFile)) continue;
-        // Fast pre-check: if stored record has contentHash and mtime hasn't changed,
-        // we can skip reading file content and computing SHA-256 entirely.
-        if (!this.kb.needsExtractionFast(w.path, w.mtime)) {
-          // Still register hash backfill / skip in the queue with an empty content stub
-          files.push({
-            path: w.path,
-            content: "",
-            mtime: w.mtime,
-            contentHash: this.kb.data.sources[w.path]?.contentHash ?? "",
-            origin: w.origin,
-          });
-          continue;
-        }
-        const content = await this.app.vault.cachedRead(tfile);
-        const contentHash = await sha256Hex(content);
         files.push({
           path: w.path,
-          content,
           mtime: w.mtime,
-          contentHash,
           origin: w.origin,
+          getContent: async (): Promise<string> => {
+            return await this.app.vault.cachedRead(tfile);
+          },
         });
       }
 

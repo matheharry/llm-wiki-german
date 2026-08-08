@@ -7,6 +7,7 @@ import { extractFile, type ExtractFileInput } from "./extractor.js";
 import { deduplicateEntityFacts } from "../core/dedupe.js";
 import { wordSimilarity } from "../core/lint.js";
 import { exportVocabulary } from "../core/vocabulary.js";
+import { sha256Hex } from "./content-hash.js";
 
 export type QueueFile = ExtractFileInput;
 
@@ -114,8 +115,31 @@ export async function runExtraction(
       const file = files[i];
       const index = ++progressIndex;
 
-      if (!kb.needsExtraction(file.path, file.mtime, file.contentHash)) {
-        kb.backfillContentHash(file.path, file.contentHash, file.mtime);
+      // Fast check 1: If caller provided an explicit contentHash (e.g. tests), check it directly.
+      // Otherwise, use fast mtime pre-check (0 disk reads, 0 hashing for unmodified files).
+      if (file.contentHash !== undefined && file.contentHash.length > 0) {
+        if (!kb.needsExtraction(file.path, file.mtime, file.contentHash)) {
+          kb.backfillContentHash(file.path, file.contentHash, file.mtime);
+          skipped++;
+          emitter.emit("file-skipped", { path: file.path, index, total });
+          continue;
+        }
+      } else if (!kb.needsExtractionFast(file.path, file.mtime)) {
+        const cachedHash = kb.data.sources[file.path]?.contentHash ?? "";
+        kb.backfillContentHash(file.path, cachedHash, file.mtime);
+        skipped++;
+        emitter.emit("file-skipped", { path: file.path, index, total });
+        continue;
+      }
+
+      // Fast check 2: file modified or unknown -> load content on-demand and compute hash
+      const content =
+        file.content ?? (file.getContent ? await file.getContent() : "");
+      const contentHash =
+        file.contentHash ?? (await sha256Hex(content));
+
+      if (!kb.needsExtraction(file.path, file.mtime, contentHash)) {
+        kb.backfillContentHash(file.path, contentHash, file.mtime);
         skipped++;
         emitter.emit("file-skipped", { path: file.path, index, total });
         continue;
@@ -135,6 +159,8 @@ export async function runExtraction(
           signal: args.signal,
           charLimit,
           vocabulary: frozenVocabulary,
+          resolvedContent: content,
+          resolvedContentHash: contentHash,
         });
 
         if (result) {
