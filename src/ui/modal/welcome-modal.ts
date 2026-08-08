@@ -28,7 +28,7 @@ export class WelcomeModal extends Modal {
     contentEl.createEl("h2", { text: "Willkommen" });
 
     const introEl = contentEl.createEl("p");
-    introEl.appendText("Dein Tresor muss erst indiziert werden, bevor du Fragen stellen kannst.");
+    introEl.appendText("Dein Vault muss erst indiziert werden, bevor du Fragen stellen kannst.");
     introEl.createEl("br");
     introEl.appendText(
       "Die Extraktion liest jede Notiz und baut eine strukturierte Wissensdatenbank auf — " +
