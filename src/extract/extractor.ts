@@ -197,7 +197,7 @@ export async function extractFile(
   const parsed = parseExtraction(raw);
   if (!parsed) return null;
 
-  const generatedBy = args.model ? `${args.model}` : "llm-wiki-german/1.1.0b";
+  const generatedBy = args.model ? `${args.model}` : "llm-wiki-german/1.1.0c";
 
   for (const ent of parsed.entities) {
     const name = (ent.name ?? "").trim();

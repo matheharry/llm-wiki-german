@@ -75,14 +75,14 @@ export function parseExtraction(raw: string): ParsedExtraction | null {
     data = JSON.parse(simpleClean);
   } catch {
     // Stage 2: Standard JSON repair (control chars, backslashes, comments, smart quotes, auto-close)
+    const stage2 = repairJsonString(text);
     try {
-      const repaired = repairJsonString(text);
-      data = JSON.parse(repaired);
+      data = JSON.parse(stage2);
     } catch {
-      // Stage 3: Aggressive JSON repair (repair unescaped inner quotes in code/HTML strings)
+      // Stage 3: Aggressive JSON repair (unescaped quotes inside code/HTML string values)
       try {
-        const repairedAggressive = repairJsonString(repairUnescapedQuotes(text));
-        data = JSON.parse(repairedAggressive);
+        const stage3 = autoCloseJson(repairJsonString(repairUnescapedQuotes(text)));
+        data = JSON.parse(stage3);
       } catch {
         return null;
       }

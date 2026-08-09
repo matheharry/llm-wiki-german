@@ -1,6 +1,6 @@
 # LLM Wiki German
 
-![Version](https://img.shields.io/badge/version-1.1.0b-blue) ![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-7c3aed)
+![Version](https://img.shields.io/badge/version-1.1.0c-blue) ![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-7c3aed)
 
 **Deutsche Wissensdatenbank für Obsidian — lokal, privat, LLM-gestützt und Open Knowledge Format (OKF) konform.**
 
