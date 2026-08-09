@@ -184,16 +184,16 @@ export function renderIndexingSection(
   new Setting(containerEl)
     .setName("Parallele Extraktions-Worker")
     .setDesc(
-      "Anzahl der Notizen, die gleichzeitig extrahiert werden (1\u20138). Standard: 3. Höhere Werte nutzen leistungsfähige Hardware besser aus.",
+      "Anzahl der Notizen, die gleichzeitig extrahiert werden (1\u20138). Standard: 1. Höhere Werte nutzen leistungsfähige Hardware besser aus, erhöhen aber den Speicherbedarf.",
     )
     .addText((text) =>
       text
-        .setPlaceholder("3")
-        .setValue(String(plugin.settings.extractionConcurrency ?? 3))
+        .setPlaceholder("1")
+        .setValue(String(plugin.settings.extractionConcurrency ?? 1))
         .onChange(async (value) => {
           const parsed = Number.parseInt(value, 10);
           plugin.settings.extractionConcurrency =
-            Number.isFinite(parsed) && parsed >= 1 && parsed <= 8 ? parsed : 3;
+            Number.isFinite(parsed) && parsed >= 1 && parsed <= 8 ? parsed : 1;
           await plugin.saveSettings();
         }),
     );

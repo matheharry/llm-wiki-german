@@ -52,82 +52,156 @@ function toStrArr(v: unknown): string[] {
   return v.map((item) => toStr(item)).filter((s) => s.length > 0);
 }
 
+/** Extract first sentence for short description fallback. */
+function extractFirstSentence(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) return "";
+  const match = trimmed.match(/^([^.!?]+[.!?])/);
+  if (match && match[1]) return match[1].trim();
+  return trimmed.slice(0, 120);
+}
+
 export function parseExtraction(raw: string): ParsedExtraction | null {
-  if (!raw) return null;
-  let text = raw.trim();
-  if (!text) return null;
+  if (!raw || typeof raw !== "string") return null;
+  const rawTrimmed = raw.trim();
+  if (!rawTrimmed) return null;
 
   // Strip leading ```json or ``` fences and trailing ``` fences.
-  text = text.replace(/^```(?:json)?\s*\n?/i, "");
-  text = text.replace(/\n?```\s*$/i, "");
-  text = text.trim();
+  let text = rawTrimmed
+    .replace(/^```(?:json)?\s*\n?/i, "")
+    .replace(/\n?```\s*$/i, "")
+    .trim();
 
   // Find the outermost { ... } — allows preamble/postamble noise.
   const start = text.indexOf("{");
-  if (start === -1) return null;
-  const end = text.lastIndexOf("}");
-  text = end > start ? text.slice(start, end + 1) : text.slice(start);
+  if (start !== -1) {
+    const end = text.lastIndexOf("}");
+    const jsonCandidate = end > start ? text.slice(start, end + 1) : text.slice(start);
 
-  let data: unknown = null;
-  // Stage 1: Try direct JSON.parse with simple trailing comma removal
-  const simpleClean = text.replace(/,(\s*[}\]])/g, "$1");
-  try {
-    data = JSON.parse(simpleClean);
-  } catch {
-    // Stage 2: Standard JSON repair (control chars, backslashes, comments, smart quotes, auto-close)
-    const stage2 = repairJsonString(text);
+    let data: unknown = null;
+
+    // Stage 1: Direct JSON.parse with simple trailing comma removal
+    const simpleClean = jsonCandidate.replace(/,(\s*[}\]])/g, "$1");
     try {
-      data = JSON.parse(stage2);
+      data = JSON.parse(simpleClean);
     } catch {
-      // Stage 3: Aggressive JSON repair (unescaped quotes inside code/HTML string values)
+      // Stage 2: Standard JSON repair (control chars, backslashes, comments, smart quotes, auto-close)
+      const stage2 = repairJsonString(jsonCandidate);
       try {
-        const stage3 = autoCloseJson(repairJsonString(repairUnescapedQuotes(text)));
-        data = JSON.parse(stage3);
+        data = JSON.parse(stage2);
       } catch {
-        return null;
+        // Stage 3: Aggressive repair — fix unescaped inner quotes from HTML/code
+        try {
+          const stage3 = autoCloseJson(repairJsonString(repairUnescapedQuotes(jsonCandidate)));
+          data = JSON.parse(stage3);
+        } catch {
+          // Stage 4: Single-quote JSON fallback
+          try {
+            const singleFixed = jsonCandidate.replace(/'/g, '"');
+            const stage4 = autoCloseJson(repairJsonString(singleFixed));
+            data = JSON.parse(stage4);
+          } catch {
+            // Fall through to Stage 5 text fallback
+          }
+        }
       }
+    }
+
+    if (typeof data === "object" && data !== null && !Array.isArray(data)) {
+      const d = data as Record<string, unknown>;
+      return {
+        source_summary: toStr(d.source_summary),
+        source_summary_short: toStr(d.source_summary_short),
+        entities: Array.isArray(d.entities)
+          ? d.entities
+              .filter((e): e is Record<string, unknown> => e !== null && typeof e === "object")
+              .map((e) => ({
+                name: toStr(e.name),
+                type: toStr(e.type),
+                aliases: toStrArr(e.aliases),
+                facts: toStrArr(e.facts),
+                short_description: toStr(e.short_description),
+              }))
+          : [],
+        concepts: Array.isArray(d.concepts)
+          ? d.concepts
+              .filter((c): c is Record<string, unknown> => c !== null && typeof c === "object")
+              .map((c) => ({
+                name: toStr(c.name),
+                definition: toStr(c.definition),
+                short_description: toStr(c.short_description),
+                related: toStrArr(c.related),
+              }))
+          : [],
+        connections: Array.isArray(d.connections)
+          ? d.connections
+              .filter((c): c is Record<string, unknown> => c !== null && typeof c === "object")
+              .map((c) => ({
+                from: toStr(c.from),
+                to: toStr(c.to),
+                type: toStr(c.type),
+                description: toStr(c.description),
+              }))
+          : [],
+      };
     }
   }
 
-  if (typeof data !== "object" || data === null || Array.isArray(data)) {
+  // Stage 5: Plain-text fallback for non-JSON or code-only notes.
+  // When a model outputs a natural-language summary instead of JSON
+  // (common for purely code-based documents), we still record it as a
+  // minimal extraction so the file gets a source-page in the wiki.
+  const cleanSummary = rawTrimmed
+    .replace(/```[a-z]*\n?/gi, "")
+    .replace(/\n?```/gi, "")
+    .replace(/^(hier ist (die |das )?|zusammenfassung:|wissen:|hier ist ein json:)\s*/i, "")
+    .trim();
+
+  if (
+    !cleanSummary ||
+    /^(i'm sorry|entschuldigung|i cannot|as an ai|es tut mir leid)/i.test(cleanSummary) ||
+    /^\{\s*this:/i.test(cleanSummary)
+  ) {
     return null;
   }
 
-  const d = data as Record<string, unknown>;
+  // If the cleaned text still looks like a JSON object (e.g. the model
+  // wrapped its answer in a fenced block and all repair stages failed),
+  // try to salvage the `source_summary` field so the file still gets a
+  // source page instead of a hard failure.
+  if (cleanSummary.startsWith("{")) {
+    const summaryMatch = /"source_summary"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(cleanSummary);
+    if (summaryMatch && summaryMatch[1]) {
+      const summary = summaryMatch[1]
+        .replace(/\\"/g, '"')
+        .replace(/\\n/g, " ")
+        .replace(/\\t/g, " ")
+        .trim();
+      if (summary) {
+        return {
+          source_summary: summary,
+          source_summary_short: extractFirstSentence(summary),
+          entities: [],
+          concepts: [],
+          connections: [],
+        };
+      }
+    }
+    // JSON object but no salvageable summary — treat as failure.
+    return null;
+  }
+
+  // If the cleaned text starts with `[`, it's an array — not a summary.
+  if (cleanSummary.startsWith("[")) {
+    return null;
+  }
+
   return {
-    source_summary: toStr(d.source_summary),
-    source_summary_short: toStr(d.source_summary_short),
-    entities: Array.isArray(d.entities)
-      ? d.entities
-          .filter((e): e is Record<string, unknown> => e !== null && typeof e === "object")
-          .map((e) => ({
-            name: toStr(e.name),
-            type: toStr(e.type),
-            aliases: toStrArr(e.aliases),
-            facts: toStrArr(e.facts),
-            short_description: toStr(e.short_description),
-          }))
-      : [],
-    concepts: Array.isArray(d.concepts)
-      ? d.concepts
-          .filter((c): c is Record<string, unknown> => c !== null && typeof c === "object")
-          .map((c) => ({
-            name: toStr(c.name),
-            definition: toStr(c.definition),
-            short_description: toStr(c.short_description),
-            related: toStrArr(c.related),
-          }))
-      : [],
-    connections: Array.isArray(d.connections)
-      ? d.connections
-          .filter((c): c is Record<string, unknown> => c !== null && typeof c === "object")
-          .map((c) => ({
-            from: toStr(c.from),
-            to: toStr(c.to),
-            type: toStr(c.type),
-            description: toStr(c.description),
-          }))
-      : [],
+    source_summary: cleanSummary,
+    source_summary_short: extractFirstSentence(cleanSummary),
+    entities: [],
+    concepts: [],
+    connections: [],
   };
 }
 
@@ -181,7 +255,7 @@ function removeJsComments(input: string): string {
 }
 
 function repairJsonString(input: string): string {
-  let s = input.replace(/[“”„]/g, '"').replace(/[‘’]/g, "'");
+  let s = input.replace(/[""„]/g, '"').replace(/['']/g, "'");
   s = removeJsComments(s);
 
   let result = "";

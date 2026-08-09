@@ -259,7 +259,7 @@ describe("runExtraction", () => {
     const kb = new KnowledgeBase();
     const provider = new MockLLMProvider([
       EMPTY_JSON,
-      "I can't do that.",
+      "[1,2,3]",
       EMPTY_JSON,
     ]);
     const emitter = new ProgressEmitter();

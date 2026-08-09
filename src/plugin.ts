@@ -130,7 +130,7 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   nightlyExtractionHour: 2,
   showStatusBar: true,
   hideWikiFromSearch: true,
-  extractionConcurrency: 3,
+  extractionConcurrency: 1,
 };
 
 /** Delay before kicking off the background pre-build, so plugin load stays snappy. */
@@ -747,7 +747,7 @@ export default class LlmWikiPlugin extends Plugin {
         checkpointEvery: 5,
         charLimit: this.settings.extractionCharLimit,
         signal: this.abortController.signal,
-        concurrency: this.settings.extractionConcurrency ?? 3,
+        concurrency: this.settings.extractionConcurrency ?? 1,
       });
 
       this.progress.off("file-skipped", onSkipped);

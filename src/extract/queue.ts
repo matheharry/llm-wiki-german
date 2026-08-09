@@ -3,7 +3,7 @@ import type { LLMProvider } from "../llm/provider.js";
 import { LLMAbortError } from "../llm/provider.js";
 import type { ProgressEmitter } from "../runtime/progress.js";
 import { KBStaleError } from "../vault/kb-store.js";
-import { extractFile, type ExtractFileInput } from "./extractor.js";
+import { extractFile, previewRawResponse, type ExtractFileInput } from "./extractor.js";
 import { deduplicateEntityFacts } from "../core/dedupe.js";
 import { wordSimilarity } from "../core/lint.js";
 import { exportVocabulary } from "../core/vocabulary.js";
@@ -150,6 +150,7 @@ export async function runExtraction(
       const preConcepts = kb.stats().concepts;
 
       try {
+        let parseErrorRaw: string | null = null;
         const result = await extractFile({
           provider,
           kb,
@@ -161,6 +162,9 @@ export async function runExtraction(
           vocabulary: frozenVocabulary,
           resolvedContent: content,
           resolvedContentHash: contentHash,
+          onParseError: (raw) => {
+            parseErrorRaw = raw;
+          },
         });
 
         if (result) {
@@ -185,11 +189,14 @@ export async function runExtraction(
           await maybeCheckpoint(index);
         } else {
           failed++;
+          const reason = parseErrorRaw
+            ? `LLM response could not be parsed: ${previewRawResponse(parseErrorRaw)}`
+            : "LLM response could not be parsed";
           emitter.emit("file-failed", {
             path: file.path,
             index,
             total,
-            reason: "LLM response could not be parsed",
+            reason,
           });
         }
       } catch (e) {

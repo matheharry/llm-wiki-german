@@ -9,6 +9,8 @@ import type { LLMProvider } from "../llm/provider.js";
 import { DEFAULT_CHAR_LIMIT } from "./defaults.js";
 import { buildExtractionPrompt } from "./prompts.js";
 import { parseExtraction, type ParsedExtraction } from "./parser.js";
+import { preprocessContent } from "./preprocess.js";
+import { sha256Hex } from "./content-hash.js";
 
 export interface ExtractFileInput {
   path: string;
@@ -41,6 +43,16 @@ export interface ExtractFileArgs {
   resolvedContent?: string;
   /** Resolved content hash if already computed by caller. */
   resolvedContentHash?: string;
+  /** Called with the raw LLM response when it cannot be parsed, so the
+   *  caller can include a diagnostic preview in the failure log. */
+  onParseError?: (raw: string) => void;
+}
+
+/** Truncate a diagnostic preview for error messages. */
+export function previewRawResponse(raw: string, max = 200): string {
+  const singleLine = raw.replace(/\s+/g, " ").trim();
+  if (singleLine.length <= max) return singleLine;
+  return singleLine.slice(0, max) + "…";
 }
 
 const ENTITY_TYPES: ReadonlySet<EntityType> = new Set<EntityType>([
@@ -173,10 +185,7 @@ export async function extractFile(
     (args.file.getContent ? await args.file.getContent() : "");
 
   const limit = args.charLimit ?? DEFAULT_CHAR_LIMIT;
-  const content =
-    rawContent.length > limit
-      ? rawContent.slice(0, limit) + "\n\n[... truncated ...]"
-      : rawContent;
+  const content = preprocessContent(rawContent, limit);
 
   const prompt = buildExtractionPrompt({
     vocabulary: args.vocabulary ?? exportVocabulary(args.kb),
@@ -195,7 +204,10 @@ export async function extractFile(
   }
 
   const parsed = parseExtraction(raw);
-  if (!parsed) return null;
+  if (!parsed) {
+    args.onParseError?.(raw);
+    return null;
+  }
 
   const generatedBy = args.model ? `${args.model}` : "llm-wiki-german/1.1.0c";
 

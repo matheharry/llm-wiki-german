@@ -127,5 +127,32 @@ describe("parseExtraction — robust JSON repair", () => {
   });
 });
 
+describe("parseExtraction — fenced-code fallback", () => {
+  it("parses fenced JSON correctly", () => {
+    const raw = `\`\`\`json\n{\n  "source_summary": "Dieses Dokument beschreibt einen Passwortgenerator.",\n  "entities": [{"name": "Passwortgenerator", "type": "tool"}],\n  "concepts": [],\n  "connections": []\n}\n\`\`\``;
+    const parsed = parseExtraction(raw);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.source_summary).toContain("Passwortgenerator");
+    expect(parsed!.entities).toHaveLength(1);
+    expect(parsed!.entities[0].name).toBe("Passwortgenerator");
+  });
+
+  it("returns null when a JSON object has no salvageable source_summary", () => {
+    // Invalid JSON (double closing brace) that falls through all repair
+    // stages, starts with `{`, but has no source_summary to salvage.
+    const raw = `{"entities": [{"name": "X"}], "foo": "bar"}}`;
+    const parsed = parseExtraction(raw);
+    expect(parsed).toBeNull();
+  });
+
+  it("strips fenced code markers from plain-text fallback", () => {
+    const raw = "```text\nDies ist eine Zusammenfassung des Dokuments.\n```";
+    const parsed = parseExtraction(raw);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.source_summary).toContain("Zusammenfassung");
+    expect(parsed!.source_summary).not.toContain("```");
+  });
+});
+
 
 

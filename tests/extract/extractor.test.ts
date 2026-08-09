@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { KnowledgeBase } from "../../src/core/kb.js";
-import { extractFile } from "../../src/extract/extractor.js";
+import { extractFile, previewRawResponse } from "../../src/extract/extractor.js";
 import { MockLLMProvider } from "../helpers/mock-llm-provider.js";
 
 const HAPPY_JSON = `{
@@ -94,6 +94,42 @@ describe("extractFile", () => {
     const prompt = provider.calls[0].prompt;
     expect(prompt).toContain("[... truncated ...]");
     expect(prompt.length).toBeLessThan(20_000);
+  });
+
+  it("calls onParseError with the raw response when parsing fails", async () => {
+    const kb = new KnowledgeBase();
+    const raw = "I'm sorry, I can't do that.";
+    const provider = new MockLLMProvider([raw]);
+    let captured: string | null = null;
+    const result = await extractFile({
+      provider,
+      kb,
+      file: {
+        path: "x.md",
+        content: "body",
+        mtime: 1,
+        contentHash: "h1",
+        origin: "user-note",
+      },
+      model: "gemma4:e4b-it-qat",
+      onParseError: (r) => {
+        captured = r;
+      },
+    });
+    expect(result).toBeNull();
+    expect(captured).toBe(raw);
+  });
+
+  it("previewRawResponse truncates long responses", () => {
+    const long = "a".repeat(500);
+    const preview = previewRawResponse(long);
+    expect(preview.length).toBeLessThan(500);
+    expect(preview.endsWith("…")).toBe(true);
+  });
+
+  it("previewRawResponse collapses whitespace", () => {
+    const preview = previewRawResponse("line1\n\n  line2\t\tline3");
+    expect(preview).toBe("line1 line2 line3");
   });
 
   it("propagates AbortError from the provider", async () => {
