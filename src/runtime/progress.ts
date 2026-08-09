@@ -21,7 +21,7 @@ export interface ProgressEventMap {
     total: number;
     reason: string;
   };
-  "file-skipped": { path: string; index: number; total: number };
+  "file-skipped": { path: string; index: number; total: number; reason: string };
   checkpoint: { processed: number; total: number };
   "batch-completed": {
     processed: number;

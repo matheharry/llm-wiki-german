@@ -4,7 +4,7 @@ import type { Concept, Entity } from "./types.js";
 const MIN_FACTS_PER_ENTITY = 1;
 const MIN_SOURCES_PER_ENTITY = 1;
 
-const ENTITY_BLACKLIST = new Set([
+export const ENTITY_BLACKLIST = new Set([
   "exact name",
   "exact-name",
   "unbekannt",
@@ -15,7 +15,7 @@ const ENTITY_BLACKLIST = new Set([
   "keine angabe",
   "n/a",
 ]);
-const CONCEPT_BLACKLIST = new Set([
+export const CONCEPT_BLACKLIST = new Set([
   "address book",
   "address-book",
   "unbekanntes konzept",

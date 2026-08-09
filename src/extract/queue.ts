@@ -121,14 +121,14 @@ export async function runExtraction(
         if (!kb.needsExtraction(file.path, file.mtime, file.contentHash)) {
           kb.backfillContentHash(file.path, file.contentHash, file.mtime);
           skipped++;
-          emitter.emit("file-skipped", { path: file.path, index, total });
+          emitter.emit("file-skipped", { path: file.path, index, total, reason: "Inhalt unverändert (Hash-Übereinstimmung)" });
           continue;
         }
       } else if (!kb.needsExtractionFast(file.path, file.mtime)) {
         const cachedHash = kb.data.sources[file.path]?.contentHash ?? "";
         kb.backfillContentHash(file.path, cachedHash, file.mtime);
         skipped++;
-        emitter.emit("file-skipped", { path: file.path, index, total });
+        emitter.emit("file-skipped", { path: file.path, index, total, reason: "Inhalt unverändert (mtime-Vorprüfung)" });
         continue;
       }
 
@@ -141,7 +141,7 @@ export async function runExtraction(
       if (!kb.needsExtraction(file.path, file.mtime, contentHash)) {
         kb.backfillContentHash(file.path, contentHash, file.mtime);
         skipped++;
-        emitter.emit("file-skipped", { path: file.path, index, total });
+        emitter.emit("file-skipped", { path: file.path, index, total, reason: "Inhalt unverändert (vollständige Hash-Prüfung)" });
         continue;
       }
 

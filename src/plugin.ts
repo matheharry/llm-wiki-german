@@ -2,6 +2,7 @@ import { getLanguage, Notice, Plugin, TFile } from "obsidian";
 import { KnowledgeBase } from "./core/kb.js";
 import { loadKB, saveKB } from "./vault/kb-store.js";
 import { walkVaultFiles, type WalkOptions } from "./vault/walker.js";
+import { isInAnyFolder } from "./vault/path-scope.js";
 import { openVocabularyModal } from "./ui/modal/vocabulary-modal.js";
 import { openLintModal } from "./ui/modal/lint-modal.js";
 import { WelcomeModal } from "./ui/modal/welcome-modal.js";
@@ -696,6 +697,44 @@ export default class LlmWikiPlugin extends Plugin {
         dailiesFromIso: defaultDailiesFromIso(),
       };
       const walked = await walkVaultFiles(this.app, walkOpts);
+
+      // Log files that were excluded by the walker so users can understand
+      // why certain vault files never appear in the wiki.
+      {
+        const walkedPaths = new Set(walked.map((w) => w.path));
+        const skipSet = new Set(
+          walkOpts.skipDirs.map((d) => d.toLowerCase()),
+        );
+        const allMd = this.app.vault.getMarkdownFiles();
+        const excluded: { path: string; reason: string }[] = [];
+
+        for (const f of allMd) {
+          if (walkedPaths.has(f.path)) continue;
+          const parts = f.path.split("/");
+          if (parts.some((p) => skipSet.has(p.toLowerCase()))) {
+            excluded.push({ path: f.path, reason: `Ordner ausgeschlossen (${parts.find((p) => skipSet.has(p.toLowerCase()))})` });
+          } else if (!isInAnyFolder(f.path, walkOpts.includeFolders ?? [])) {
+            const scope = walkOpts.includeFolders?.join(", ") ?? "(keine)";
+            excluded.push({ path: f.path, reason: `Außerhalb der konfigurierten Ordner [${scope}]` });
+          } else {
+            const size = f.stat?.size ?? 0;
+            if (size < walkOpts.minFileSize) {
+              excluded.push({ path: f.path, reason: `Datei zu klein (${size} < ${walkOpts.minFileSize} Zeichen)` });
+            }
+          }
+        }
+
+        if (excluded.length > 0) {
+          await appendWikiLog(
+            this.app,
+            `Walker | ${excluded.length} Datei(en) nicht indiziert`,
+          );
+          for (const e of excluded) {
+            await appendWikiLog(this.app, `Ausgeschlossen | ${e.path} – ${e.reason}`);
+          }
+        }
+      }
+
       if (walked.length === 0) {
         new Notice(
           "Es gibt nichts zu extrahieren (alle Dateien wurden nach Ordnern, auszuschließenden Verzeichnissen, Mindestgröße oder Tagesgrenzen gefiltert).",
@@ -722,6 +761,19 @@ export default class LlmWikiPlugin extends Plugin {
         this.kbMtime = reloaded.mtime;
       };
 
+      // Collect skip/fail details for per-file logging.
+      const skippedLog: { path: string; reason: string }[] = [];
+      const failedLog: { path: string; reason: string }[] = [];
+
+      const onSkipped = (d: { path: string; reason: string }): void => {
+        skippedLog.push({ path: d.path, reason: d.reason });
+      };
+      const onFailed = (d: { path: string; reason: string }): void => {
+        failedLog.push({ path: d.path, reason: d.reason });
+      };
+      this.progress.on("file-skipped", onSkipped);
+      this.progress.on("file-failed", onFailed);
+
       const stats = await runExtraction({
         provider: this.provider,
         kb: this.kb,
@@ -736,13 +788,33 @@ export default class LlmWikiPlugin extends Plugin {
         concurrency: this.settings.extractionConcurrency ?? 3,
       });
 
+      this.progress.off("file-skipped", onSkipped);
+      this.progress.off("file-failed", onFailed);
+
       this.settings.lastExtractionRunIso = new Date().toISOString();
       await this.saveSettings();
       await appendWikiLog(this.app, `Ingest | Batch-Extraktion durchgeführt: ${stats.succeeded} erfolgreich, ${stats.failed} fehlgeschlagen, ${stats.skipped} übersprungen`);
+
+      // Log individual skipped files (debug-level, reason always included)
+      for (const s of skippedLog) {
+        await appendWikiLog(this.app, `Übersprungen | ${s.path} – ${s.reason}`);
+      }
+      // Log individual failed files with reason
+      for (const f of failedLog) {
+        await appendWikiLog(this.app, `Fehlgeschlagen | ${f.path} – ${f.reason}`);
+      }
+
       new Notice(
         `LLM Wiki: ${stats.succeeded} extracted, ${stats.failed} failed, ${stats.skipped} skipped (${Math.round(stats.elapsedMs / 1000)}s).`,
       );
-      await generatePages(this.app, this.kb);
+      const genResult = await generatePages(this.app, this.kb);
+      // Log items excluded by the quality filter
+      for (const f of genResult.filtered) {
+        await appendWikiLog(
+          this.app,
+          `Qualitätsfilter | ${f.kind === "entity" ? "Entität" : "Konzept"} "${f.name}" (${f.id}) nicht generiert – ${f.reason}`,
+        );
+      }
     } catch (e) {
       this.progress.emit("batch-errored", {
         message: (e as Error).message ?? "Unknown error",
