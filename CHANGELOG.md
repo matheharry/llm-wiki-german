@@ -4,6 +4,16 @@ All notable changes to LLM Wiki are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.1] — 2026-08-09
+
+### Added
+- **Chunking for long files**: files longer than the extraction character
+  limit are now split into multiple chunks and extracted separately instead
+  of being truncated. This preserves information from the whole document.
+  New settings: "Chunking aktivieren", "Maximale Chunks pro Datei", and
+  "Chunk-Überlappung (Zeichen)". Chunking is on by default; disable it to
+  restore the legacy truncate-at-limit behaviour.
+
 ## [1.0.1] — 2026-04-11
 
 ### Added

@@ -93,6 +93,13 @@ interface LlmWikiSettings {
   /** Output language used when extracting summaries, facts, and definitions. */
   extractionOutputLanguage: ExtractionLanguageSetting;
   extractionCharLimit: number;
+  /** When enabled, files longer than `extractionCharLimit` are split into
+   *  chunks and each chunk is extracted separately instead of truncating. */
+  extractionChunkingEnabled: boolean;
+  /** Hard cap on the number of chunks per file. */
+  extractionMaxChunks: number;
+  /** Overlap characters repeated at the start of each chunk (except the first). */
+  extractionChunkOverlapChars: number;
   lastExtractionRunIso: string | null;
   queryFolders: string[];
   nightlyExtractionEnabled: boolean;
@@ -124,6 +131,9 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   cloudModel: "",
   extractionOutputLanguage: "app",
   extractionCharLimit: 8_000,
+  extractionChunkingEnabled: true,
+  extractionMaxChunks: 20,
+  extractionChunkOverlapChars: 300,
   lastExtractionRunIso: null,
   queryFolders: [],
   nightlyExtractionEnabled: false,
@@ -747,6 +757,9 @@ export default class LlmWikiPlugin extends Plugin {
         emitter: this.progress,
         checkpointEvery: 5,
         charLimit: this.settings.extractionCharLimit,
+        chunkingEnabled: this.settings.extractionChunkingEnabled,
+        maxChunks: this.settings.extractionMaxChunks,
+        chunkOverlapChars: this.settings.extractionChunkOverlapChars,
         signal: this.abortController.signal,
         concurrency: this.settings.extractionConcurrency ?? 1,
       });
@@ -907,6 +920,9 @@ export default class LlmWikiPlugin extends Plugin {
         outputLanguage: this.extractionOutputLanguage,
         signal: this.abortController.signal,
         charLimit: this.settings.extractionCharLimit,
+        chunkingEnabled: this.settings.extractionChunkingEnabled,
+        maxChunks: this.settings.extractionMaxChunks,
+        chunkOverlapChars: this.settings.extractionChunkOverlapChars,
       });
       await saveKB(this.app, this.kb, this.kbMtime);
       const reloaded = await loadKB(this.app);

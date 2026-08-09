@@ -25,6 +25,14 @@ export interface RunExtractionArgs {
   checkpointEvery?: number;
   /** Truncate file content at this many characters before prompting. */
   charLimit?: number;
+  /** When enabled, files longer than `charLimit` are split into chunks and
+   *  each chunk is extracted separately. Defaults to true. */
+  chunkingEnabled?: boolean;
+  /** Max number of chunks per file. Defaults to DEFAULT_MAX_CHUNKS. */
+  maxChunks?: number;
+  /** Overlap characters repeated at the start of each chunk (except the
+   *  first). Defaults to DEFAULT_CHUNK_OVERLAP_CHARS. */
+  chunkOverlapChars?: number;
   /** Language to request for extracted summaries/facts/definitions. */
   outputLanguage?: string;
   /** Cancellation signal. If it fires, the queue exits cleanly at the next
@@ -159,6 +167,9 @@ export async function runExtraction(
           outputLanguage: args.outputLanguage,
           signal: args.signal,
           charLimit,
+          chunkingEnabled: args.chunkingEnabled,
+          maxChunks: args.maxChunks,
+          chunkOverlapChars: args.chunkOverlapChars,
           vocabulary: frozenVocabulary,
           resolvedContent: content,
           resolvedContentHash: contentHash,

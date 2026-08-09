@@ -7,9 +7,17 @@ import type {
 import { exportVocabulary } from "../core/vocabulary.js";
 import type { LLMProvider } from "../llm/provider.js";
 import { DEFAULT_CHAR_LIMIT } from "./defaults.js";
+import { splitIntoChunks, type Chunk } from "./chunker.js";
 import { buildExtractionPrompt } from "./prompts.js";
-import { parseExtraction, type ParsedExtraction } from "./parser.js";
-import { preprocessContent } from "./preprocess.js";
+import {
+  parseExtraction,
+  type ParsedExtraction,
+} from "./parser.js";
+import {
+  stripBase64Images,
+  condenseCodeBlocks,
+  truncateAtBoundary,
+} from "./preprocess.js";
 import { sha256Hex } from "./content-hash.js";
 
 export interface ExtractFileInput {
@@ -46,6 +54,18 @@ export interface ExtractFileArgs {
   /** Called with the raw LLM response when it cannot be parsed, so the
    *  caller can include a diagnostic preview in the failure log. */
   onParseError?: (raw: string) => void;
+  /**
+   * When enabled (default), files longer than `charLimit` are split into
+   * chunks and each chunk is extracted separately. This preserves
+   * information from the whole document instead of truncating the tail.
+   * Disable to keep the legacy truncate-at-limit behaviour.
+   */
+  chunkingEnabled?: boolean;
+  /** Max number of chunks per file. Defaults to DEFAULT_MAX_CHUNKS. */
+  maxChunks?: number;
+  /** Overlap characters repeated at the start of each chunk (except the
+   *  first). Defaults to DEFAULT_CHUNK_OVERLAP_CHARS. */
+  chunkOverlapChars?: number;
 }
 
 /** Truncate a diagnostic preview for error messages. */
@@ -170,11 +190,69 @@ function normalizeConnectionType(raw: string | undefined): ConnectionType {
   );
 }
 
+/** Mutate the KB from a single parsed extraction. */
+function mergeParsedIntoKb(
+  parsed: ParsedExtraction,
+  kb: KnowledgeBase,
+  sourcePath: string,
+  generatedBy: string,
+): void {
+  for (const ent of parsed.entities) {
+    const name = (ent.name ?? "").trim();
+    if (!name) continue;
+    const type = normalizeEntityType(ent.type);
+    kb.addEntity({
+      name,
+      type,
+      aliases: ent.aliases ?? [],
+      facts: ent.facts ?? [],
+      shortDescription: ent.short_description,
+      generatedBy,
+      source: sourcePath,
+    });
+  }
+
+  for (const con of parsed.concepts) {
+    const name = (con.name ?? "").trim();
+    if (!name) continue;
+    kb.addConcept({
+      name,
+      definition: String(con.definition ?? "").trim(),
+      shortDescription: con.short_description,
+      generatedBy,
+      related: con.related ?? [],
+      source: sourcePath,
+    });
+  }
+
+  for (const conn of parsed.connections) {
+    const from = (conn.from ?? "").trim();
+    const to = (conn.to ?? "").trim();
+    if (!from || !to) continue;
+    const type = normalizeConnectionType(conn.type);
+    kb.addConnection({
+      from,
+      to,
+      type,
+      description: conn.description ?? "",
+      source: sourcePath,
+    });
+  }
+}
+
 /**
  * Extract structured knowledge from a single file and merge into the KB.
- * Returns the parsed extraction on success, or null if the LLM response
- * could not be parsed (in which case the KB is untouched and the source
- * is NOT marked as processed — a later retry will re-attempt the file).
+ *
+ * When the file is longer than `charLimit` and chunking is enabled (default),
+ * the content is split into manageable chunks and each chunk is extracted
+ * separately. Parsed entities/concepts/connections from all chunks are merged
+ * into the KB (deduplication happens via the KB's slug-based merge logic).
+ * A failed chunk does not abort the file — successful chunks are still kept.
+ * The source record is marked only once, after all chunks have been tried.
+ *
+ * Returns the first parsed extraction on success, or null if no chunk
+ * produced a parseable response (the KB is untouched and the source is
+ * NOT marked as processed — a later retry will re-attempt the file).
  */
 export async function extractFile(
   args: ExtractFileArgs,
@@ -185,72 +263,62 @@ export async function extractFile(
     (args.file.getContent ? await args.file.getContent() : "");
 
   const limit = args.charLimit ?? DEFAULT_CHAR_LIMIT;
-  const content = preprocessContent(rawContent, limit);
-
-  const prompt = buildExtractionPrompt({
-    vocabulary: args.vocabulary ?? exportVocabulary(args.kb),
-    sourcePath: args.file.path,
-    content,
-    outputLanguage: args.outputLanguage ?? "English",
-  });
-
-  let raw = "";
-  for await (const chunk of args.provider.complete({
-    prompt,
-    model: args.model,
-    signal: args.signal,
-  })) {
-    raw += chunk;
-  }
-
-  const parsed = parseExtraction(raw);
-  if (!parsed) {
-    args.onParseError?.(raw);
-    return null;
-  }
-
+  const chunkingEnabled = args.chunkingEnabled !== false;
+  const vocabulary = args.vocabulary ?? exportVocabulary(args.kb);
   const generatedBy = args.model ? `${args.model}` : "llm-wiki-german/1.1.0c";
 
-  for (const ent of parsed.entities) {
-    const name = (ent.name ?? "").trim();
-    if (!name) continue;
-    const type = normalizeEntityType(ent.type);
-    args.kb.addEntity({
-      name,
-      type,
-      aliases: ent.aliases ?? [],
-      facts: ent.facts ?? [],
-      shortDescription: ent.short_description,
-      generatedBy,
-      source: args.file.path,
+  // Clean base64 blobs and condense long code blocks *before* chunking so the
+  // chunks contain only meaningful text. Truncation happens only when chunking
+  // is disabled (legacy behaviour).
+  const cleaned = stripBase64Images(rawContent);
+  const condensed = condenseCodeBlocks(cleaned);
+  const content =
+    chunkingEnabled ? condensed : truncateAtBoundary(condensed, limit);
+
+  // Determine the chunks to process. A single chunk is used when the content
+  // fits within the limit or chunking is disabled.
+  const chunks: Chunk[] =
+    chunkingEnabled && content.length > limit
+      ? splitIntoChunks(content, {
+          chunkSize: limit,
+          overlapChars: args.chunkOverlapChars,
+          maxChunks: args.maxChunks,
+        })
+      : [{ index: 1, text: content, startOffset: 0 }];
+
+  let firstParsed: ParsedExtraction | null = null;
+  let anySuccess = false;
+
+  for (const chunk of chunks) {
+    const prompt = buildExtractionPrompt({
+      vocabulary,
+      sourcePath: args.file.path,
+      content: chunk.text,
+      outputLanguage: args.outputLanguage ?? "English",
     });
+
+    let raw = "";
+    for await (const piece of args.provider.complete({
+      prompt,
+      model: args.model,
+      signal: args.signal,
+    })) {
+      raw += piece;
+    }
+
+    const parsed = parseExtraction(raw);
+    if (!parsed) {
+      args.onParseError?.(raw);
+      continue; // skip this chunk; keep successful ones
+    }
+
+    if (!firstParsed) firstParsed = parsed;
+    mergeParsedIntoKb(parsed, args.kb, args.file.path, generatedBy);
+    anySuccess = true;
   }
 
-  for (const con of parsed.concepts) {
-    const name = (con.name ?? "").trim();
-    if (!name) continue;
-    args.kb.addConcept({
-      name,
-      definition: String(con.definition ?? "").trim(),
-      shortDescription: con.short_description,
-      generatedBy,
-      related: con.related ?? [],
-      source: args.file.path,
-    });
-  }
-
-  for (const conn of parsed.connections) {
-    const from = (conn.from ?? "").trim();
-    const to = (conn.to ?? "").trim();
-    if (!from || !to) continue;
-    const type = normalizeConnectionType(conn.type);
-    args.kb.addConnection({
-      from,
-      to,
-      type,
-      description: conn.description ?? "",
-      source: args.file.path,
-    });
+  if (!anySuccess || !firstParsed) {
+    return null; // no usable extraction from any chunk
   }
 
   const finalHash =
@@ -260,13 +328,13 @@ export async function extractFile(
 
   args.kb.markSource({
     path: args.file.path,
-    summary: parsed.source_summary,
-    shortDescription: parsed.source_summary_short,
+    summary: firstParsed.source_summary,
+    shortDescription: firstParsed.source_summary_short,
     generatedBy,
     mtime: args.file.mtime,
     contentHash: finalHash,
     origin: args.file.origin,
   });
 
-  return parsed;
+  return firstParsed;
 }

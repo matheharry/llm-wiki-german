@@ -6,6 +6,15 @@
 
 export const DEFAULT_CHAR_LIMIT = 12_000;
 
+/** Default extra characters repeated at the start of each chunk so context
+ *  from the previous chunk isn't lost (continuity for the LLM). */
+export const DEFAULT_CHUNK_OVERLAP_CHARS = 300;
+
+/** Hard cap on the number of chunks per file. Prevents runaway cost for
+ *  very large notes, especially with pay-per-call cloud providers. When
+ *  exceeded, remaining content is appended compactly to the last chunk. */
+export const DEFAULT_MAX_CHUNKS = 20;
+
 /** Minimum file size (in characters) before a file is considered
  *  worth extracting. Below this, the file is skipped. */
 export const DEFAULT_MIN_FILE_SIZE = 100;

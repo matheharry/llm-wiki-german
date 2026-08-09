@@ -199,9 +199,9 @@ export function renderIndexingSection(
     );
 
   new Setting(containerEl)
-    .setName("Zeichenlimit pro Notiz")
+    .setName("Zeichenlimit pro Chunk")
     .setDesc(
-      "Maximale Zeichen pro Notiz, die an das LLM gesendet werden (Standard: 8000). Niedrigere Werte beschleunigen die Extraktion, höhere erfassen längere Notizen.",
+      "Maximale Zeichen pro Chunk, die an das LLM gesendet werden (Standard: 8000). Niedrigere Werte beschleunigen die Extraktion, höhere erfassen längere Abschnitte.",
     )
     .addText((text) =>
       text
@@ -214,6 +214,57 @@ export function renderIndexingSection(
           await plugin.saveSettings();
         }),
     );
+
+  new Setting(containerEl)
+    .setName("Chunking aktivieren")
+    .setDesc(
+      "Wenn aktiviert, werden lange Notizen in mehrere Abschnitte (Chunks) aufgeteilt und einzeln extrahiert, statt abgeschnitten. Deaktivieren für das alte Verhalten (Abschneiden am Limit).",
+    )
+    .addToggle((toggle) =>
+      toggle
+        .setValue(plugin.settings.extractionChunkingEnabled)
+        .onChange(async (value) => {
+          plugin.settings.extractionChunkingEnabled = value;
+          await plugin.saveSettings();
+          handlers.rerender();
+        }),
+    );
+
+  if (plugin.settings.extractionChunkingEnabled) {
+    new Setting(containerEl)
+      .setName("Maximale Chunks pro Datei")
+      .setDesc(
+        "Höchstzahl der Chunks, in die eine Datei aufgeteilt wird (Standard: 20). Schützt vor zu vielen API-Aufrufen bei Cloud-Anbietern.",
+      )
+      .addText((text) =>
+        text
+          .setPlaceholder("20")
+          .setValue(String(plugin.settings.extractionMaxChunks ?? 20))
+          .onChange(async (value) => {
+            const parsed = Number.parseInt(value, 10);
+            plugin.settings.extractionMaxChunks =
+              Number.isFinite(parsed) && parsed >= 1 ? parsed : 20;
+            await plugin.saveSettings();
+          }),
+      );
+
+    new Setting(containerEl)
+      .setName("Chunk-Überlappung (Zeichen)")
+      .setDesc(
+        "Zeichenanzahl, die am Anfang jedes Chunks wiederholt wird, um Kontextverluste zwischen Chunks zu vermeiden (Standard: 300).",
+      )
+      .addText((text) =>
+        text
+          .setPlaceholder("300")
+          .setValue(String(plugin.settings.extractionChunkOverlapChars ?? 300))
+          .onChange(async (value) => {
+            const parsed = Number.parseInt(value, 10);
+            plugin.settings.extractionChunkOverlapChars =
+              Number.isFinite(parsed) && parsed >= 0 ? parsed : 300;
+            await plugin.saveSettings();
+          }),
+      );
+  }
 
   // ── Daily refresh ─────────────────────────────────────────────────
   new Setting(containerEl)

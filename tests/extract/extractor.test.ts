@@ -75,7 +75,7 @@ describe("extractFile", () => {
     expect(kb.isProcessed("x.md")).toBe(false);
   });
 
-  it("truncates content longer than DEFAULT_CHAR_LIMIT before prompting", async () => {
+  it("truncates content longer than DEFAULT_CHAR_LIMIT when chunking disabled", async () => {
     const kb = new KnowledgeBase();
     const provider = new MockLLMProvider([HAPPY_JSON]);
     const huge = "x".repeat(20_000);
@@ -90,6 +90,7 @@ describe("extractFile", () => {
         origin: "user-note",
       },
       model: "gemma4:e4b-it-qat",
+      chunkingEnabled: false,
     });
     const prompt = provider.calls[0].prompt;
     expect(prompt).toContain("[... truncated ...]");
@@ -152,5 +153,116 @@ describe("extractFile", () => {
         signal: controller.signal,
       }),
     ).rejects.toMatchObject({ name: "LLMAbortError" });
+  });
+
+  it("chunks long content and merges results from multiple LLM calls", async () => {
+    const kb = new KnowledgeBase();
+    const chunk1 = `{
+      "source_summary": "Erster Teil.",
+      "entities": [{"name": "Alan Watts", "type": "person", "facts": ["wrote books"]}],
+      "concepts": [], "connections": []
+    }`;
+    const chunk2 = `{
+      "source_summary": "Zweiter Teil.",
+      "entities": [{"name": "Alan Watts", "type": "person", "facts": ["gave lectures"]}],
+      "concepts": [{"name": "Zen", "definition": "School of Mahayana."}], "connections": []
+    }`;
+    const provider = new MockLLMProvider([chunk1, chunk2]);
+
+    // Long content split into 2 chunks at 1000 chars, overlap 0.
+    const base = "Abc def ghi. ".repeat(60); // ~780 chars
+    const content = base + "\n\n" + base;
+
+    const result = await extractFile({
+      provider,
+      kb,
+      file: {
+        path: "long.md",
+        content,
+        mtime: 5,
+        contentHash: "long-hash",
+        origin: "user-note",
+      },
+      model: "gemma4:e4b-it-qat",
+      charLimit: 1000,
+      chunkingEnabled: true,
+      maxChunks: 20,
+      chunkOverlapChars: 0,
+    });
+
+    expect(result).not.toBeNull();
+    // Two LLM calls were made.
+    expect(provider.calls).toHaveLength(2);
+    // The duplicate entity was merged into one entry with both facts.
+    const alan = kb.getEntity("Alan Watts");
+    expect(alan).toBeDefined();
+    expect(alan!.facts).toContain("wrote books");
+    expect(alan!.facts).toContain("gave lectures");
+    // Concepts from the second chunk are present.
+    expect(kb.getConcept("Zen")).toBeDefined();
+    // Source marked exactly once.
+    expect(kb.data.sources["long.md"]).toBeDefined();
+    expect(kb.isProcessed("long.md")).toBe(true);
+  });
+
+  it("keeps successful chunks when one chunk fails to parse", async () => {
+    const kb = new KnowledgeBase();
+    const good = `{
+      "source_summary": "Guter Teil.",
+      "entities": [{"name": "Alan Watts", "type": "person", "facts": ["wrote"]}],
+      "concepts": [], "connections": []
+    }`;
+    const bad = "I'm sorry, I can't do that.";
+    const provider = new MockLLMProvider([good, bad]);
+
+    const base = "Abc def ghi. ".repeat(60);
+    const content = base + "\n\n" + base;
+
+    const result = await extractFile({
+      provider,
+      kb,
+      file: {
+        path: "partial.md",
+        content,
+        mtime: 6,
+        contentHash: "partial-hash",
+        origin: "user-note",
+      },
+      model: "gemma4:e4b-it-qat",
+      charLimit: 1000,
+      chunkingEnabled: true,
+      maxChunks: 20,
+      chunkOverlapChars: 0,
+    });
+
+    // Result is non-null because at least one chunk succeeded.
+    expect(result).not.toBeNull();
+    expect(kb.getEntity("Alan Watts")).toBeDefined();
+    expect(kb.isProcessed("partial.md")).toBe(true);
+  });
+
+  it("uses single LLM call when chunking disabled and content exceeds limit (legacy truncate)", async () => {
+    const kb = new KnowledgeBase();
+    const provider = new MockLLMProvider([HAPPY_JSON]);
+    const huge = "x".repeat(20_000);
+    await extractFile({
+      provider,
+      kb,
+      file: {
+        path: "legacy.md",
+        content: huge,
+        mtime: 7,
+        contentHash: "legacy-hash",
+        origin: "user-note",
+      },
+      model: "gemma4:e4b-it-qat",
+      charLimit: 1000,
+      chunkingEnabled: false,
+    });
+    const prompt = provider.calls[0].prompt;
+    expect(prompt).toContain("[... truncated ...]");
+    expect(prompt.length).toBeLessThan(20_000);
+    // Only one call was made.
+    expect(provider.calls).toHaveLength(1);
   });
 });
