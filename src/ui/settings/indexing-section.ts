@@ -198,6 +198,23 @@ export function renderIndexingSection(
         }),
     );
 
+  new Setting(containerEl)
+    .setName("Zeichenlimit pro Notiz")
+    .setDesc(
+      "Maximale Zeichen pro Notiz, die an das LLM gesendet werden (Standard: 8000). Niedrigere Werte beschleunigen die Extraktion, höhere erfassen längere Notizen.",
+    )
+    .addText((text) =>
+      text
+        .setPlaceholder("8000")
+        .setValue(String(plugin.settings.extractionCharLimit ?? 8_000))
+        .onChange(async (value) => {
+          const parsed = Number.parseInt(value, 10);
+          plugin.settings.extractionCharLimit =
+            Number.isFinite(parsed) && parsed > 0 ? parsed : 8_000;
+          await plugin.saveSettings();
+        }),
+    );
+
   // ── Daily refresh ─────────────────────────────────────────────────
   new Setting(containerEl)
     .setName("Tägliche Aktualisierung")

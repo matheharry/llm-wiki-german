@@ -23,6 +23,7 @@ REGELN:
 6. Verbindungen haben einen Typ: influences, uses, critiques, extends, part-of, created-by, related-to, applies-to, contrasts-with.
 7. Der in Klammern angegebene Pfad/Dateiname bei DOKUMENT dient nur als Kontext. Erstelle KEINE Entitäten oder Konzepte, die lediglich der Dateiname, Ordnerpfad oder Notiztitel sind (z.B. Dateiendungen wie .md, Pfade wie Notizen/... oder Dateinamen). Extrahiere nur echte eigenständige Personen, Organisationen, Werkzeuge, Projekte, Bücher, Ereignisse oder Fachkonzepte aus dem Textinhalt.
 8. Auch wenn das Dokument hauptsächlich aus Quellcode, HTML, CSS oder Skripten besteht, antworte IMMER exakt im geforderten JSON-Format. Fasse in "source_summary" zusammen, welche Funktion der Code hat.
+9. Fasse Synonyme nicht zusammen, sondern extrahiere sie als separate Entitäten oder Konzepte, wenn sie im Dokument vorkommen.
 
 AKTUELLES VOKABULAR:
 {vocabulary}

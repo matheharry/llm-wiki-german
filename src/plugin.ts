@@ -123,7 +123,7 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   llamaCppNumCtx: 8192,
   cloudModel: "",
   extractionOutputLanguage: "app",
-  extractionCharLimit: 12_000,
+  extractionCharLimit: 8_000,
   lastExtractionRunIso: null,
   queryFolders: [],
   nightlyExtractionEnabled: false,
@@ -281,33 +281,34 @@ export default class LlmWikiPlugin extends Plugin {
     this.addCommand({
       id: "mark-page-verified",
       name: "Aktive Seite als menschlich verifiziert markieren (OKF)",
-      editorCallback: async (_editor, ctx) => {
-        const file = ctx.file;
-        if (!file || file.extension !== "md") {
-          new Notice("Kein aktives Markdown-Dokument geöffnet.");
-          return;
-        }
-        const username =
-          // @ts-ignore – Obsidian exposes account.name at runtime
-          (this.app as unknown as { account?: { name?: string } }).account?.name?.trim() ||
-          "user";
-        const verifiedEntry = `human:${username}`;
-        const nowIso = new Date().toISOString();
+      checkCallback: (checking) => {
+        const file = this.app.workspace.getActiveFile();
+        if (!file || file.extension !== "md") return false;
+        if (checking) return true;
+        void (async () => {
+          const username =
+            // @ts-ignore – Obsidian exposes account.name at runtime
+            (this.app as unknown as { account?: { name?: string } }).account?.name?.trim() ||
+            "user";
+          const verifiedEntry = `human:${username}`;
+          const nowIso = new Date().toISOString();
 
-        await this.app.fileManager.processFrontMatter(file, (fm) => {
-          if (!Array.isArray(fm["verified"])) fm["verified"] = [];
-          // avoid duplicate actor entries
-          const existing: { by: string; at: string }[] = fm["verified"];
-          const idx = existing.findIndex((v) => v.by === verifiedEntry);
-          if (idx !== -1) {
-            existing[idx] = { by: verifiedEntry, at: nowIso };
-          } else {
-            existing.push({ by: verifiedEntry, at: nowIso });
-          }
-          fm["verified"] = existing;
-        });
+          await this.app.fileManager.processFrontMatter(file, (fm) => {
+            if (!Array.isArray(fm["verified"])) fm["verified"] = [];
+            // avoid duplicate actor entries
+            const existing: { by: string; at: string }[] = fm["verified"];
+            const idx = existing.findIndex((v) => v.by === verifiedEntry);
+            if (idx !== -1) {
+              existing[idx] = { by: verifiedEntry, at: nowIso };
+            } else {
+              existing.push({ by: verifiedEntry, at: nowIso });
+            }
+            fm["verified"] = existing;
+          });
 
-        new Notice(`✅ Seite als verifiziert markiert (${verifiedEntry})`);
+          new Notice(`✅ Seite als verifiziert markiert (${verifiedEntry})`);
+        })();
+        return true;
       },
     });
 
