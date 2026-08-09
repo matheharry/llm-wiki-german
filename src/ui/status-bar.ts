@@ -72,6 +72,14 @@ export class StatusBarWidget {
     emitter.on("batch-errored", (d) => {
       this.render({ state: "error", message: d.message });
     });
+
+    emitter.on("dedup-started", (d) => {
+      this.render({ state: "deduplicating", done: 0, total: d.total });
+    });
+
+    emitter.on("dedup-progress", (d) => {
+      this.render({ state: "deduplicating", done: d.done, total: d.total });
+    });
   }
 
   private render(state: StatusBarState): void {

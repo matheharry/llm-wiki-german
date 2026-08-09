@@ -213,6 +213,7 @@ export async function runExtraction(
   // Only runs when the batch completed normally (no abort / no batch error).
   // ---------------------------------------------------------------------------
   if (!isStopped() && pendingDedup.size > 0) {
+    emitter.emit("dedup-started", { total: pendingDedup.size });
     await runBatchDeduplication({
       entityNames: pendingDedup,
       kb,
@@ -220,6 +221,7 @@ export async function runExtraction(
       model,
       signal: args.signal,
       concurrency,
+      emitter,
     });
   }
 
@@ -271,6 +273,7 @@ interface BatchDedupArgs {
   model: string;
   signal?: AbortSignal;
   concurrency: number;
+  emitter: ProgressEmitter;
 }
 
 /**
@@ -300,9 +303,11 @@ async function runBatchDeduplication(args: BatchDedupArgs): Promise<void> {
   if (needsDedup.length === 0) return;
 
   let idx = 0;
+  let done = 0;
+  const total = needsDedup.length;
 
   async function dedupWorker(): Promise<void> {
-    while (idx < needsDedup.length) {
+    while (idx < total) {
       if (args.signal?.aborted) break;
       // Synchronously claim the next entity (no race in JS).
       const name = needsDedup[idx++];
@@ -322,9 +327,11 @@ async function runBatchDeduplication(args: BatchDedupArgs): Promise<void> {
       } catch {
         // Non-fatal: keep original facts on error.
       }
+      done++;
+      args.emitter.emit("dedup-progress", { done, total });
     }
   }
 
-  const workerCount = Math.min(args.concurrency, needsDedup.length);
+  const workerCount = Math.min(args.concurrency, total);
   await Promise.all(Array.from({ length: workerCount }, () => dedupWorker()));
 }

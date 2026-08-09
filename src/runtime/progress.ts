@@ -33,6 +33,8 @@ export interface ProgressEventMap {
   };
   "batch-cancelled": { processed: number; total: number };
   "batch-errored": { message: string };
+  "dedup-started": { total: number };
+  "dedup-progress": { done: number; total: number };
 }
 
 export type ProgressEventName = keyof ProgressEventMap;

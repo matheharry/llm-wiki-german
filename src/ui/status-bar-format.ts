@@ -30,6 +30,11 @@ export type StatusBarState =
       total: number;
       elapsedMs: number;
     }
+  | {
+      state: "deduplicating";
+      done: number;
+      total: number;
+    }
   | { state: "error"; message: string };
 
 export function formatIndexingLabel(state: StatusBarState): string {
@@ -40,6 +45,8 @@ export function formatIndexingLabel(state: StatusBarState): string {
       const eta = formatEta(state.elapsedMs, state.processed, state.total);
       return `Indizierung ${state.processed}/${state.total} · ${eta}`;
     }
+    case "deduplicating":
+      return `Deduplizierung ${state.done}/${state.total}`;
     case "error":
       return `⚠ ${state.message}`;
   }
