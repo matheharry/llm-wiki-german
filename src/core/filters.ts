@@ -38,9 +38,17 @@ export const CONCEPT_BLACKLIST = new Set([
   "informationen",
 ]);
 
+export function isFileNameOrPathLike(name: string): boolean {
+  const trimmed = name.trim();
+  if (trimmed.includes("/") || trimmed.includes("\\")) return true;
+  if (/\.(md|txt|pdf|png|jpg|jpeg|gif|svg|json|csv|docx|xlsx|html|htm|py|js|ts)$/i.test(trimmed)) return true;
+  return false;
+}
+
 export function isQualityEntity(e: Entity): boolean {
   const lower = e.name.trim().toLowerCase();
   if (ENTITY_BLACKLIST.has(lower)) return false;
+  if (isFileNameOrPathLike(e.name)) return false;
   if (e.facts.length === 0 && e.aliases.length === 0) return false;
   if (e.facts.length < MIN_FACTS_PER_ENTITY) return false;
   if (e.sources.length < MIN_SOURCES_PER_ENTITY) return false;
@@ -50,6 +58,8 @@ export function isQualityEntity(e: Entity): boolean {
 export function isQualityConcept(c: Concept): boolean {
   const lower = c.name.trim().toLowerCase();
   if (CONCEPT_BLACKLIST.has(lower)) return false;
+  if (isFileNameOrPathLike(c.name)) return false;
   if (!c.definition || typeof c.definition !== "string" || c.definition.trim().length === 0) return false;
   return true;
 }
+

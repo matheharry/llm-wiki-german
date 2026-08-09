@@ -2,7 +2,6 @@ import { getLanguage, Notice, Plugin, TFile } from "obsidian";
 import { KnowledgeBase } from "./core/kb.js";
 import { loadKB, saveKB } from "./vault/kb-store.js";
 import { walkVaultFiles, type WalkOptions } from "./vault/walker.js";
-import { isInAnyFolder } from "./vault/path-scope.js";
 import { openVocabularyModal } from "./ui/modal/vocabulary-modal.js";
 import { openLintModal } from "./ui/modal/lint-modal.js";
 import { WelcomeModal } from "./ui/modal/welcome-modal.js";
@@ -697,43 +696,6 @@ export default class LlmWikiPlugin extends Plugin {
         dailiesFromIso: defaultDailiesFromIso(),
       };
       const walked = await walkVaultFiles(this.app, walkOpts);
-
-      // Log files that were excluded by the walker so users can understand
-      // why certain vault files never appear in the wiki.
-      {
-        const walkedPaths = new Set(walked.map((w) => w.path));
-        const skipSet = new Set(
-          walkOpts.skipDirs.map((d) => d.toLowerCase()),
-        );
-        const allMd = this.app.vault.getMarkdownFiles();
-        const excluded: { path: string; reason: string }[] = [];
-
-        for (const f of allMd) {
-          if (walkedPaths.has(f.path)) continue;
-          const parts = f.path.split("/");
-          if (parts.some((p) => skipSet.has(p.toLowerCase()))) {
-            excluded.push({ path: f.path, reason: `Ordner ausgeschlossen (${parts.find((p) => skipSet.has(p.toLowerCase()))})` });
-          } else if (!isInAnyFolder(f.path, walkOpts.includeFolders ?? [])) {
-            const scope = walkOpts.includeFolders?.join(", ") ?? "(keine)";
-            excluded.push({ path: f.path, reason: `Außerhalb der konfigurierten Ordner [${scope}]` });
-          } else {
-            const size = f.stat?.size ?? 0;
-            if (size < walkOpts.minFileSize) {
-              excluded.push({ path: f.path, reason: `Datei zu klein (${size} < ${walkOpts.minFileSize} Zeichen)` });
-            }
-          }
-        }
-
-        if (excluded.length > 0) {
-          await appendWikiLog(
-            this.app,
-            `Walker | ${excluded.length} Datei(en) nicht indiziert`,
-          );
-          for (const e of excluded) {
-            await appendWikiLog(this.app, `Ausgeschlossen | ${e.path} – ${e.reason}`);
-          }
-        }
-      }
 
       if (walked.length === 0) {
         new Notice(

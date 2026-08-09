@@ -69,3 +69,8 @@ docs/superpowers/
 .env.development
 .env.production
 .env.test
+
+# ============================================================
+# Sampledata
+# ============================================================
+Beispieldateien

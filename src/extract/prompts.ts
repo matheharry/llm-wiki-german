@@ -21,6 +21,7 @@ REGELN:
 4. Die gesamte Ausgabe muss in {output_language} erfolgen, unabhängig von der Sprache des Quelltexts.
 5. Jede Entität benötigt einen Typ: person, org, tool, project, book, article, place, event, other.
 6. Verbindungen haben einen Typ: influences, uses, critiques, extends, part-of, created-by, related-to, applies-to, contrasts-with.
+7. Der in Klammern angegebene Pfad/Dateiname bei DOKUMENT dient nur als Kontext. Erstelle KEINE Entitäten oder Konzepte, die lediglich der Dateiname, Ordnerpfad oder Notiztitel sind (z.B. Dateiendungen wie .md, Pfade wie Notizen/... oder Dateinamen). Extrahiere nur echte eigenständige Personen, Organisationen, Werkzeuge, Projekte, Bücher, Ereignisse oder Fachkonzepte aus dem Textinhalt.
 
 AKTUELLES VOKABULAR:
 {vocabulary}

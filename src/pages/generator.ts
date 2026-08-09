@@ -113,11 +113,12 @@ export function sourcePagePath(sourcePath: string): string {
 // ---------------------------------------------------------------------------
 
 import type { Entity, Concept } from "../core/types.js";
-import { ENTITY_BLACKLIST, CONCEPT_BLACKLIST } from "../core/filters.js";
+import { ENTITY_BLACKLIST, CONCEPT_BLACKLIST, isFileNameOrPathLike } from "../core/filters.js";
 
 function describeEntityFilterReason(e: Entity): string {
   const lower = e.name.trim().toLowerCase();
   if (ENTITY_BLACKLIST.has(lower)) return `Name auf Blacklist ("${e.name}")`;
+  if (isFileNameOrPathLike(e.name)) return `Dateiname oder Pfad anstelle einer Entität ("${e.name}")`;
   if (e.facts.length === 0 && e.aliases.length === 0)
     return "Keine Fakten und keine Aliasse";
   if (e.facts.length < 1) return `Zu wenige Fakten (${e.facts.length})`;
@@ -128,6 +129,7 @@ function describeEntityFilterReason(e: Entity): string {
 function describeConceptFilterReason(c: Concept): string {
   const lower = c.name.trim().toLowerCase();
   if (CONCEPT_BLACKLIST.has(lower)) return `Name auf Blacklist ("${c.name}")`;
+  if (isFileNameOrPathLike(c.name)) return `Dateiname oder Pfad anstelle eines Konzepts ("${c.name}")`;
   if (!c.definition || c.definition.trim().length === 0)
     return "Keine Definition vorhanden";
   return "Qualitätsprüfung nicht bestanden";

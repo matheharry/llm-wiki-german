@@ -54,12 +54,23 @@ describe("isQualityEntity", () => {
       false,
     );
   });
+
+  it("rejects entities named after filenames or paths", () => {
+    expect(isQualityEntity({ ...baseEntity, name: "Passwort-Generator.md" })).toBe(false);
+    expect(isQualityEntity({ ...baseEntity, name: "Notizen/Passwort-Generator" })).toBe(false);
+  });
 });
 
 describe("isQualityConcept", () => {
   it("accepts a concept with a definition and sources", () => {
     expect(isQualityConcept(baseConcept)).toBe(true);
   });
+
+  it("rejects concepts named after filenames or paths", () => {
+    expect(isQualityConcept({ ...baseConcept, name: "Whiteboards für den Unterricht.md" })).toBe(false);
+    expect(isQualityConcept({ ...baseConcept, name: "Tools/Whiteboards" })).toBe(false);
+  });
+
 
   it("rejects a blacklisted name", () => {
     expect(isQualityConcept({ ...baseConcept, name: "Address Book" })).toBe(

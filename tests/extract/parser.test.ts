@@ -88,3 +88,42 @@ describe("parseExtraction — failure modes", () => {
     expect(parseExtraction("[1,2,3]")).toBeNull();
   });
 });
+
+describe("parseExtraction — robust JSON repair", () => {
+  it("repairs unescaped raw newlines and tabs inside strings", () => {
+    const raw = `{\n  "source_summary": "First line\nsecond line with\ttab",\n  "entities": []\n}`;
+    const parsed = parseExtraction(raw);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.source_summary).toContain("First line");
+    expect(parsed!.source_summary).toContain("second line");
+  });
+
+  it("repairs unescaped quotes inside code snippets", () => {
+    const raw = `{\n  "source_summary": "Uses <script src="https://cdn.com"></script> for styling",\n  "entities": []\n}`;
+    const parsed = parseExtraction(raw);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.source_summary).toContain("cdn.com");
+  });
+
+  it("fixes invalid backslash escape sequences", () => {
+    const raw = `{\n  "source_summary": "Pfad C:\\Users\\Name\\notizen",\n  "entities": []\n}`;
+    const parsed = parseExtraction(raw);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.source_summary).toContain("Users");
+  });
+
+  it("strips JS comments and smart quotes", () => {
+    const raw = `// Comment line\n{\n  “source_summary”: “Zusammenfassung mit /* comment */ Text”\n}`;
+    const parsed = parseExtraction(raw);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.source_summary).toContain("Zusammenfassung");
+  });
+
+  it("auto-closes truncated JSON missing closing brackets", () => {
+    const raw = `{\n  "source_summary": "Abgebrochen",\n  "entities": [{"name": "Teilweise"`;
+    const parsed = parseExtraction(raw);
+    expect(parsed).not.toBeNull();
+    expect(parsed!.entities[0].name).toBe("Teilweise");
+  });
+});
+

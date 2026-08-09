@@ -64,19 +64,31 @@ export function parseExtraction(raw: string): ParsedExtraction | null {
 
   // Find the outermost { ... } — allows preamble/postamble noise.
   const start = text.indexOf("{");
+  if (start === -1) return null;
   const end = text.lastIndexOf("}");
-  if (start === -1 || end === -1 || end <= start) return null;
-  text = text.slice(start, end + 1);
+  text = end > start ? text.slice(start, end + 1) : text.slice(start);
 
-  // Fix trailing commas (JSON does not allow them; 7B models produce them).
-  text = text.replace(/,(\s*[}\]])/g, "$1");
-
-  let data: unknown;
+  let data: unknown = null;
+  // Stage 1: Try direct JSON.parse with simple trailing comma removal
+  const simpleClean = text.replace(/,(\s*[}\]])/g, "$1");
   try {
-    data = JSON.parse(text);
+    data = JSON.parse(simpleClean);
   } catch {
-    return null;
+    // Stage 2: Standard JSON repair (control chars, backslashes, comments, smart quotes, auto-close)
+    try {
+      const repaired = repairJsonString(text);
+      data = JSON.parse(repaired);
+    } catch {
+      // Stage 3: Aggressive JSON repair (repair unescaped inner quotes in code/HTML strings)
+      try {
+        const repairedAggressive = repairJsonString(repairUnescapedQuotes(text));
+        data = JSON.parse(repairedAggressive);
+      } catch {
+        return null;
+      }
+    }
   }
+
   if (typeof data !== "object" || data === null || Array.isArray(data)) {
     return null;
   }
@@ -117,4 +129,183 @@ export function parseExtraction(raw: string): ParsedExtraction | null {
           }))
       : [],
   };
+}
+
+// ---------------------------------------------------------------------------
+// JSON Repair Helpers
+// ---------------------------------------------------------------------------
+
+function removeJsComments(input: string): string {
+  let result = "";
+  let inString = false;
+  let isEscaped = false;
+  let i = 0;
+
+  while (i < input.length) {
+    const char = input[i];
+
+    if (inString) {
+      result += char;
+      if (isEscaped) {
+        isEscaped = false;
+      } else if (char === "\\") {
+        isEscaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      i++;
+    } else {
+      if (char === '"') {
+        inString = true;
+        result += char;
+        i++;
+      } else if (char === "/" && input[i + 1] === "/") {
+        i += 2;
+        while (i < input.length && input[i] !== "\n" && input[i] !== "\r") {
+          i++;
+        }
+      } else if (char === "/" && input[i + 1] === "*") {
+        i += 2;
+        while (i < input.length - 1 && !(input[i] === "*" && input[i + 1] === "/")) {
+          i++;
+        }
+        i += 2;
+      } else {
+        result += char;
+        i++;
+      }
+    }
+  }
+
+  return result;
+}
+
+function repairJsonString(input: string): string {
+  let s = input.replace(/[“”„]/g, '"').replace(/[‘’]/g, "'");
+  s = removeJsComments(s);
+
+  let result = "";
+  let inString = false;
+  let isEscaped = false;
+
+  for (let i = 0; i < s.length; i++) {
+    const char = s[i];
+
+    if (inString) {
+      if (isEscaped) {
+        if (/["\\/bfnrtu]/.test(char)) {
+          result += char;
+        } else {
+          result += "\\" + char;
+        }
+        isEscaped = false;
+      } else if (char === "\\") {
+        isEscaped = true;
+        result += char;
+      } else if (char === '"') {
+        inString = false;
+        result += char;
+      } else if (char === "\n") {
+        result += "\\n";
+      } else if (char === "\r") {
+        result += "\\r";
+      } else if (char === "\t") {
+        result += "\\t";
+      } else {
+        result += char;
+      }
+    } else {
+      if (char === '"') {
+        inString = true;
+        result += char;
+      } else {
+        result += char;
+      }
+    }
+  }
+
+  if (inString) {
+    result += '"';
+  }
+
+  result = result.replace(/,(\s*[}\]])/g, "$1");
+  return autoCloseJson(result);
+}
+
+function repairUnescapedQuotes(input: string): string {
+  let result = "";
+  let inString = false;
+  let isEscaped = false;
+
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+
+    if (inString) {
+      if (isEscaped) {
+        result += char;
+        isEscaped = false;
+      } else if (char === "\\") {
+        result += char;
+        isEscaped = true;
+      } else if (char === '"') {
+        const rest = input.slice(i + 1).trimStart();
+        const nextChar = rest[0];
+        if (
+          nextChar === ":" ||
+          nextChar === "," ||
+          nextChar === "}" ||
+          nextChar === "]" ||
+          nextChar === undefined
+        ) {
+          inString = false;
+          result += '"';
+        } else {
+          result += '\\"';
+        }
+      } else {
+        result += char;
+      }
+    } else {
+      if (char === '"') {
+        inString = true;
+        result += char;
+      } else {
+        result += char;
+      }
+    }
+  }
+
+  return result;
+}
+
+function autoCloseJson(input: string): string {
+  const stack: Array<"{" | "["> = [];
+  let inString = false;
+  let isEscaped = false;
+
+  for (let i = 0; i < input.length; i++) {
+    const c = input[i];
+    if (inString) {
+      if (isEscaped) isEscaped = false;
+      else if (c === "\\") isEscaped = true;
+      else if (c === '"') inString = false;
+    } else {
+      if (c === '"') inString = true;
+      else if (c === "{") stack.push("{");
+      else if (c === "[") stack.push("[");
+      else if (c === "}") {
+        if (stack.length > 0 && stack[stack.length - 1] === "{") stack.pop();
+      } else if (c === "]") {
+        if (stack.length > 0 && stack[stack.length - 1] === "[") stack.pop();
+      }
+    }
+  }
+
+  let suffix = "";
+  while (stack.length > 0) {
+    const top = stack.pop();
+    suffix += top === "{" ? "}" : "]";
+  }
+
+  return input + suffix;
 }
