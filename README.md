@@ -1,6 +1,6 @@
 # LLM Wiki German
 
-![Version](https://img.shields.io/badge/version-1.1.0c-blue) ![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-7c3aed)
+![Version](https://img.shields.io/badge/version-1.1.1-blue) ![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-7c3aed)
 
 **Deutsche Wissensdatenbank für Obsidian — lokal, privat, LLM-gestützt und Open Knowledge Format (OKF) konform.**
 
@@ -12,6 +12,7 @@ Gegenüber dem Original wurden folgende Features ergänzt:
 - **Mistral**, **LlamaCpp** und **OpenAI-kompatibler Provider** als zusätzliche Anbieter
 - **Extraktionssprache** einstellbar (Deutsch, Englisch, Französisch, Spanisch, Italienisch, Niederländisch, Portugiesisch)
 - **Multi-Folder-Index** — wähle bestimmte Ordner für die Wissensdatenbank aus
+- **Intelligentes Chunking** — lange Notizen werden in mehrere überlappende Abschnitte aufgeteilt und separat extrahiert, statt abzuschneiden. So gehen keine Informationen verloren.
 - **Inhaltsbasierte Deduplizierung** mittels SHA-256-Hashes
 - **Integritätsprüfung (Lint)** mit automatischer Fehlerbehebung
 - **Wiki-Log** (`wiki/log.md`) und **Interaktions-Log** für vollständige Nachvollziehbarkeit
@@ -184,4 +185,4 @@ Die Ergebnisse werden mit **Reciprocal Rank Fusion** zu einer kombinierten Rangl
 
 **Integritätsprüfung (Lint).** Der Befehl „Wissensdatenbank aufräumen und prüfen" analysiert die Wissensdatenbank auf verwaiste Verbindungen, fehlende Quellen, doppelte Einträge und redundante Fakten. Für viele Probleme bietet das Plugin eine automatische Bereinigung an.
 
-**Protokollierung.** Alle Extraktionen, Dateilöschungen und Abfragen werden in `wiki/log.md` protokolliert.
+**Protokollierung.** Alle Extraktionen, Dateilöschungen und Abfragen werden in `wiki/log.md` protokolliert.</arg_value><arg_key>absolutePath</arg_key><arg_value>E:/llm-wiki-german/README.md</arg_value></tool_call>
