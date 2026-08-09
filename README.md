@@ -112,6 +112,7 @@ Das war's. Du bist startklar.
 | Seiten aus Wissensdatenbank neu generieren | Baut alle Wiki-Seiten neu auf |
 | Wissensdatenbank von der Festplatte neu laden | Lädt die Wissensdatenbank ohne Neu-Extraktion |
 | Wissensdatenbank aufräumen und prüfen | Führt eine Integritätsprüfung und Reparatur durch |
+| Aktive Seite als menschlich verifiziert markieren (OKF) | Open Knowledge Format konform |
 
 ## Der `wiki/`-Ordner
 
@@ -124,7 +125,6 @@ LLM Wiki German trennt drei Dinge sauber:
 ```
 wiki/
   knowledge.json      Wissensdatenbank (strukturierte Daten)
-  embeddings.json     Vektorcache für die semantische Suche
   index.md            Katalogseite (OKF-reserviert)
   log.md              Protokoll aller Extraktionen und Abfragen (OKF-reserviert)
   lint-report.md      Bericht der Integritätsprüfung (optional)
@@ -185,4 +185,4 @@ Die Ergebnisse werden mit **Reciprocal Rank Fusion** zu einer kombinierten Rangl
 
 **Integritätsprüfung (Lint).** Der Befehl „Wissensdatenbank aufräumen und prüfen" analysiert die Wissensdatenbank auf verwaiste Verbindungen, fehlende Quellen, doppelte Einträge und redundante Fakten. Für viele Probleme bietet das Plugin eine automatische Bereinigung an.
 
-**Protokollierung.** Alle Extraktionen, Dateilöschungen und Abfragen werden in `wiki/log.md` protokolliert.</arg_value><arg_key>absolutePath</arg_key><arg_value>E:/llm-wiki-german/README.md</arg_value></tool_call>
+**Protokollierung.** Alle Extraktionen, Dateilöschungen und Abfragen werden in `wiki/log.md` protokolliert.
