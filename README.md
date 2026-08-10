@@ -66,7 +66,7 @@ Lege sie in `<dein-vault>/.obsidian/plugins/llm-wiki-german/` ab (erstelle den O
 
 Öffne die Befehlspalette (`Cmd+P` / `Ctrl+P`) und führe **LLM Wiki German: Extrahierung starten** aus. Das Plugin durchsucht deinen Vault, sendet jede Notiz an das lokale Modell und baut eine strukturierte Wissensdatenbank auf. Der Fortschritt wird in der Statusleiste angezeigt.
 
-> **Das dauert eine Weile.** Die erste Extrahierung verarbeitet jede Notiz einzeln, was schnell einige Stunden dauern kann.
+> **Das dauert eine Weile.** Die erste Extrahierung verarbeitet jede Notiz einzeln, was bei einem Vault mit ein paar hundert Notizen schnell einige Stunden dauern kann. Außerdem werden im Anschluss Redundanzen entfernt (Deduplizierung), was zusätzlich etwas Zeit in Anspruch nimmt.
 > Nach dem ersten Durchlauf werden nur geänderte Notizen neu extrahiert — Updates dauern Sekunden, nicht Stunden.
 
 **4. Stelle deinem Vault eine Frage**
