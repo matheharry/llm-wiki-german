@@ -2,7 +2,6 @@ import { getLanguage, Notice, Plugin, TFile } from "obsidian";
 import { KnowledgeBase } from "./core/kb.js";
 import { loadKB, saveKB } from "./vault/kb-store.js";
 import { walkVaultFiles, type WalkOptions } from "./vault/walker.js";
-import { openVocabularyModal } from "./ui/modal/vocabulary-modal.js";
 import { openLintModal } from "./ui/modal/lint-modal.js";
 import { WelcomeModal } from "./ui/modal/welcome-modal.js";
 import { OllamaProvider } from "./llm/ollama.js";
@@ -649,6 +648,7 @@ export default class LlmWikiPlugin extends Plugin {
 
   private createIndexController(): EmbeddingIndexController {
     return new EmbeddingIndexController({
+      getModel: () => this.activeEmbeddingModel,
       buildIndex: async (onProgress) => {
         if (!this.embeddingsCache) {
           this.embeddingsCache = await loadEmbeddingsCache(this.app);
@@ -664,6 +664,29 @@ export default class LlmWikiPlugin extends Plugin {
         return index;
       },
     });
+  }
+
+  /**
+   * Rebuilds the embedding index with the currently configured embedding
+   * model. Used when the user changes the embedding model: the embeddings
+   * cache is keyed by model, so stale vectors are recomputed automatically.
+   * Does NOT re-run LLM extraction.
+   */
+  async rebuildEmbeddings(): Promise<void> {
+    if (!this.embeddingIndexController) {
+      this.embeddingIndexController = this.createIndexController();
+    }
+    this.embeddingsCache = await loadEmbeddingsCache(this.app);
+    this.embeddingIndexController.reset();
+    await this.embeddingIndexController.ensureBuilt();
+    const state = this.embeddingIndexController.getState();
+    if (state.kind === "error") {
+      new Notice(
+        `LLM Wiki: Embedding-Index konnte nicht neu aufgebaut werden — ${state.message}`,
+      );
+    } else {
+      new Notice("LLM Wiki: Embedding-Index neu aufgebaut.");
+    }
   }
 
   async runExtractAll(): Promise<void> {

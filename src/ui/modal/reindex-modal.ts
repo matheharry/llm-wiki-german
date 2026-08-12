@@ -21,7 +21,7 @@ export class ReindexConfirmationModal extends Modal {
     descEl.setText(
       `Du hast das Embedding-Modell zu "${this.newModel}" geändert. ` +
       "Damit die semantische Suche korrekt funktioniert, müssen alle Notizen mit dem neuen Modell neu indiziert werden. " +
-      "Möchtest du die Indizierung jetzt starten?"
+      "Möchtest du den Embedding-Index jetzt neu aufbauen?"
     );
 
     new Setting(contentEl)
@@ -34,11 +34,11 @@ export class ReindexConfirmationModal extends Modal {
       )
       .addButton((btn) =>
         btn
-          .setButtonText("Jetzt indizieren")
+          .setButtonText("Jetzt neu aufbauen")
           .setCta()
           .onClick(() => {
             this.close();
-            void this.plugin.runExtractAll();
+            void this.plugin.rebuildEmbeddings();
           })
       );
   }

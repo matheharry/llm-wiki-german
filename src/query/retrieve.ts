@@ -1,4 +1,4 @@
-import type { Concept, Entity } from "../core/types.js";
+import type { Concept, Entity, SourceRecord } from "../core/types.js";
 import type { QueryType, RankedItem, RetrievedBundle } from "./types.js";
 import {
   RETRIEVAL_CONCEPT_BLACKLIST,

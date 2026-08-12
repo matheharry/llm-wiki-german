@@ -160,6 +160,7 @@ export class QueryModal extends Modal {
   private clearBtn!: HTMLButtonElement;
   private terminalTextEl!: HTMLSpanElement;
   private controller: QueryController | null = null;
+  private embeddingIndex: ReadonlyMap<string, number[]> = new Map();
 
   // Per-turn streaming state
   private currentStreamedAnswer = "";
@@ -625,6 +626,14 @@ export class QueryModal extends Modal {
       const index: ReadonlyMap<string, number[]> =
         state.kind === "ready" ? state.index : new Map();
       this.controller = this.buildQueryController(index);
+    } else if (
+      state.kind === "ready" &&
+      this.embeddingIndex !== state.index
+    ) {
+      // Swap in a freshly built index (also triggered by embedding model
+      // changes that rebuilt the index in the background).
+      this.embeddingIndex = state.index;
+      this.controller.setEmbeddingIndex(state.index);
     }
 
     if (state.kind === "idle" || state.kind === "building") {

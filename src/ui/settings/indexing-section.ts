@@ -1,4 +1,3 @@
-/* eslint-disable obsidianmd/ui/sentence-case */
 import { Setting } from "obsidian";
 import type LlmWikiPlugin from "../../plugin.js";
 import type { ExtractionLanguageSetting } from "../../plugin.js";

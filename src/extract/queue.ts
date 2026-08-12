@@ -312,7 +312,7 @@ async function runBatchDeduplication(args: BatchDedupArgs): Promise<void> {
     if (!ent || ent.facts.length < 2) return false;
     for (let i = 0; i < ent.facts.length; i++) {
       for (let j = i + 1; j < ent.facts.length; j++) {
-        if (wordSimilarity(ent.facts[i]!, ent.facts[j]!) >= 0.4) return true;
+        if (wordSimilarity(ent.facts[i], ent.facts[j]) >= 0.4) return true;
       }
     }
     return false;

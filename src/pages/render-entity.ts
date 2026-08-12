@@ -1,18 +1,6 @@
 import type { Connection, Entity } from "../core/types.js";
 import { entityFrontmatter, serializeFrontmatter } from "./frontmatter.js";
 
-const ENTITY_TYPE_LABELS: Record<string, string> = {
-  person: "Person",
-  org: "Organisation",
-  tool: "Werkzeug",
-  project: "Projekt",
-  book: "Buch",
-  article: "Artikel",
-  place: "Ort",
-  event: "Ereignis",
-  other: "Sonstiges",
-};
-
 const CONNECTION_TYPE_LABELS: Record<string, string> = {
   influences: "beeinflusst",
   uses: "verwendet",

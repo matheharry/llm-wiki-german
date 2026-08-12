@@ -59,7 +59,11 @@ describe("buildEmbeddingIndex", () => {
     const text = contextualTextForEntity(kb.allEntities()[0]);
     const cache: EmbeddingsCache = {
       entries: {
-        "alan-watts": { sourceText: text, vector: [9, 9, 9] },
+        "alan-watts": {
+          sourceText: text,
+          vector: [9, 9, 9],
+          model: "nomic-embed-text",
+        },
       },
     };
     const index = await buildEmbeddingIndex({
@@ -69,6 +73,39 @@ describe("buildEmbeddingIndex", () => {
       cache,
     });
     expect(index.get("alan-watts")).toEqual([9, 9, 9]);
+  });
+
+  it("re-embeds legacy cache entries without a model field", async () => {
+    const kb = new KnowledgeBase();
+    kb.addEntity({
+      name: "Alan Watts",
+      type: "person",
+      aliases: [],
+      facts: ["philosopher"],
+      source: "x.md",
+    });
+    const provider = new MockLLMProvider({
+      responses: [],
+      embeddings: [[4, 4, 4]],
+    });
+    const { contextualTextForEntity } = await import(
+      "../../src/query/embedding-text.js"
+    );
+    const text = contextualTextForEntity(kb.allEntities()[0]);
+    const cache: EmbeddingsCache = {
+      entries: {
+        "alan-watts": { sourceText: text, vector: [9, 9, 9] },
+      },
+    };
+    const index = await buildEmbeddingIndex({
+      kb,
+      provider,
+      model: "nomic-embed-text",
+      cache,
+    });
+    expect(index.get("alan-watts")).toEqual([4, 4, 4]);
+    // the entry is backfilled with the current model
+    expect(cache.entries["alan-watts"]?.model).toBe("nomic-embed-text");
   });
 
   it("re-embeds when cached sourceText is stale", async () => {
@@ -157,7 +194,11 @@ describe("buildEmbeddingIndex", () => {
     const text = contextualTextForEntity(kb.allEntities()[0]);
     const cache: EmbeddingsCache = {
       entries: {
-        "alan-watts": { sourceText: text, vector: [9, 9, 9] },
+        "alan-watts": {
+          sourceText: text,
+          vector: [9, 9, 9],
+          model: "nomic-embed-text",
+        },
       },
     };
     const provider = new MockLLMProvider({ responses: [], embeddings: [] });

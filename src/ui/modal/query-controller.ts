@@ -57,6 +57,11 @@ export class QueryController {
     this.currentFolders = folders.length > 0 ? folders : undefined;
   }
 
+  /** Swaps in a freshly built embedding index (e.g. after a model change). */
+  setEmbeddingIndex(index: ReadonlyMap<string, number[]>): void {
+    this.opts.embeddingIndex = index;
+  }
+
   async runChatTurn(args: { chat: Chat; question: string }): Promise<void> {
     this.abortCtrl = new AbortController();
     this.transition("loading");

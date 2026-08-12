@@ -160,4 +160,67 @@ describe("EmbeddingIndexController", () => {
     expect(calls).toBe(1);
     expect(controller.getState().kind).toBe("ready");
   });
+
+  it("tracks the model the index was built with in the ready state", async () => {
+    const controller = new EmbeddingIndexController({
+      getModel: () => "embeddinggemma",
+      buildIndex: () => Promise.resolve(new Map([["x", [1]]])),
+    });
+    await controller.ensureBuilt();
+    const state = controller.getState();
+    if (state.kind !== "ready") throw new Error("expected ready state");
+    expect(state.model).toBe("embeddinggemma");
+  });
+
+  it("rebuilds when the embedding model changes", async () => {
+    let model = "nomic-embed-text";
+    let calls = 0;
+    const controller = new EmbeddingIndexController({
+      getModel: () => model,
+      buildIndex: () => {
+        calls += 1;
+        return Promise.resolve(new Map([["x", [1]]]));
+      },
+    });
+    await controller.ensureBuilt();
+    expect(calls).toBe(1);
+
+    // Model change → next ensureBuilt must drop the cached index and rebuild.
+    model = "embeddinggemma";
+    await controller.ensureBuilt();
+    expect(calls).toBe(2);
+    const state = controller.getState();
+    if (state.kind !== "ready") throw new Error("expected ready state");
+    expect(state.model).toBe("embeddinggemma");
+  });
+
+  it("does not rebuild when the model stays the same", async () => {
+    let calls = 0;
+    const controller = new EmbeddingIndexController({
+      getModel: () => "embeddinggemma",
+      buildIndex: () => {
+        calls += 1;
+        return Promise.resolve(new Map([["x", [1]]]));
+      },
+    });
+    await controller.ensureBuilt();
+    await controller.ensureBuilt();
+    expect(calls).toBe(1);
+  });
+
+  it("reset() forces a rebuild with the same model", async () => {
+    let calls = 0;
+    const controller = new EmbeddingIndexController({
+      getModel: () => "embeddinggemma",
+      buildIndex: () => {
+        calls += 1;
+        return Promise.resolve(new Map([["x", [1]]]));
+      },
+    });
+    await controller.ensureBuilt();
+    controller.reset();
+    expect(controller.getState().kind).toBe("idle");
+    await controller.ensureBuilt();
+    expect(calls).toBe(2);
+  });
 });

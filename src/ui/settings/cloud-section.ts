@@ -1,4 +1,3 @@
-/* eslint-disable obsidianmd/ui/sentence-case */
 /**
  * Settings UI section for cloud provider configuration: provider picker,
  * API key entry with auto-validation.
@@ -10,6 +9,7 @@ import { detectProvider, validateKey } from "../../llm/detect-key.js";
 import type { CloudProvider } from "../../llm/catalog.js";
 import type LlmWikiPlugin from "../../plugin.js";
 import type { ProviderType } from "../../plugin.js";
+import { ReindexConfirmationModal } from "../modal/reindex-modal.js";
 import { Setting } from "obsidian";
 
 export interface CloudSectionHandlers {
@@ -134,15 +134,24 @@ export function renderCloudSection(
     new Setting(containerEl)
       .setName("Embedding-Modell")
       .setDesc("Optional. Standardmäßig wird das Completion-Modell verwendet, wenn leer gelassen.")
-      .addText((text) =>
+      .addText((text) => {
+        let prevValue = plugin.settings.customOpenAIEmbeddingModel;
         text
           .setPlaceholder("Name des Embedding-Modells")
           .setValue(plugin.settings.customOpenAIEmbeddingModel)
           .onChange(async (value) => {
             plugin.settings.customOpenAIEmbeddingModel = value.trim();
             await plugin.saveSettings();
-          }),
-      );
+          });
+
+        text.inputEl.addEventListener("blur", () => {
+          const currentValue = plugin.settings.customOpenAIEmbeddingModel;
+          if (currentValue !== prevValue) {
+            prevValue = currentValue;
+            new ReindexConfirmationModal(plugin.app, plugin, currentValue).open();
+          }
+        });
+      });
 
     new Setting(containerEl)
       .setName("Modell-Endpunkt")

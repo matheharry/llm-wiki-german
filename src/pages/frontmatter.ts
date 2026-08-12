@@ -109,38 +109,6 @@ function yamlScalar(value: unknown): string {
   return String(value);
 }
 
-function serializeValue(value: unknown, indentLevel = 0): string {
-  const indent = " ".repeat(indentLevel);
-  if (value !== null && typeof value === "object" && !Array.isArray(value)) {
-    const entries = Object.entries(value as Record<string, unknown>);
-    if (entries.length === 0) return "{}";
-    const lines: string[] = [];
-    for (const [k, v] of entries) {
-      if (typeof v === "object" && v !== null && !Array.isArray(v)) {
-        lines.push(`${indent}${k}:`);
-        lines.push(serializeValue(v, indentLevel + 2));
-      } else if (Array.isArray(v)) {
-        if (v.length === 0) {
-          lines.push(`${indent}${k}: []`);
-        } else {
-          lines.push(`${indent}${k}:`);
-          for (const item of v) {
-            if (typeof item === "object" && item !== null) {
-              lines.push(`${indent}  - ${serializeInlineObject(item)}`);
-            } else {
-              lines.push(`${indent}  - ${yamlScalar(item)}`);
-            }
-          }
-        }
-      } else {
-        lines.push(`${indent}${k}: ${yamlScalar(v)}`);
-      }
-    }
-    return lines.join("\n");
-  }
-  return `${indent}${yamlScalar(value)}`;
-}
-
 function serializeInlineObject(obj: object): string {
   const entries = Object.entries(obj as Record<string, unknown>);
   const pairs = entries.map(([k, v]) => `${k}: ${yamlScalar(v)}`);

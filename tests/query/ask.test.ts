@@ -1,27 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { ask } from "../../src/query/ask.js";
+import type { AnswerEvent } from "../../src/query/types.js";
 import { MockLLMProvider } from "../helpers/mock-llm-provider.js";
 import { KnowledgeBase } from "../../src/core/kb.js";
 
-const BUNDLE = {
-  question: "tell me more about Alan Watts",
-  queryType: "conceptual" as const,
-  entities: [
-    {
-      id: "alan-watts",
-      name: "Alan Watts",
-      type: "person" as const,
-      aliases: ["Watts"],
-      facts: ["British philosopher", "Wrote The Way of Zen"],
-      sources: ["Books/Watts.md"],
-    },
-  ],
-  concepts: [],
-  connections: [],
-  sources: [{ id: "Books/Watts.md", summary: "Watts notes" }],
-};
-
-async function collectChunks(gen: AsyncIterable<any>): Promise<string> {
+async function collectChunks(gen: AsyncIterable<AnswerEvent>): Promise<string> {
   let out = "";
   for await (const event of gen) {
     if (event.kind === "chunk") out += event.text;
@@ -64,9 +47,11 @@ describe("ask", () => {
     })) {
       events.push(event);
     }
-    const errorEvent = events.find(e => e.kind === "error");
+    const errorEvent = events.find(
+      (e): e is { kind: "error"; error: string } => e.kind === "error",
+    );
     expect(errorEvent).toBeDefined();
-    expect(errorEvent.error).toBe("LLM Down");
+    expect(errorEvent?.error).toBe("LLM Down");
   });
 });
 
@@ -85,6 +70,7 @@ describe("ask with history and retrievalQuery", () => {
         {
           question: "prior q",
           answer: "prior a",
+          rewrittenQuery: null,
           createdAt: 0,
           sourceIds: [],
         },

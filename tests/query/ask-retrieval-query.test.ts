@@ -1,27 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { ask } from "../../src/query/ask.js";
+import type { AnswerEvent } from "../../src/query/types.js";
 import { MockLLMProvider } from "../helpers/mock-llm-provider.js";
 import { KnowledgeBase } from "../../src/core/kb.js";
 
-const BUNDLE = {
-  question: "and why?",
-  queryType: "conceptual" as const,
-  entities: [
-    {
-      id: "test",
-      name: "Test",
-      type: "other" as const,
-      aliases: [],
-      facts: ["f1", "f2", "f3"],
-      sources: ["a.md"],
-    },
-  ],
-  concepts: [],
-  connections: [],
-  sources: [{ id: "a.md", summary: "s" }],
-};
-
-async function collectChunks(gen: AsyncIterable<any>): Promise<string> {
+async function collectChunks(gen: AsyncIterable<AnswerEvent>): Promise<string> {
   let out = "";
   for await (const event of gen) {
     if (event.kind === "chunk") out += event.text;

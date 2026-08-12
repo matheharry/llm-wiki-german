@@ -33,7 +33,15 @@ const BUNDLE: RetrievedBundle = {
       sources: ["Books/Watts.md"],
     },
   ],
-  sources: [{ id: "Books/Watts.md", summary: "Watts notes" }],
+  sources: [
+    {
+      id: "Books/Watts.md",
+      summary: "Watts notes",
+      date: "2024-01-01",
+      mtime: 1700000000000,
+      origin: "user-note",
+    },
+  ],
 };
 
 describe("formatContextMarkdown", () => {

@@ -212,7 +212,7 @@ interface LLMProvider {
 | `openai.ts` | OpenAI API + custom OpenAI-compatible base URLs (`/v1/chat/completions`, `/v1/embeddings`, `/v1/models`). |
 | `anthropic.ts` | No embedding API → **injects an Ollama embed-provider** (`embedProvider: ollama`). |
 | `google.ts` | Gemini models. |
-| `mistral.ts` | Ministral models + mistral-embed. |
+| `mistral.ts` | Mistral models + mistral-embed. |
 | `llama-cpp.ts` | Local alternative backend. |
 
 - `catalog.ts` — `completionModels()`, `defaultCompletionModel()`, `defaultEmbeddingModel()`, `CloudProvider` type.

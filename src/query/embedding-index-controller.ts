@@ -11,13 +11,20 @@ export type EmbeddingIndexErrorReason = "connect" | "other";
 export type EmbeddingIndexState =
   | { kind: "idle" }
   | { kind: "building"; progress: EmbeddingIndexProgress }
-  | { kind: "ready"; index: ReadonlyMap<string, number[]> }
+  /** `model` records which embedding model the index was built with. */
+  | { kind: "ready"; index: ReadonlyMap<string, number[]>; model: string }
   | { kind: "error"; message: string; reason: EmbeddingIndexErrorReason };
 
 export interface EmbeddingIndexControllerOptions {
   buildIndex: (
     onProgress: (progress: EmbeddingIndexProgress) => void,
   ) => Promise<ReadonlyMap<string, number[]>>;
+  /**
+   * Optional: returns the embedding model the index should be built with.
+   * When the value differs from the model the current index was built with,
+   * `ensureBuilt()` drops the cached index and rebuilds it automatically.
+   */
+  getModel?: () => string;
 }
 
 export class EmbeddingIndexController {
@@ -41,7 +48,27 @@ export class EmbeddingIndexController {
     return () => this.listeners.delete(cb);
   }
 
+  /**
+   * Drops the current index so the next `ensureBuilt()` rebuilds it from
+   * scratch. No-op while a build is already in flight.
+   */
+  reset(): void {
+    if (this.state.kind === "building") return;
+    this.buildPromise = null;
+    if (this.state.kind !== "idle") this.transition({ kind: "idle" });
+  }
+
   ensureBuilt(): Promise<ReadonlyMap<string, number[]>> {
+    const model = this.opts.getModel?.() ?? null;
+    if (
+      this.state.kind === "ready" &&
+      model !== null &&
+      this.state.model !== model
+    ) {
+      // Embedding model changed — the cached vectors were produced in a
+      // different vector space, so drop the index and rebuild.
+      this.transition({ kind: "idle" });
+    }
     if (this.state.kind === "ready") return Promise.resolve(this.state.index);
     if (this.state.kind === "error") return Promise.resolve(new Map());
     if (this.buildPromise) return this.buildPromise;
@@ -55,7 +82,7 @@ export class EmbeddingIndexController {
         const index = await this.opts.buildIndex((progress) => {
           this.transition({ kind: "building", progress });
         });
-        this.transition({ kind: "ready", index });
+        this.transition({ kind: "ready", index, model: model ?? "" });
         return index;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

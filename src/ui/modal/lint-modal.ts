@@ -68,7 +68,13 @@ class LintModal extends Modal {
     const warnings = this.result.issues.filter((i) => i.severity === "warning").length;
     const infos = this.result.issues.filter((i) => i.severity === "info").length;
 
-    summaryEl.innerHTML = `Status: <b>${errors}</b> Fehler, <b>${warnings}</b> Warnungen, <b>${infos}</b> Hinweise.`;
+    summaryEl.createSpan({ text: "Status: " });
+    summaryEl.createEl("b", { text: String(errors) });
+    summaryEl.createSpan({ text: " Fehler, " });
+    summaryEl.createEl("b", { text: String(warnings) });
+    summaryEl.createSpan({ text: " Warnungen, " });
+    summaryEl.createEl("b", { text: String(infos) });
+    summaryEl.createSpan({ text: " Hinweise." });
 
     // Action buttons (Admin actions only)
     const btnContainer = contentEl.createDiv();
@@ -82,13 +88,15 @@ class LintModal extends Modal {
       cls: "mod-cta",
     });
     exportBtn.disabled = this.isCleaning;
-    exportBtn.addEventListener("click", async () => {
-      try {
-        await this.exportReport();
-        new Notice("Lint-Report erfolgreich in wiki/lint-report.md gespeichert.");
-      } catch (err) {
-        new Notice(`Fehler beim Speichern des Reports: ${(err as Error).message}`);
-      }
+    exportBtn.addEventListener("click", () => {
+      void (async (): Promise<void> => {
+        try {
+          await this.exportReport();
+          new Notice("Lint-Report erfolgreich in wiki/lint-report.md gespeichert.");
+        } catch (err) {
+          new Notice(`Fehler beim Speichern des Reports: ${(err as Error).message}`);
+        }
+      })();
     });
 
     const closeBtn = btnContainer.createEl("button", { text: "Schließen" });
@@ -143,81 +151,83 @@ class LintModal extends Modal {
             cls: "mod-warning",
           });
           
-          cleanBtn.addEventListener("click", async () => {
-            this.isCleaning = true;
-            this.abortController = new AbortController();
-            const { signal } = this.abortController;
-            this.onOpen(); // Re-render to show disabled state and progress UI
-            
-            if (this.statusTextEl) {
-              this.statusTextEl.setText("Bereinigung gestartet...");
-            }
+          cleanBtn.addEventListener("click", () => {
+            void (async () => {
+              this.isCleaning = true;
+              this.abortController = new AbortController();
+              const { signal } = this.abortController;
+              this.onOpen(); // Re-render to show disabled state and progress UI
 
-            let aborted = false;
-            try {
-              let count = 0;
-              for (const ent of entitiesWithRedundancies) {
-                if (signal.aborted) {
-                  aborted = true;
-                  break;
-                }
-                if (this.statusTextEl) {
-                  this.statusTextEl.setText(`Bereinige Fakten: ${count + 1} von ${entitiesWithRedundancies.length} Entitäten`);
-                }
-                if (this.subStatusTextEl) {
-                  this.subStatusTextEl.setText(`Entität: "${ent.name}"`);
-                }
-                
-                const newFacts = await deduplicateEntityFacts(
-                  this.plugin.provider,
-                  this.plugin.activeModel,
-                  ent.name,
-                  ent.type,
-                  ent.facts,
-                  signal,
-                );
+              if (this.statusTextEl) {
+                this.statusTextEl.setText("Bereinigung gestartet...");
+              }
 
-                // Don't apply changes if aborted during the LLM call
-                if (signal.aborted) {
-                  aborted = true;
-                  break;
+              let aborted = false;
+              try {
+                let count = 0;
+                for (const ent of entitiesWithRedundancies) {
+                  if (signal.aborted) {
+                    aborted = true;
+                    break;
+                  }
+                  if (this.statusTextEl) {
+                    this.statusTextEl.setText(`Bereinige Fakten: ${count + 1} von ${entitiesWithRedundancies.length} Entitäten`);
+                  }
+                  if (this.subStatusTextEl) {
+                    this.subStatusTextEl.setText(`Entität: "${ent.name}"`);
+                  }
+
+                  const newFacts = await deduplicateEntityFacts(
+                    this.plugin.provider,
+                    this.plugin.activeModel,
+                    ent.name,
+                    ent.type,
+                    ent.facts,
+                    signal,
+                  );
+
+                  // Don't apply changes if aborted during the LLM call
+                  if (signal.aborted) {
+                    aborted = true;
+                    break;
+                  }
+
+                  ent.facts = newFacts;
+                  count++;
                 }
 
-                ent.facts = newFacts;
-                count++;
-              }
-              
-              if (aborted) {
-                new Notice("Bereinigung abgebrochen. Keine Änderungen wurden gespeichert.");
-              } else {
-                if (this.statusTextEl) {
-                  this.statusTextEl.setText("Speichere Änderungen und aktualisiere Wiki...");
+                if (aborted) {
+                  new Notice("Bereinigung abgebrochen. Keine Änderungen wurden gespeichert.");
+                } else {
+                  if (this.statusTextEl) {
+                    this.statusTextEl.setText("Speichere Änderungen und aktualisiere Wiki...");
+                  }
+                  if (this.subStatusTextEl) {
+                    this.subStatusTextEl.setText("");
+                  }
+
+                  await saveKB(this.app, this.kb, this.plugin.kbMtime);
+                  const reloaded = await loadKB(this.app);
+                  this.plugin.kbMtime = reloaded.mtime;
+                  await generatePages(this.app, this.kb);
+
+                  new Notice("Bereinigung erfolgreich abgeschlossen!");
                 }
-                if (this.subStatusTextEl) {
-                  this.subStatusTextEl.setText("");
+              } catch (err) {
+                const isAbort = (err as Error).name === "AbortError" || signal.aborted;
+                if (isAbort) {
+                  new Notice("Bereinigung abgebrochen. Keine Änderungen wurden gespeichert.");
+                } else {
+                  new Notice(`Fehler bei der Bereinigung: ${(err as Error).message}`);
                 }
-                
-                await saveKB(this.app, this.kb, this.plugin.kbMtime);
-                const reloaded = await loadKB(this.app);
-                this.plugin.kbMtime = reloaded.mtime;
-                await generatePages(this.app, this.kb);
-                
-                new Notice("Bereinigung erfolgreich abgeschlossen!");
+              } finally {
+                this.isCleaning = false;
+                this.abortController = null;
+                // Refresh lint results and modal
+                this.result = runLint(this.kb);
+                this.onOpen();
               }
-            } catch (err) {
-              const isAbort = (err as Error).name === "AbortError" || signal.aborted;
-              if (isAbort) {
-                new Notice("Bereinigung abgebrochen. Keine Änderungen wurden gespeichert.");
-              } else {
-                new Notice(`Fehler bei der Bereinigung: ${(err as Error).message}`);
-              }
-            } finally {
-              this.isCleaning = false;
-              this.abortController = null;
-              // Refresh lint results and modal
-              this.result = runLint(this.kb);
-              this.onOpen();
-            }
+            })();
           });
         }
 
@@ -227,27 +237,29 @@ class LintModal extends Modal {
             cls: "mod-warning",
           });
 
-          cleanConnBtn.addEventListener("click", async () => {
-            this.isCleaning = true;
-            this.onOpen();
-
-            try {
-              // Filter connections to keep only those where both from and to exist
-              this.kb.data.connections = this.kb.data.connections.filter(c => exists(c.from) && exists(c.to));
-
-              await saveKB(this.app, this.kb, this.plugin.kbMtime);
-              const reloaded = await loadKB(this.app);
-              this.plugin.kbMtime = reloaded.mtime;
-              await generatePages(this.app, this.kb);
-
-              new Notice(`${danglingConnections.length} ungültige Verbindungen erfolgreich gelöscht!`);
-            } catch (err) {
-              new Notice(`Fehler beim Löschen der Verbindungen: ${(err as Error).message}`);
-            } finally {
-              this.isCleaning = false;
-              this.result = runLint(this.kb);
+          cleanConnBtn.addEventListener("click", () => {
+            void (async () => {
+              this.isCleaning = true;
               this.onOpen();
-            }
+
+              try {
+                // Filter connections to keep only those where both from and to exist
+                this.kb.data.connections = this.kb.data.connections.filter(c => exists(c.from) && exists(c.to));
+
+                await saveKB(this.app, this.kb, this.plugin.kbMtime);
+                const reloaded = await loadKB(this.app);
+                this.plugin.kbMtime = reloaded.mtime;
+                await generatePages(this.app, this.kb);
+
+                new Notice(`${danglingConnections.length} ungültige Verbindungen erfolgreich gelöscht!`);
+              } catch (err) {
+                new Notice(`Fehler beim Löschen der Verbindungen: ${(err as Error).message}`);
+              } finally {
+                this.isCleaning = false;
+                this.result = runLint(this.kb);
+                this.onOpen();
+              }
+            })();
           });
         }
       } else {
@@ -335,7 +347,7 @@ class LintModal extends Modal {
           badge.style.color = "var(--text-normal)";
         }
 
-        const title = leftHeader.createSpan({ text: `[${issue.category}] ${issue.message}` });
+        leftHeader.createSpan({ text: `[${issue.category}] ${issue.message}` });
 
         // Add Auto-Fix status label
         const isAutofixable = 
@@ -381,7 +393,7 @@ class LintModal extends Modal {
     const serializeFm = (fmObj: Record<string, unknown>) => {
       const lines = ["---"];
       for (const [k, v] of Object.entries(fmObj)) {
-        lines.push(`${k}: ${v}`);
+        lines.push(`${k}: ${String(v)}`);
       }
       lines.push("---");
       return lines.join("\n") + "\n";

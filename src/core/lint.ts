@@ -199,7 +199,7 @@ export function runLint(kb: KnowledgeBase): LintResult {
 function getWords(s: string): Set<string> {
   return new Set(
     s.toLowerCase()
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "")
+      .replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, "")
       .split(/\s+/)
       .filter((w) => w.length > 2)
   );
@@ -225,7 +225,7 @@ export function wordSimilarity(s1: string, s2: string): number {
 function getPrefix(fact: string, n = 2): string {
   return fact
     .toLowerCase()
-    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, "")
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()?"']/g, "")
     .split(/\s+/)
     .filter((w) => w.length > 0)
     .slice(0, n)

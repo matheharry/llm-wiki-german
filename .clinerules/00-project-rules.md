@@ -30,7 +30,7 @@ A local-first, LLM-powered knowledge base for Obsidian. It extracts entities, co
 - **Unit Tests:** Located in `tests/` mirroring the `src/` structure.
 - **Integration Tests:** Found in `tests/integration/` (e.g., `chat-flow.test.ts`, `phase2-extraction.test.ts`).
 - **Property-based Tests:** Uses `fast-check` (e.g., `tests/core/ids.property.test.ts`).
-- **Mocks:** Extmemory-bank.mdensive use of mocks for Obsidian API (`tests/helpers/mock-app.ts`) and LLM providers.
+- **Mocks:** Extensive use of mocks for Obsidian API (`tests/helpers/mock-app.ts`) and LLM providers.
 
 ## Key Implementation Details
 

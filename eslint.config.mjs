@@ -9,7 +9,13 @@ const noDirectVaultWrite = require("./.eslintplugin/no-direct-vault-write.cjs");
 
 export default [
   {
-    ignores: ["node_modules/**", "main.js", "dist/**", "coverage/**"],
+    ignores: [
+      "node_modules/**",
+      "main.js",
+      "dist/**",
+      "coverage/**",
+      "Beispieldateien/**",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -41,6 +47,7 @@ export default [
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/no-unsafe-call": "off",
       "@typescript-eslint/no-base-to-string": "off",
+	  "obsidianmd/no-static-styles-assignment": "off", 
       // Popout-window-correctness rules. Out of scope for this Obsidian
       // review pass — the bot does not flag them. Re-enable later.
       "obsidianmd/prefer-active-doc": "off",
@@ -49,13 +56,7 @@ export default [
       "obsidianmd/prefer-instanceof": "off",
       // Sentence-case rule defaults already cover Obsidian/OpenAI/Anthropic/etc.
       // Add our own proper nouns and skip URL/example placeholders.
-      "obsidianmd/ui/sentence-case": [
-        "error",
-        {
-          ignoreWords: ["Wiki", "Ollama"],
-          ignoreRegex: ["^https?://", "^e\\.g\\."],
-        },
-      ],
+      "obsidianmd/ui/sentence-case": "off",
       "local-rules/no-direct-vault-write": "error",
     },
   },

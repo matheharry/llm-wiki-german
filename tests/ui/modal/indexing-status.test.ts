@@ -29,6 +29,7 @@ describe("formatIndexingStatus", () => {
       formatIndexingStatus({
         kind: "ready",
         index: new Map(),
+        model: "embeddinggemma",
       }),
     ).toBe("Bereit");
   });

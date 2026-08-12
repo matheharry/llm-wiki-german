@@ -79,9 +79,11 @@ function buildPendingList(
     const id = e.id;
     const text = prefix + contextualTextForEntity(e);
     const cached = args.cache.entries[id];
-    // Legacy cache entries may lack a `model` field — treat them as matching
-    // the first time the user embeds with any model (the text is the same).
-    const cachedModel = cached?.model ?? args.model;
+    // Only reuse a vector when it was computed with the exact same model —
+    // otherwise the vector spaces differ and mixing them silently corrupts
+    // semantic search. Legacy entries without a `model` field are re-embedded
+    // once (and backfilled with the model name).
+    const cachedModel = cached?.model;
     if (cached && cached.sourceText === text && cachedModel === args.model) {
       index.set(id, cached.vector);
       onProgress();
@@ -94,7 +96,7 @@ function buildPendingList(
     const id = `concept:${c.id}`;
     const text = prefix + contextualTextForConcept(c);
     const cached = args.cache.entries[id];
-    const cachedModel = cached?.model ?? args.model;
+    const cachedModel = cached?.model;
     if (cached && cached.sourceText === text && cachedModel === args.model) {
       index.set(id, cached.vector);
       onProgress();
@@ -107,7 +109,7 @@ function buildPendingList(
     const id = `source:${s.id}`;
     const text = prefix + contextualTextForSource(s);
     const cached = args.cache.entries[id];
-    const cachedModel = cached?.model ?? args.model;
+    const cachedModel = cached?.model;
     if (cached && cached.sourceText === text && cachedModel === args.model) {
       index.set(id, cached.vector);
       onProgress();
