@@ -1,7 +1,7 @@
 import type { ProgressEmitter } from "../runtime/progress.js";
 import {
-  formatIndexingLabel,
-  type StatusBarState,
+	formatIndexingLabel,
+	type StatusBarState,
 } from "./status-bar-format.js";
 
 /**
@@ -9,80 +9,87 @@ import {
  * (Obsidian's status-bar item) with the formatted label.
  */
 export class StatusBarWidget {
-  private batchStart = 0;
-  private processed = 0;
-  private total = 0;
+	private batchStart = 0;
+	private processed = 0;
+	private skipped = 0;
+	private total = 0;
 
-  constructor(
-    private readonly el: Pick<HTMLElement, "setText">,
-    emitter: ProgressEmitter,
-  ) {
-    this.render({ state: "idle" });
+	constructor(
+		private readonly el: Pick<HTMLElement, "setText">,
+		emitter: ProgressEmitter,
+	) {
+		this.render({ state: "idle" });
 
-    emitter.on("batch-started", (d) => {
-      this.batchStart = Date.now();
-      this.processed = 0;
-      this.total = d.total;
-      this.render({
-        state: "indexing",
-        processed: 0,
-        total: this.total,
-        elapsedMs: 0,
-      });
-    });
+		emitter.on("batch-started", (d) => {
+			this.batchStart = Date.now();
+			this.processed = 0;
+			this.skipped = 0;
+			this.total = d.total;
+			this.render({
+				state: "indexing",
+				processed: 0,
+				total: this.total,
+				elapsedMs: 0,
+				skipped: 0,
+			});
+		});
 
-    emitter.on("file-completed", (d) => {
-      this.processed = d.index;
-      this.render({
-        state: "indexing",
-        processed: this.processed,
-        total: this.total,
-        elapsedMs: Date.now() - this.batchStart,
-      });
-    });
+		emitter.on("file-completed", (d) => {
+			this.processed = d.index;
+			this.render({
+				state: "indexing",
+				processed: this.processed,
+				total: this.total,
+				elapsedMs: Date.now() - this.batchStart,
+				skipped: this.skipped,
+			});
+		});
 
-    emitter.on("file-failed", (d) => {
-      this.processed = d.index;
-      this.render({
-        state: "indexing",
-        processed: this.processed,
-        total: this.total,
-        elapsedMs: Date.now() - this.batchStart,
-      });
-    });
+		emitter.on("file-failed", (d) => {
+			this.processed = d.index;
+			this.render({
+				state: "indexing",
+				processed: this.processed,
+				total: this.total,
+				elapsedMs: Date.now() - this.batchStart,
+				skipped: this.skipped,
+			});
+		});
 
-    emitter.on("file-skipped", (d) => {
-      this.processed = d.index;
-      this.render({
-        state: "indexing",
-        processed: this.processed,
-        total: this.total,
-        elapsedMs: Date.now() - this.batchStart,
-      });
-    });
+		emitter.on("file-skipped", (d) => {
+			this.processed = d.index;
+			this.skipped++;
+			this.render({
+				state: "indexing",
+				processed: this.processed,
+				total: this.total,
+				elapsedMs: Date.now() - this.batchStart,
+				skipped: this.skipped,
+			});
+		});
 
-    emitter.on("batch-completed", () => {
-      this.render({ state: "idle" });
-    });
+		emitter.on("batch-completed", () => {
+			this.render({ state: "idle" });
+		});
 
-    emitter.on("batch-cancelled", () => {
-      this.render({ state: "idle" });
-    });
+		emitter.on("batch-cancelled", () => {
+			this.render({ state: "idle" });
+		});
 
-    emitter.on("batch-errored", (d) => {
-      this.render({ state: "error", message: d.message });
-    });
+		emitter.on("batch-errored", (d) => {
+			this.render({ state: "error", message: d.message });
+		});
 
-    emitter.on("dedup-started", (d) => {
-      this.render({ state: "deduplicating", done: 0, total: d.total });
-    });
+		emitter.on("dedup-started", (d) => {
+			this.render({ state: "deduplicating", done: 0, total: d.total });
+		});
 
-    emitter.on("dedup-progress", (d) => {
-      this.render({ state: "deduplicating", done: d.done, total: d.total });
-    });
-  }
+		emitter.on("dedup-progress", (d) => {
+			this.render({ state: "deduplicating", done: d.done, total: d.total });
+		});
+	}
 
-  private render(state: StatusBarState): void {
-    this.el.setText(formatIndexingLabel(state));
-  }
+	private render(state: StatusBarState): void {
+		this.el.setText(formatIndexingLabel(state));
+	}
 }
