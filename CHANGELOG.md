@@ -6,11 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.2] — 2026-08-13
+
 ### Fixed
 - **Restzeitanzeige bei Wiederaufnahme der Indizierung**: übersprungene Dateien
   (bereits in einer vorherigen Sitzung verarbeitet) verfälschen die berechnete
   Restzeit nicht mehr. Die Schätzung berücksichtigt jetzt nur echte Extraktionen
   (Dateien, bei denen ein LLM-Aufruf stattfand) für den Durchschnitt pro Datei.
+
+### Changed
+- **Linting entfernt verwaiste Links nicht mehr**: Die automatische Bereinigung
+  von Verbindungen, deren Ausgangs- oder Zielpunkt nicht mehr existiert, wurde
+  aus der Integritätsprüfung entfernt. Der Button "Ungültige Verbindungen
+  entfernen" und die zugehörige Auto-Fix-Logik in der Lint-UI sind ebenfalls
+  entfernt worden.
 
 ## [1.1.1] — 2026-08-09
 

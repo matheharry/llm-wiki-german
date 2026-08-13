@@ -28,32 +28,7 @@ export function runLint(kb: KnowledgeBase): LintResult {
   const connections = kb.allConnections();
   const sources = kb.allSources();
 
-  const entityMap = new Map(entities.map((e) => [e.id, e]));
-  const conceptMap = new Map(concepts.map((c) => [c.id, c]));
   const sourceMap = new Map(sources.map((s) => [s.id, s]));
-
-  // Helper to check if an ID exists as either entity or concept
-  const exists = (id: string) => entityMap.has(id) || conceptMap.has(id);
-
-  // 1. Dangling Connections
-  for (const conn of connections) {
-    if (!exists(conn.from)) {
-      issues.push({
-        severity: "error",
-        category: "Verbindungen",
-        message: `Ungültiger Ausgangspunkt in Verbindung`,
-        detail: `Verbindung verweist von ID "${conn.from}" (nicht vorhanden) nach "${conn.to}" (${conn.type}).`,
-      });
-    }
-    if (!exists(conn.to)) {
-      issues.push({
-        severity: "error",
-        category: "Verbindungen",
-        message: `Ungültiges Ziel in Verbindung`,
-        detail: `Verbindung verweist von "${conn.from}" nach ID "${conn.to}" (nicht vorhanden) (${conn.type}).`,
-      });
-    }
-  }
 
   // 2. Missing Sources
   for (const ent of entities) {

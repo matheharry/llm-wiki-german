@@ -116,14 +116,8 @@ class LintModal extends Modal {
       return false;
     });
 
-    // Find dangling connections
-    const entityIds = new Set(this.kb.allEntities().map(e => e.id));
-    const conceptIds = new Set(this.kb.allConcepts().map(c => c.id));
-    const exists = (id: string) => entityIds.has(id) || conceptIds.has(id);
-    const danglingConnections = this.kb.allConnections().filter(c => !exists(c.from) || !exists(c.to));
-
     // --- SECTION 1: Automatic Fixes ---
-    if (entitiesWithRedundancies.length > 0 || danglingConnections.length > 0 || this.isCleaning) {
+    if (entitiesWithRedundancies.length > 0 || this.isCleaning) {
       const autoFixSection = contentEl.createDiv();
       autoFixSection.style.border = "1px solid var(--background-modifier-border-focus)";
       autoFixSection.style.borderRadius = "6px";
@@ -230,38 +224,6 @@ class LintModal extends Modal {
             })();
           });
         }
-
-        if (danglingConnections.length > 0) {
-          const cleanConnBtn = actionBtnContainer.createEl("button", {
-            text: `Ungültige Verbindungen entfernen (${danglingConnections.length} Verbindungen)`,
-            cls: "mod-warning",
-          });
-
-          cleanConnBtn.addEventListener("click", () => {
-            void (async () => {
-              this.isCleaning = true;
-              this.onOpen();
-
-              try {
-                // Filter connections to keep only those where both from and to exist
-                this.kb.data.connections = this.kb.data.connections.filter(c => exists(c.from) && exists(c.to));
-
-                await saveKB(this.app, this.kb, this.plugin.kbMtime);
-                const reloaded = await loadKB(this.app);
-                this.plugin.kbMtime = reloaded.mtime;
-                await generatePages(this.app, this.kb);
-
-                new Notice(`${danglingConnections.length} ungültige Verbindungen erfolgreich gelöscht!`);
-              } catch (err) {
-                new Notice(`Fehler beim Löschen der Verbindungen: ${(err as Error).message}`);
-              } finally {
-                this.isCleaning = false;
-                this.result = runLint(this.kb);
-                this.onOpen();
-              }
-            })();
-          });
-        }
       } else {
         // Cleaning in progress: show progress panel + cancel button
         this.progressContainer = autoFixSection.createDiv();
@@ -351,8 +313,7 @@ class LintModal extends Modal {
 
         // Add Auto-Fix status label
         const isAutofixable = 
-          (issue.category === "Duplikate" && issue.message.startsWith("Mögliche redundante Fakten")) ||
-          (issue.category === "Verbindungen" && (issue.message.startsWith("Ungültiger Ausgangspunkt") || issue.message.startsWith("Ungültiges Ziel")));
+          (issue.category === "Duplikate" && issue.message.startsWith("Mögliche redundante Fakten"));
         const fixLabel = header.createSpan();
         fixLabel.style.padding = "2px 6px";
         fixLabel.style.borderRadius = "3px";
@@ -438,11 +399,7 @@ class LintModal extends Modal {
     await safeWritePage(this.app, "wiki/lint-report.md", reportContent);
     await appendWikiLog(
       this.app,
-      `Lint | Bericht gespeichert in wiki/lint-report.md (Fehler: ${
-        this.result.issues.filter((i) => i.severity === "error").length
-      }, Warnungen: ${
-        this.result.issues.filter((i) => i.severity === "warning").length
-      }, Hinweise: ${this.result.issues.filter((i) => i.severity === "info").length})`,
+      `Lint | Bericht gespeichert in wiki/lint-report.md (Fehler: ${this.result.issues.filter((i) => i.severity === "error").length}, Warnungen: ${this.result.issues.filter((i) => i.severity === "warning").length}, Hinweise: ${this.result.issues.filter((i) => i.severity === "info").length})`,
     );
   }
 }

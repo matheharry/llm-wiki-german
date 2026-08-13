@@ -92,7 +92,7 @@ Das war's. Du bist startklar.
 - **Inhaltsverzeichnis** — in `wiki/index.md` sind alle Begriffe des Wikis aufgelistet und verlinkt.
   ![Index](https://res.cloudinary.com/dbb1diepu/image/upload/v1784391130/ene9ft4gllt4fl2wbdh8.png)
 
-![Integritätsprüfung (Lint)](https://res.cloudinary.com/dbb1diepu/image/upload/v1784377558/nc2gvs16uwij9usxp13a.png)
+![Integritätsprüfung (Lint)](https://res.cloudinary.com/dbb1diepu/image/upload/v1786590095/tbajydrlg56ojmbn40an.png)
 
 | | |
 |---|---|
@@ -183,6 +183,6 @@ Die Ergebnisse werden mit **Reciprocal Rank Fusion** zu einer kombinierten Rangl
 
 **Auf dem Laufenden bleiben.** Wenn du eine Notiz speicherst, extrahiert das Plugin nur diese Datei im Hintergrund neu. Es gibt auch einen optionalen nächtlichen Planer für eine vollständige Aktualisierung.
 
-**Integritätsprüfung (Lint).** Der Befehl „Wissensdatenbank aufräumen und prüfen" analysiert die Wissensdatenbank auf verwaiste Verbindungen, fehlende Quellen, doppelte Einträge und redundante Fakten. Für viele Probleme bietet das Plugin eine automatische Bereinigung an.
+**Integritätsprüfung (Lint).** Der Befehl „Wissensdatenbank aufräumen und prüfen" analysiert die Wissensdatenbank auf fehlende Quellen, doppelte Einträge und redundante Fakten. Für viele Probleme bietet das Plugin eine automatische Bereinigung an.
 
 **Protokollierung.** Alle Extraktionen, Dateilöschungen und Abfragen werden in `wiki/log.md` protokolliert.
