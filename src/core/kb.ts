@@ -46,12 +46,22 @@ function toStrArr(v: unknown): string[] {
  * rest of the codebase never sees e.g. `definition` as an array.
  */
 function sanitizeKbData(raw: KBData): KBData {
+  // Migration: legacy entries predating `generatedAt` get today's date so
+  // their pages become stable from the next regeneration onward. Without
+  // this, old entities/concepts would keep being rewritten with a fresh
+  // date on every `generatePages` run.
+  const today = todayIso();
   const concepts: Record<string, Concept> = {};
   for (const [id, c] of Object.entries(raw.concepts)) {
     concepts[id] = {
       id: c.id,
       name: toStr(c.name),
       definition: toStr(c.definition),
+      shortDescription: c.shortDescription ? toStr(c.shortDescription) : undefined,
+      generatedBy: c.generatedBy ? toStr(c.generatedBy) : undefined,
+      generatedAt: c.generatedAt ? toStr(c.generatedAt) : today,
+      verified: c.verified,
+      staleAfter: c.staleAfter ? toStr(c.staleAfter) : undefined,
       related: toStrArr(c.related),
       sources: toStrArr(c.sources),
     };
@@ -64,6 +74,11 @@ function sanitizeKbData(raw: KBData): KBData {
       type: toStr(e.type) as EntityType,
       aliases: toStrArr(e.aliases),
       facts: toStrArr(e.facts),
+      shortDescription: e.shortDescription ? toStr(e.shortDescription) : undefined,
+      generatedBy: e.generatedBy ? toStr(e.generatedBy) : undefined,
+      generatedAt: e.generatedAt ? toStr(e.generatedAt) : today,
+      verified: e.verified,
+      staleAfter: e.staleAfter ? toStr(e.staleAfter) : undefined,
       sources: toStrArr(e.sources),
     };
   }
@@ -84,6 +99,7 @@ export interface AddEntityArgs {
   facts?: string[];
   shortDescription?: string;
   generatedBy?: string;
+  generatedAt?: string;
   verified?: VerifiedRecord | VerifiedRecord[];
   staleAfter?: string;
   source?: string;
@@ -94,6 +110,7 @@ export interface AddConceptArgs {
   definition?: string;
   shortDescription?: string;
   generatedBy?: string;
+  generatedAt?: string;
   verified?: VerifiedRecord | VerifiedRecord[];
   staleAfter?: string;
   related?: string[];
@@ -138,6 +155,7 @@ export class KnowledgeBase {
         facts: args.facts,
         shortDescription: args.shortDescription,
         generatedBy: args.generatedBy,
+        generatedAt: args.generatedAt,
         verified: args.verified,
         staleAfter: args.staleAfter,
         source: args.source,
@@ -151,6 +169,7 @@ export class KnowledgeBase {
       facts: args.facts ?? [],
       shortDescription: args.shortDescription,
       generatedBy: args.generatedBy,
+      generatedAt: args.generatedAt ?? todayIso(),
       verified: args.verified,
       staleAfter: args.staleAfter,
       sources: args.source ? [args.source] : [],
@@ -166,6 +185,7 @@ export class KnowledgeBase {
       facts?: string[];
       shortDescription?: string;
       generatedBy?: string;
+      generatedAt?: string;
       verified?: VerifiedRecord | VerifiedRecord[];
       staleAfter?: string;
       source?: string;
@@ -175,6 +195,10 @@ export class KnowledgeBase {
       entity.shortDescription = patch.shortDescription;
     }
     if (patch.generatedBy) entity.generatedBy = patch.generatedBy;
+    // Keep the original creation date — only set if not already present.
+    if (patch.generatedAt && !entity.generatedAt) {
+      entity.generatedAt = patch.generatedAt;
+    }
     if (patch.verified) entity.verified = patch.verified;
     if (patch.staleAfter) entity.staleAfter = patch.staleAfter;
     if (patch.aliases) {
@@ -207,6 +231,7 @@ export class KnowledgeBase {
         definition: args.definition,
         shortDescription: args.shortDescription,
         generatedBy: args.generatedBy,
+        generatedAt: args.generatedAt,
         verified: args.verified,
         staleAfter: args.staleAfter,
         related: args.related,
@@ -219,6 +244,7 @@ export class KnowledgeBase {
       definition: args.definition ?? "",
       shortDescription: args.shortDescription,
       generatedBy: args.generatedBy,
+      generatedAt: args.generatedAt ?? todayIso(),
       verified: args.verified,
       staleAfter: args.staleAfter,
       related: args.related ?? [],
@@ -234,6 +260,7 @@ export class KnowledgeBase {
       definition?: string;
       shortDescription?: string;
       generatedBy?: string;
+      generatedAt?: string;
       verified?: VerifiedRecord | VerifiedRecord[];
       staleAfter?: string;
       related?: string[];
@@ -244,6 +271,10 @@ export class KnowledgeBase {
       concept.shortDescription = patch.shortDescription;
     }
     if (patch.generatedBy) concept.generatedBy = patch.generatedBy;
+    // Keep the original creation date — only set if not already present.
+    if (patch.generatedAt && !concept.generatedAt) {
+      concept.generatedAt = patch.generatedAt;
+    }
     if (patch.verified) concept.verified = patch.verified;
     if (patch.staleAfter) concept.staleAfter = patch.staleAfter;
     if (patch.definition && patch.definition.length > concept.definition.length) {

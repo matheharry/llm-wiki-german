@@ -33,6 +33,59 @@ describe("KnowledgeBase — construction", () => {
     const kb = new KnowledgeBase(data);
     expect(kb.data.entities["alan-watts"]?.name).toBe("Alan Watts");
   });
+
+  it("backfills generatedAt for legacy entities and concepts on load", () => {
+    const data = {
+      meta: { version: 1, created: "2026-01-01", updated: "2026-01-02" },
+      entities: {
+        "alan-watts": {
+          id: "alan-watts",
+          name: "Alan Watts",
+          type: "person" as const,
+          aliases: [],
+          facts: ["Author of Wisdom of Insecurity"],
+          sources: ["Books/Watts.md"],
+        },
+      },
+      concepts: {
+        zen: {
+          id: "zen",
+          name: "Zen",
+          definition: "Direct experience",
+          related: [],
+          sources: ["Books/Watts.md"],
+        },
+      },
+      connections: [],
+      sources: {},
+    };
+    const kb = new KnowledgeBase(data);
+    const expected = new Date().toISOString().slice(0, 10);
+    expect(kb.data.entities["alan-watts"]?.generatedAt).toBe(expected);
+    expect(kb.data.concepts["zen"]?.generatedAt).toBe(expected);
+  });
+
+  it("preserves an existing generatedAt on load", () => {
+    const data = {
+      meta: { version: 1, created: "2026-01-01", updated: "2026-01-02" },
+      entities: {
+        "alan-watts": {
+          id: "alan-watts",
+          name: "Alan Watts",
+          type: "person" as const,
+          aliases: [],
+          facts: ["Author of Wisdom of Insecurity"],
+          generatedAt: "2026-01-15",
+          sources: ["Books/Watts.md"],
+        },
+      },
+      concepts: {},
+      connections: [],
+      sources: {},
+    };
+    const kb = new KnowledgeBase(data);
+    expect(kb.data.entities["alan-watts"]?.generatedAt).toBe("2026-01-15");
+  });
 });
 
 describe("KnowledgeBase.addEntity", () => {

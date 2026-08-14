@@ -46,6 +46,13 @@ export interface Entity {
   facts: string[];
   shortDescription?: string;
   generatedBy?: string;
+  /**
+   * ISO date (YYYY-MM-DD) when this entity was first created in the KB.
+   * Stable across page regenerations — used for the OKF `generated.at`
+   * frontmatter field so pages don't get rewritten with today's date
+   * on every `generatePages` run.
+   */
+  generatedAt?: string;
   verified?: VerifiedRecord | VerifiedRecord[];
   staleAfter?: string;
   sources: string[];
@@ -57,6 +64,13 @@ export interface Concept {
   definition: string;
   shortDescription?: string;
   generatedBy?: string;
+  /**
+   * ISO date (YYYY-MM-DD) when this concept was first created in the KB.
+   * Stable across page regenerations — used for the OKF `generated.at`
+   * frontmatter field so pages don't get rewritten with today's date
+   * on every `generatePages` run.
+   */
+  generatedAt?: string;
   verified?: VerifiedRecord | VerifiedRecord[];
   staleAfter?: string;
   related: string[];
@@ -144,4 +158,3 @@ export interface OKFFrontmatter {
   okf_version?: string;
   [key: string]: unknown;
 }
-

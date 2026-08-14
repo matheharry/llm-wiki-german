@@ -72,6 +72,20 @@ describe("generatePages", () => {
     const content = files.get("wiki/entities/alan-watts.md")!.content;
     expect(content).toContain("Alan Watts");
   });
+
+  it("does not rewrite pages with a new date when KB is unchanged", async () => {
+    const { app, files } = createMockApp();
+    const kb = buildRichKb();
+    await generatePages(app, kb);
+    const first = files.get("wiki/entities/alan-watts.md")!.content;
+    const firstConcept = files.get("wiki/concepts/zen-buddhism.md")!.content;
+
+    // Simulate a later regeneration on a different day — the KB data is
+    // unchanged, so the generated pages must be byte-identical.
+    await generatePages(app, kb);
+    expect(files.get("wiki/entities/alan-watts.md")!.content).toBe(first);
+    expect(files.get("wiki/concepts/zen-buddhism.md")!.content).toBe(firstConcept);
+  });
 });
 
 describe("sourcePagePath", () => {

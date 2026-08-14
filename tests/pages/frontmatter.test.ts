@@ -90,6 +90,22 @@ describe("entityFrontmatter", () => {
     expect(fm["aktualisiert"]).toBe(TODAY);
   });
 
+  it("uses generatedAt when present instead of today", () => {
+    const e = { ...ENTITY, generatedAt: "2026-01-15" };
+    const fm = entityFrontmatter(e, TODAY);
+    expect(fm["aktualisiert"]).toBe("2026-01-15");
+    expect(fm["generated"]).toEqual({
+      by: "llm-wiki-german/1.1.0c",
+      at: "2026-01-15T00:00:00Z",
+    });
+  });
+
+  it("keeps generatedAt stable even when today differs", () => {
+    const e = { ...ENTITY, generatedAt: "2026-01-15" };
+    const fm = entityFrontmatter(e, "2026-04-07");
+    expect(fm["aktualisiert"]).toBe("2026-01-15");
+  });
+
   it("sets cssclasses to empty list", () => {
     const fm = entityFrontmatter(ENTITY, TODAY);
     expect(fm["cssclasses"]).toEqual([]);
@@ -136,6 +152,22 @@ describe("conceptFrontmatter", () => {
   it("sets aktualisiert to TODAY", () => {
     const fm = conceptFrontmatter(CONCEPT, TODAY);
     expect(fm["aktualisiert"]).toBe(TODAY);
+  });
+
+  it("uses generatedAt when present instead of today", () => {
+    const c = { ...CONCEPT, generatedAt: "2026-02-20" };
+    const fm = conceptFrontmatter(c, TODAY);
+    expect(fm["aktualisiert"]).toBe("2026-02-20");
+    expect(fm["generated"]).toEqual({
+      by: "llm-wiki-german/1.1.0c",
+      at: "2026-02-20T00:00:00Z",
+    });
+  });
+
+  it("keeps generatedAt stable even when today differs", () => {
+    const c = { ...CONCEPT, generatedAt: "2026-02-20" };
+    const fm = conceptFrontmatter(c, "2026-04-07");
+    expect(fm["aktualisiert"]).toBe("2026-02-20");
   });
 });
 

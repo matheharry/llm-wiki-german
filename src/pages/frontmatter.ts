@@ -26,6 +26,9 @@ export function entityFrontmatter(
   const desc =
     toFirstSentence(entity.shortDescription || entity.facts[0]) ||
     `Entität vom Typ ${entity.type}`;
+  // Use the stable creation date when available; fall back to `today`
+  // only for legacy entries that predate `generatedAt`.
+  const generatedAt = entity.generatedAt || today;
   const fm: Record<string, unknown> = {
     type: `Entity/${entity.type}`,
     title: entity.name,
@@ -36,10 +39,10 @@ export function entityFrontmatter(
     aliases: [...entity.aliases],
     tags: ["llm-wiki/entity", `llm-wiki/entity/${entity.type}`],
     sources: entity.sources.map((s) => ({ resource: s, id: s })),
-    generated: { by: entity.generatedBy || "llm-wiki-german/1.1.0c", at: `${today}T00:00:00Z` },
+    generated: { by: entity.generatedBy || "llm-wiki-german/1.1.0c", at: `${generatedAt}T00:00:00Z` },
     status: "stable",
     "quellen-anzahl": entity.sources.length,
-    "aktualisiert": today,
+    "aktualisiert": generatedAt,
     cssclasses: [],
   };
   if (entity.verified) fm["verified"] = entity.verified;
@@ -54,6 +57,9 @@ export function conceptFrontmatter(
   const desc =
     toFirstSentence(concept.shortDescription || concept.definition) ||
     `Konzept ${concept.name}`;
+  // Use the stable creation date when available; fall back to `today`
+  // only for legacy entries that predate `generatedAt`.
+  const generatedAt = concept.generatedAt || today;
   const fm: Record<string, unknown> = {
     type: "Concept",
     title: concept.name,
@@ -63,10 +69,10 @@ export function conceptFrontmatter(
     aliases: [],
     tags: ["llm-wiki/concept"],
     sources: concept.sources.map((s) => ({ resource: s, id: s })),
-    generated: { by: concept.generatedBy || "llm-wiki-german/1.1.0c", at: `${today}T00:00:00Z` },
+    generated: { by: concept.generatedBy || "llm-wiki-german/1.1.0c", at: `${generatedAt}T00:00:00Z` },
     status: "stable",
     "quellen-anzahl": concept.sources.length,
-    "aktualisiert": today,
+    "aktualisiert": generatedAt,
     cssclasses: [],
   };
   if (concept.verified) fm["verified"] = concept.verified;
