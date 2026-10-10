@@ -625,7 +625,8 @@ export class QueryModal extends Modal {
     if (!this.controller) {
       const index: ReadonlyMap<string, number[]> =
         state.kind === "ready" ? state.index : new Map();
-      this.controller = this.buildQueryController(index);
+      const norms = state.kind === "ready" ? state.norms : undefined;
+      this.controller = this.buildQueryController(index, norms);
     } else if (
       state.kind === "ready" &&
       this.embeddingIndex !== state.index
@@ -633,7 +634,7 @@ export class QueryModal extends Modal {
       // Swap in a freshly built index (also triggered by embedding model
       // changes that rebuilt the index in the background).
       this.embeddingIndex = state.index;
-      this.controller.setEmbeddingIndex(state.index);
+      this.controller.setEmbeddingIndex(state.index, state.norms);
     }
 
     if (state.kind === "idle" || state.kind === "building") {
@@ -689,6 +690,7 @@ export class QueryModal extends Modal {
 
   private buildQueryController(
     embeddingIndex: ReadonlyMap<string, number[]>,
+    embeddingNorms?: ReadonlyMap<string, number>,
   ): QueryController {
     return new QueryController({
       kb: this.args.kb,
@@ -697,6 +699,7 @@ export class QueryModal extends Modal {
       embeddingModel: this.args.embeddingModel,
       folders: this.currentFolders,
       embeddingIndex,
+      embeddingNorms,
       queryEmbedding: this.args.queryEmbedding,
       onState: (s): void => {
         this.applyState(s);

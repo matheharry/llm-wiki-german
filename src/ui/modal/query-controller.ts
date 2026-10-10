@@ -26,6 +26,8 @@ export interface QueryControllerOptions {
   embeddingModel?: string;
   folders?: string[];
   embeddingIndex?: ReadonlyMap<string, number[]>;
+  /** Cached L2 norms paired with `embeddingIndex`. */
+  embeddingNorms?: ReadonlyMap<string, number>;
   queryEmbedding?: number[] | null;
   onState: (s: QueryControllerState) => void;
   onContext: (bundle: RetrievedBundle, confidence: ConfidenceLevel) => void;
@@ -58,8 +60,12 @@ export class QueryController {
   }
 
   /** Swaps in a freshly built embedding index (e.g. after a model change). */
-  setEmbeddingIndex(index: ReadonlyMap<string, number[]>): void {
+  setEmbeddingIndex(
+    index: ReadonlyMap<string, number[]>,
+    norms?: ReadonlyMap<string, number>,
+  ): void {
     this.opts.embeddingIndex = index;
+    this.opts.embeddingNorms = norms;
   }
 
   async runChatTurn(args: { chat: Chat; question: string }): Promise<void> {
@@ -96,6 +102,7 @@ export class QueryController {
         embeddingModel: this.opts.embeddingModel,
         folders: this.currentFolders,
         embeddingIndex: this.opts.embeddingIndex,
+        embeddingNorms: this.opts.embeddingNorms,
         queryEmbedding: this.opts.queryEmbedding,
         signal: this.abortCtrl.signal,
       })) {

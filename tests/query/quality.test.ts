@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   RETRIEVAL_ENTITY_BLACKLIST,
   RETRIEVAL_CONCEPT_BLACKLIST,
+  createQualityMultiplier,
   qualityMultiplier,
   detectTypeHint,
 } from "../../src/query/quality.js";
@@ -49,6 +50,54 @@ describe("qualityMultiplier", () => {
   it("penalises twitter-only sources", () => {
     const kb = kbWith(2, ["Twitter/a.md", "Twitter/b.md"]);
     expect(qualityMultiplier("x", kb)).toBeLessThan(1.0);
+  });
+});
+
+describe("createQualityMultiplier", () => {
+  it("matches qualityMultiplier for entity, concept, and source ids", () => {
+    const kb = new KnowledgeBase();
+    kb.addEntity({
+      name: "Rich Entity",
+      type: "person",
+      aliases: ["Rich"],
+      facts: ["a", "b", "c"],
+      source: "Books/rich.md",
+    });
+    kb.addEntity({
+      name: "Thin Entity",
+      type: "person",
+      aliases: [],
+      facts: [],
+      source: "Twitter/x.md",
+    });
+    kb.addConcept({
+      name: "Zen",
+      definition: "A school of Buddhism",
+      related: ["meditation"],
+      source: "Books/rich.md",
+    });
+    kb.markSource({
+      path: "Books/rich.md",
+      summary: "A rich source",
+      mtime: 1,
+      origin: "user-note",
+    });
+
+    const entities = new Map(kb.allEntities().map((e) => [e.id, e]));
+    const concepts = new Map(kb.allConcepts().map((c) => [c.id, c]));
+    const sources = new Map(kb.allSources().map((s) => [s.id, s]));
+    const multiplier = createQualityMultiplier({ entities, concepts, sources });
+
+    const ids = [
+      "rich-entity",
+      "thin-entity",
+      "concept:zen",
+      "source:Books/rich.md",
+      "missing-id",
+    ];
+    for (const id of ids) {
+      expect(multiplier(id)).toBe(qualityMultiplier(id, kb));
+    }
   });
 });
 

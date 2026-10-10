@@ -30,6 +30,7 @@ describe("formatIndexingStatus", () => {
         kind: "ready",
         index: new Map(),
         model: "embeddinggemma",
+        norms: new Map(),
       }),
     ).toBe("Bereit");
   });

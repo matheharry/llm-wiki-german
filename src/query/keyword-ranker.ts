@@ -1,12 +1,13 @@
 import type { KnowledgeBase } from "../core/kb.js";
 import type { RankedItem } from "./types.js";
+import { buildKbView, type KbView } from "./kb-view.js";
 
 const NAME_HIT = 3;
 const FACT_HIT = 1;
 const BIGRAM_BOOST = 6;
 
 function computeTermWeights(
-  kb: KnowledgeBase,
+  view: KbView,
   terms: readonly string[],
 ): Map<string, number> {
   const weights = new Map<string, number>();
@@ -15,9 +16,9 @@ function computeTermWeights(
     return weights;
   }
 
-  const allEntities = kb.allEntities();
-  const allConcepts = kb.allConcepts();
-  const allSources = kb.allSources();
+  const allEntities = view.entities;
+  const allConcepts = view.concepts;
+  const allSources = view.sources;
   const n = allEntities.length + allConcepts.length + allSources.length;
   if (n === 0) {
     for (const t of terms) weights.set(t, 1.0);
@@ -26,28 +27,22 @@ function computeTermWeights(
 
   for (const t of terms) {
     let df = 0;
-    for (const e of allEntities) {
+    for (const { nameLower, aliasesLower, factsLower } of allEntities) {
       if (
-        e.name.toLowerCase().includes(t) ||
-        e.aliases.some((a) => a.toLowerCase().includes(t)) ||
-        e.facts.some((f) => f.toLowerCase().includes(t))
+        nameLower.includes(t) ||
+        aliasesLower.some((a) => a.includes(t)) ||
+        factsLower.some((f) => f.includes(t))
       ) {
         df++;
       }
     }
-    for (const c of allConcepts) {
-      if (
-        c.name.toLowerCase().includes(t) ||
-        (c.definition && c.definition.toLowerCase().includes(t))
-      ) {
+    for (const { nameLower, definitionLower } of allConcepts) {
+      if (nameLower.includes(t) || definitionLower.includes(t)) {
         df++;
       }
     }
-    for (const s of allSources) {
-      if (
-        s.id.toLowerCase().includes(t) ||
-        (s.summary && s.summary.toLowerCase().includes(t))
-      ) {
+    for (const { idLower, summaryLower } of allSources) {
+      if (idLower.includes(t) || summaryLower.includes(t)) {
         df++;
       }
     }
@@ -61,21 +56,21 @@ function computeTermWeights(
 export function rankByKeyword(
   kb: KnowledgeBase,
   terms: readonly string[],
+  view?: KbView,
 ): RankedItem[] {
   if (terms.length === 0) return [];
-  const weights = computeTermWeights(kb, terms);
+  const prepared = view ?? buildKbView(kb);
+  const weights = computeTermWeights(prepared, terms);
   const items: Array<{ id: string; score: number; richness: number }> = [];
 
-  for (const e of kb.allEntities()) {
+  for (const { entity, nameLower, aliasesLower, factsLower } of prepared.entities) {
     let score = 0;
-    const nameLower = e.name.toLowerCase();
-    const aliasesLower = e.aliases.map((a) => a.toLowerCase());
     for (const t of terms) {
       const w = weights.get(t) ?? 1.0;
       if (nameLower.includes(t)) score += NAME_HIT * w;
       else if (aliasesLower.some((a) => a.includes(t))) score += NAME_HIT * w;
-      for (const f of e.facts) {
-        if (f.toLowerCase().includes(t)) score += FACT_HIT * w;
+      for (const f of factsLower) {
+        if (f.includes(t)) score += FACT_HIT * w;
       }
     }
     for (let i = 0; i < terms.length - 1; i++) {
@@ -84,35 +79,31 @@ export function rankByKeyword(
     }
     if (score > 0) {
       items.push({
-        id: e.id,
+        id: entity.id,
         score,
-        richness: e.facts.length + e.sources.length,
+        richness: entity.facts.length + entity.sources.length,
       });
     }
   }
 
-  for (const c of kb.allConcepts()) {
+  for (const { concept, nameLower, definitionLower } of prepared.concepts) {
     let score = 0;
-    const nameLower = c.name.toLowerCase();
-    const defLower = (c.definition ?? "").toLowerCase();
     for (const t of terms) {
       const w = weights.get(t) ?? 1.0;
       if (nameLower.includes(t)) score += NAME_HIT * w;
-      if (defLower.includes(t)) score += FACT_HIT * w;
+      if (definitionLower.includes(t)) score += FACT_HIT * w;
     }
     if (score > 0) {
       items.push({
-        id: `concept:${c.id}`,
+        id: `concept:${concept.id}`,
         score,
-        richness: (c.related?.length ?? 0) + c.sources.length,
+        richness: (concept.related?.length ?? 0) + concept.sources.length,
       });
     }
   }
 
-  for (const s of kb.allSources()) {
+  for (const { source, idLower, summaryLower } of prepared.sources) {
     let score = 0;
-    const idLower = s.id.toLowerCase();
-    const summaryLower = (s.summary ?? "").toLowerCase();
     for (const t of terms) {
       const w = weights.get(t) ?? 1.0;
       if (idLower.includes(t)) score += NAME_HIT * w;
@@ -120,7 +111,7 @@ export function rankByKeyword(
     }
     if (score > 0) {
       items.push({
-        id: `source:${s.id}`,
+        id: `source:${source.id}`,
         score,
         richness: 1,
       });
@@ -130,4 +121,3 @@ export function rankByKeyword(
   items.sort((a, b) => b.score - a.score || b.richness - a.richness);
   return items.map(({ id, score }) => ({ id, score }));
 }
-

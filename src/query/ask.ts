@@ -22,6 +22,8 @@ export interface AskArgs {
   embeddingModel?: string;
   folders?: string[];
   embeddingIndex?: ReadonlyMap<string, number[]>;
+  /** Cached L2 norms for `embeddingIndex`, so ranking skips re-normalizing. */
+  embeddingNorms?: ReadonlyMap<string, number>;
   queryEmbedding?: number[] | null;
   signal?: AbortSignal;
 }
@@ -67,6 +69,7 @@ export async function* ask(args: AskArgs): AsyncIterable<AnswerEvent> {
       kb: args.kb,
       folders: args.folders,
       embeddingIndex: args.embeddingIndex,
+      embeddingNorms: args.embeddingNorms,
       queryEmbedding,
     });
     yield { kind: "context", bundle };

@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-10-10
+
+### Changed
+- **Antwortzeiten bei großen Wissensbasen drastisch reduziert**: Die
+  Abfrage-Pipeline hat für jeden gefundenen Treffer die gesamte Wissensbasis
+  erneut linear durchsucht (quadratischer Aufwand in der Zahl der Datensätze).
+  Diese Suche ist durch direkte Nachschlagetabellen ersetzt; außerdem werden
+  Entitäten, Konzepte und Quellen einer Frage nur noch einmal aufbereitet,
+  statt in jeder Ranking-Stufe neu. Auf einer Wissensbasis mit 16.000
+  Datensätzen sank die Antwortzeit pro Frage von rund 15–22 s auf 0,05–0,16 s.
+  Ein neuer Regressionstest hält das fest und schlägt fehl, sobald der
+  quadratische Pfad zurückkehrt.
+- **Vektor-Suche ohne doppelte Normberechnung**: Die Länge (L2-Norm) der
+  Index-Vektoren wird beim Aufbau des Embedding-Index einmalig
+  zwischengespeichert und die Norm der Suchanfrage nur einmal pro Frage
+  berechnet, statt bei jedem Vergleich aufs Neue. Der Cache liegt nur im
+  Arbeitsspeicher (eine Zahl pro Vektor); `embeddings-cache.json` behält sein
+  bisheriges Format und lädt unverändert.
+- **Nur echte Folgefragen werden umgeschrieben**: Elliptische oder
+  pronomenbasierte Chat-Turns lösen eine LLM-Umschreibung aus, eigenständige
+  Fragen gehen direkt an die Suche. Zusätzlich liefern feinere
+  Abfrage-Typen, das Verwerfen schwacher Embedding-Treffer, priorisierte
+  Fakten im Kontext sowie eine stärkere Gewichtung seltener Stichwörter und
+  belastbarer Verbindungen passendere Antworten.
+- **Slash-Filter ohne Fehlalarme**: Schuljahre, technische Abkürzungen und
+  Begriffspaare werden nicht länger als Dateipfad interpretiert.
+- **`wiki/log.md` wächst nicht mehr unbegrenzt**: Beim Schreiben des Logs
+  werden Einträge entfernt, die älter als 30 Tage sind.
+
+### Fixed
+- **Seiten behalten ihr Erzeugungsdatum**: Entitäten und Konzepte erhalten ein
+  stabiles `generatedAt` (ISO-Datum, `JJJJ-MM-TT`). Vorher wurde bei jeder
+  Generierung das heutige Datum in `generated.at` und `aktualisiert`
+  geschrieben, wodurch alle Seiten laufend neu erzeugt wurden. Bestehende
+  Einträge werden beim Laden einmalig nachgetragen und danach unverändert
+  übernommen; eine unveränderte Wissensbasis schreibt `generatePages` gar
+  nicht mehr an.
+
 ## [1.1.2] — 2026-08-13
 
 ### Fixed

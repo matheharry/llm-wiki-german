@@ -1,5 +1,10 @@
 import type { KnowledgeBase } from "../core/kb.js";
-import type { EntityType } from "../core/types.js";
+import type {
+  Concept,
+  Entity,
+  EntityType,
+  SourceRecord,
+} from "../core/types.js";
 
 export const RETRIEVAL_ENTITY_BLACKLIST: ReadonlySet<string> = new Set([
   "exact name",
@@ -74,40 +79,25 @@ function getTrustBoost(verified: unknown): number {
   return 1.0;
 }
 
-/**
- * Soft re-ranking multiplier applied AFTER RRF.
- * Looks up the entity/concept by canonical id (the slug stored on the
- * record itself, not a re-derived form of the name). Both rankers and
- * `retrieve()` emit ids in this canonical form.
- */
-export function qualityMultiplier(id: string, kb: KnowledgeBase): number {
-  if (id.startsWith("source:")) {
-    const sourceId = id.slice("source:".length);
-    const source = kb.allSources().find((s) => s.id === sourceId);
-    if (!source) return 1.0;
-    let m = 1.2;
-    if (source.summary) m *= 1.2;
-    m *= getTrustBoost(source.verified);
-    return m;
-  }
+function multiplierForSource(source: SourceRecord): number {
+  let m = 1.2;
+  if (source.summary) m *= 1.2;
+  m *= getTrustBoost(source.verified);
+  return m;
+}
 
-  // Concept ids are prefixed
-  if (id.startsWith("concept:")) {
-    const conceptId = id.slice("concept:".length);
-    const concept = kb.allConcepts().find((c) => c.id === conceptId);
-    if (!concept) return 1.0;
-    let m = 1.0;
-    const hasDef = typeof concept.definition === "string" && concept.definition.trim().length > 0;
-    const hasRelated = (concept.related?.length ?? 0) > 0;
-    if (hasDef && hasRelated) m *= 1.2;
-    if (!hasDef) m *= 0.5;
-    m *= getTrustBoost(concept.verified);
-    return m;
-  }
+function multiplierForConcept(concept: Concept): number {
+  let m = 1.0;
+  const hasDef =
+    typeof concept.definition === "string" && concept.definition.trim().length > 0;
+  const hasRelated = (concept.related?.length ?? 0) > 0;
+  if (hasDef && hasRelated) m *= 1.2;
+  if (!hasDef) m *= 0.5;
+  m *= getTrustBoost(concept.verified);
+  return m;
+}
 
-  const entity = kb.allEntities().find((e) => e.id === id);
-  if (!entity) return 1.0;
-
+function multiplierForEntity(entity: Entity): number {
   let m = 1.0;
   if (entity.facts.length >= 3) m *= 1.3;
   if (entity.facts.length === 0) m *= 0.3;
@@ -121,4 +111,57 @@ export function qualityMultiplier(id: string, kb: KnowledgeBase): number {
   m *= getTrustBoost(entity.verified);
 
   return m;
+}
+
+/** Id-keyed record maps so quality scoring is O(1) per item. */
+export interface QualityLookup {
+  entities: ReadonlyMap<string, Entity>;
+  concepts: ReadonlyMap<string, Concept>;
+  sources: ReadonlyMap<string, SourceRecord>;
+}
+
+/**
+ * Soft re-ranking multiplier applied AFTER RRF.
+ * Looks up the entity/concept by canonical id (the slug stored on the
+ * record itself, not a re-derived form of the name). Both rankers and
+ * `retrieve()` emit ids in this canonical form.
+ *
+ * This factory builds nothing per call: pass the maps `retrieve()` already
+ * computed. Calling the standalone `qualityMultiplier(id, kb)` instead would
+ * rebuild three lookup maps per item — an O(n²) scan across a fused ranking
+ * that can contain every record in the KB.
+ */
+export function createQualityMultiplier(
+  lookup: QualityLookup,
+): (id: string) => number {
+  return (id: string): number => {
+    if (id.startsWith("source:")) {
+      const source = lookup.sources.get(id.slice("source:".length));
+      return source ? multiplierForSource(source) : 1.0;
+    }
+
+    // Concept ids are prefixed
+    if (id.startsWith("concept:")) {
+      const concept = lookup.concepts.get(id.slice("concept:".length));
+      return concept ? multiplierForConcept(concept) : 1.0;
+    }
+
+    const entity = lookup.entities.get(id);
+    return entity ? multiplierForEntity(entity) : 1.0;
+  };
+}
+
+/**
+ * Convenience wrapper for one-off callers and tests. Builds the lookup maps
+ * once for a single id — prefer `createQualityMultiplier` when scoring a
+ * whole ranked list.
+ */
+export function qualityMultiplier(id: string, kb: KnowledgeBase): number {
+  const entities = new Map<string, Entity>();
+  for (const e of kb.allEntities()) entities.set(e.id, e);
+  const concepts = new Map<string, Concept>();
+  for (const c of kb.allConcepts()) concepts.set(c.id, c);
+  const sources = new Map<string, SourceRecord>();
+  for (const s of kb.allSources()) sources.set(s.id, s);
+  return createQualityMultiplier({ entities, concepts, sources })(id);
 }

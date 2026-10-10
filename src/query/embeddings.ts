@@ -44,6 +44,28 @@ export function cosineSim(a: readonly number[], b: readonly number[]): number {
   return dot / (Math.sqrt(na) * Math.sqrt(nb));
 }
 
+/** Sum of squared components, used to derive an L2 norm. */
+export function sumOfSquares(vec: readonly number[]): number {
+  let sum = 0;
+  for (let i = 0; i < vec.length; i++) sum += vec[i] * vec[i];
+  return sum;
+}
+
+/**
+ * Precompute the L2 norm of every indexed vector. Vector norms never change
+ * once an index is built, so caching them turns cosine similarity into a
+ * single dot product plus two divisions — instead of re-deriving each
+ * vector's norm on every query. The map holds one number per item, a rounding
+ * error next to the vectors themselves.
+ */
+export function buildNormIndex(
+  index: ReadonlyMap<string, number[]>,
+): Map<string, number> {
+  const norms = new Map<string, number>();
+  for (const [id, vec] of index) norms.set(id, Math.sqrt(sumOfSquares(vec)));
+  return norms;
+}
+
 export interface EmbeddingIndexProgress {
   /** 1-based count of items processed so far (cache hits included). */
   readonly current: number;

@@ -1,5 +1,5 @@
 import { LLMConnectError } from "../llm/provider.js";
-import type { EmbeddingIndexProgress } from "./embeddings.js";
+import { buildNormIndex, type EmbeddingIndexProgress } from "./embeddings.js";
 
 /**
  * Reason classifies error states so the UI can show appropriate copy.
@@ -11,8 +11,17 @@ export type EmbeddingIndexErrorReason = "connect" | "other";
 export type EmbeddingIndexState =
   | { kind: "idle" }
   | { kind: "building"; progress: EmbeddingIndexProgress }
-  /** `model` records which embedding model the index was built with. */
-  | { kind: "ready"; index: ReadonlyMap<string, number[]>; model: string }
+  /**
+   * `model` records which embedding model the index was built with.
+   * `norms` caches each vector's L2 norm so queries can score with a plain
+   * dot product instead of re-normalizing every vector per query.
+   */
+  | {
+      kind: "ready";
+      index: ReadonlyMap<string, number[]>;
+      model: string;
+      norms: ReadonlyMap<string, number>;
+    }
   | { kind: "error"; message: string; reason: EmbeddingIndexErrorReason };
 
 export interface EmbeddingIndexControllerOptions {
@@ -82,7 +91,12 @@ export class EmbeddingIndexController {
         const index = await this.opts.buildIndex((progress) => {
           this.transition({ kind: "building", progress });
         });
-        this.transition({ kind: "ready", index, model: model ?? "" });
+        this.transition({
+          kind: "ready",
+          index,
+          model: model ?? "",
+          norms: buildNormIndex(index),
+        });
         return index;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

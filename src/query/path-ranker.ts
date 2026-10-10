@@ -1,36 +1,41 @@
 import type { KnowledgeBase } from "../core/kb.js";
 import type { RankedItem } from "./types.js";
+import { buildKbView, type KbView } from "./kb-view.js";
 
 export function rankByPath(
   kb: KnowledgeBase,
   terms: readonly string[],
+  view?: KbView,
 ): RankedItem[] {
   if (terms.length === 0) return [];
+  const prepared = view ?? buildKbView(kb);
   const items: RankedItem[] = [];
 
-  for (const e of kb.allEntities()) {
+  const lowerPath = (path: string): string =>
+    prepared.sourcePathLower.get(path) ?? path.toLowerCase();
+
+  for (const { entity } of prepared.entities) {
     let score = 0;
-    for (const src of e.sources) {
-      const lower = src.toLowerCase();
+    for (const src of entity.sources) {
+      const lower = lowerPath(src);
       for (const t of terms) if (lower.includes(t)) score += 1;
     }
-    if (score > 0) items.push({ id: e.id, score });
+    if (score > 0) items.push({ id: entity.id, score });
   }
 
-  for (const c of kb.allConcepts()) {
+  for (const { concept } of prepared.concepts) {
     let score = 0;
-    for (const src of c.sources) {
-      const lower = src.toLowerCase();
+    for (const src of concept.sources) {
+      const lower = lowerPath(src);
       for (const t of terms) if (lower.includes(t)) score += 1;
     }
-    if (score > 0) items.push({ id: `concept:${c.id}`, score });
+    if (score > 0) items.push({ id: `concept:${concept.id}`, score });
   }
 
-  for (const s of kb.allSources()) {
+  for (const { source, idLower } of prepared.sources) {
     let score = 0;
-    const lower = s.id.toLowerCase();
-    for (const t of terms) if (lower.includes(t)) score += 1;
-    if (score > 0) items.push({ id: `source:${s.id}`, score });
+    for (const t of terms) if (idLower.includes(t)) score += 1;
+    if (score > 0) items.push({ id: `source:${source.id}`, score });
   }
 
   items.sort((a, b) => b.score - a.score);
