@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import {
   isQualityEntity,
   isQualityConcept,
+  isFileNameOrPathLike,
 } from "../../src/core/filters.js";
 import type { Entity, Concept, KBData } from "../../src/core/types.js";
 
@@ -71,6 +72,23 @@ describe("isQualityConcept", () => {
     expect(isQualityConcept({ ...baseConcept, name: "Tools/Whiteboards" })).toBe(false);
   });
 
+  it("accepts concepts containing legitimate slashes (years, pairs, acronyms)", () => {
+    // User examples from update log:
+    expect(
+      isQualityConcept({
+        ...baseConcept,
+        name: "Weiterentwicklung des Schwimmunterrichtspensums ab dem Schuljahr 2027/28",
+      }),
+    ).toBe(true);
+    expect(
+      isQualityConcept({
+        ...baseConcept,
+        name: "KV Cache Memory (Key/Value Cache)",
+      }),
+    ).toBe(true);
+    expect(isQualityConcept({ ...baseConcept, name: "Client/Server-Architektur" })).toBe(true);
+    expect(isQualityConcept({ ...baseConcept, name: "Ein-/Ausgabe" })).toBe(true);
+  });
 
   it("rejects a blacklisted name", () => {
     expect(isQualityConcept({ ...baseConcept, name: "Address Book" })).toBe(
@@ -83,6 +101,75 @@ describe("isQualityConcept", () => {
 
   it("rejects a concept with no definition", () => {
     expect(isQualityConcept({ ...baseConcept, definition: "" })).toBe(false);
+  });
+});
+
+describe("isFileNameOrPathLike", () => {
+  it("detects files with document or note extensions", () => {
+    expect(isFileNameOrPathLike("Passwort-Generator.md")).toBe(true);
+    expect(isFileNameOrPathLike("Whiteboards für den Unterricht.md")).toBe(true);
+    expect(isFileNameOrPathLike("Dokument.pdf")).toBe(true);
+    expect(isFileNameOrPathLike("data.json")).toBe(true);
+    expect(isFileNameOrPathLike("note.txt")).toBe(true);
+  });
+
+  it("detects filesystem and vault paths", () => {
+    expect(isFileNameOrPathLike("Notizen/Passwort-Generator")).toBe(true);
+    expect(isFileNameOrPathLike("Tools/Whiteboards")).toBe(true);
+    expect(isFileNameOrPathLike("Notizen/Computer/KI/OpenRouter Account.md")).toBe(true);
+    expect(isFileNameOrPathLike("Notizen/Computer/KI/OpenRouter Account")).toBe(true);
+    expect(isFileNameOrPathLike("wiki/sources/Notizen")).toBe(true);
+    expect(isFileNameOrPathLike("C:\\Users\\Notes\\Note")).toBe(true);
+    expect(isFileNameOrPathLike("./Notizen/Mein-Thema")).toBe(true);
+    expect(isFileNameOrPathLike("/etc/nginx")).toBe(true);
+    expect(isFileNameOrPathLike("Notizen/")).toBe(true);
+  });
+
+  it("does not flag legitimate concepts with slashes as paths", () => {
+    // School year / dates / numbers
+    expect(
+      isFileNameOrPathLike(
+        "Weiterentwicklung des Schwimmunterrichtspensums ab dem Schuljahr 2027/28",
+      ),
+    ).toBe(false);
+    expect(isFileNameOrPathLike("Schuljahr 2023/2024")).toBe(false);
+    expect(isFileNameOrPathLike("24/7 Service")).toBe(false);
+    expect(isFileNameOrPathLike("50/50 Chance")).toBe(false);
+
+    // Parenthetical glosses / alternatives
+    expect(isFileNameOrPathLike("KV Cache Memory (Key/Value Cache)")).toBe(false);
+
+    // Word pairings & technical concepts
+    expect(isFileNameOrPathLike("Key/Value")).toBe(false);
+    expect(isFileNameOrPathLike("Key/Value-Speicher")).toBe(false);
+    expect(isFileNameOrPathLike("Client/Server")).toBe(false);
+    expect(isFileNameOrPathLike("Client/Server-Architektur")).toBe(false);
+    expect(isFileNameOrPathLike("Input/Output")).toBe(false);
+    expect(isFileNameOrPathLike("Frontend/Backend")).toBe(false);
+    expect(isFileNameOrPathLike("Kosten/Nutzen-Analyse")).toBe(false);
+
+    // Acronyms
+    expect(isFileNameOrPathLike("CI/CD")).toBe(false);
+    expect(isFileNameOrPathLike("CI/CD Pipeline")).toBe(false);
+    expect(isFileNameOrPathLike("TCP/IP")).toBe(false);
+    expect(isFileNameOrPathLike("I/O-System")).toBe(false);
+
+    // German hyphenated pairs & gender forms
+    expect(isFileNameOrPathLike("Ein-/Ausgabe")).toBe(false);
+    expect(isFileNameOrPathLike("Hard-/Software")).toBe(false);
+    expect(isFileNameOrPathLike("Mitarbeiter/-innen")).toBe(false);
+    expect(isFileNameOrPathLike("Bürger/in")).toBe(false);
+
+    // Units
+    expect(isFileNameOrPathLike("Geschwindigkeit in km/h")).toBe(false);
+
+    // Conjunctions
+    expect(isFileNameOrPathLike("und/oder")).toBe(false);
+    expect(isFileNameOrPathLike("Pro/Contra")).toBe(false);
+
+    // Allowed tools ending with .js
+    expect(isFileNameOrPathLike("Node.js")).toBe(false);
+    expect(isFileNameOrPathLike("Vue.js")).toBe(false);
   });
 });
 
