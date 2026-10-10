@@ -19,4 +19,15 @@ describe("rankByEmbedding", () => {
     for (let i = 0; i < 100; i++) index.set(`e${i}`, [Math.random()]);
     expect(rankByEmbedding(index, [1]).length).toBe(50);
   });
+
+  it("filters out noise with similarity below threshold", () => {
+    const index = new Map<string, number[]>([
+      ["good", [1, 0, 0]],
+      ["noise", [0.05, 0.99, 0]],
+      ["negative", [-1, 0, 0]],
+    ]);
+    const ranked = rankByEmbedding(index, [1, 0, 0]);
+    expect(ranked.map((r) => r.id)).toEqual(["good"]);
+  });
 });
+

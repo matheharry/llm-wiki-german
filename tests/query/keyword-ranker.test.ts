@@ -58,4 +58,22 @@ describe("rankByKeyword", () => {
   it("returns empty for empty terms", () => {
     expect(rankByKeyword(buildKB(), [])).toEqual([]);
   });
+
+  it("weights rare terms higher than common terms across the KB", () => {
+    const kb = new KnowledgeBase();
+    // Common term appears in 3 entities
+    kb.addEntity({ name: "Entity 1", type: "other", facts: ["common topic"], source: "1.md" });
+    kb.addEntity({ name: "Entity 2", type: "other", facts: ["common topic"], source: "2.md" });
+    kb.addEntity({ name: "Entity 3", type: "other", facts: ["common topic"], source: "3.md" });
+    // Rare term appears in only 1 entity
+    kb.addEntity({ name: "Specialized", type: "other", facts: ["unique term"], source: "4.md" });
+
+    // Multi-term query: "common" vs "unique"
+    const ranked = rankByKeyword(kb, ["common", "unique"]);
+    const special = ranked.find((r) => r.id === "specialized");
+    const e1 = ranked.find((r) => r.id === "entity-1");
+    // "unique" has lower df than "common", so "specialized" should score higher than "entity-1"
+    expect(special!.score).toBeGreaterThan(e1!.score);
+  });
 });
+

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { rewriteFollowUp } from "../../src/chat/rewrite.js";
+import { needsFollowUpRewrite, rewriteFollowUp } from "../../src/chat/rewrite.js";
 import type { LLMProvider } from "../../src/llm/provider.js";
 import type { ChatTurn } from "../../src/chat/types.js";
 
@@ -70,3 +70,24 @@ describe("rewriteFollowUp", () => {
     expect(out).toBe("raw");
   });
 });
+
+describe("needsFollowUpRewrite", () => {
+  it("detects short elliptical questions", () => {
+    expect(needsFollowUpRewrite("und warum?")).toBe(true);
+    expect(needsFollowUpRewrite("and why?")).toBe(true);
+    expect(needsFollowUpRewrite("why?")).toBe(true);
+  });
+
+  it("detects pronoun references in German and English", () => {
+    expect(needsFollowUpRewrite("Was hat er über Philosophie gesagt?")).toBe(true);
+    expect(needsFollowUpRewrite("Gibt es dazu weitere Notizen?")).toBe(true);
+    expect(needsFollowUpRewrite("What did they write about it?")).toBe(true);
+  });
+
+  it("returns false for self-contained standalone questions", () => {
+    expect(needsFollowUpRewrite("Wer ist Alan Watts?")).toBe(false);
+    expect(needsFollowUpRewrite("Welche Bücher existieren über Zen-Buddhismus?")).toBe(false);
+    expect(needsFollowUpRewrite("Erkläre die Quantenmechanik im Detail")).toBe(false);
+  });
+});
+

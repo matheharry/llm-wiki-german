@@ -75,4 +75,34 @@ describe("formatContextMarkdown", () => {
     const md = formatContextMarkdown(empty);
     expect(md).not.toContain("##");
   });
+
+  it("prioritizes facts matching the question when entity has many facts", () => {
+    const bundleWithManyFacts: RetrievedBundle = {
+      ...BUNDLE,
+      question: "Was ist über Meditation bekannt?",
+      entities: [
+        {
+          id: "e1",
+          name: "Teacher",
+          type: "person",
+          aliases: [],
+          facts: [
+            "Lived in Zurich",
+            "Traveled to India",
+            "Taught meditation techniques daily",
+            "Born in 1950",
+            "Spoke German and French",
+            "Wrote poetry",
+            "Enjoyed gardening",
+          ],
+          sources: ["t.md"],
+        },
+      ],
+    };
+    const md = formatContextMarkdown(bundleWithManyFacts);
+    // The meditation fact should appear first in the list
+    const firstFactMatch = md.match(/- (.+)/);
+    expect(firstFactMatch?.[1]).toBe("Taught meditation techniques daily");
+  });
 });
+

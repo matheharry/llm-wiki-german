@@ -177,6 +177,35 @@ describe("QueryController.runChatTurn", () => {
     expect(retrievalQueries).toEqual(["Why is Alan Watts important"]);
   });
 
+  it("turn 2 (standalone question): skips rewrite and calls complete once", async () => {
+    const kb = buildKB();
+    const provider = new MockLLMProvider({
+      responses: ["final answer"],
+      chunked: false,
+    });
+    const retrievalQueries: string[] = [];
+    const ctrl = new QueryController({
+      kb,
+      provider,
+      model: "test",
+      onState: () => {},
+      onChunk: () => {},
+      onContext: () => {},
+      onRetrievalQuery: (q) => retrievalQueries.push(q),
+    });
+
+    await ctrl.runChatTurn({
+      chat: buildChatWithOneTurn(),
+      question: "who is Alan Watts in detail",
+    });
+
+    // Only one complete() call (rewrite was bypassed)
+    expect(provider.calls).toHaveLength(1);
+    expect(retrievalQueries).toEqual(["who is Alan Watts in detail"]);
+  });
+
+
+
   it("emits state transitions: loading → streaming → done", async () => {
     const kb = buildKB();
     const provider = new MockLLMProvider({

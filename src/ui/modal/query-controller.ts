@@ -4,7 +4,7 @@ import type { LLMProvider } from "../../llm/provider.js";
 import type { RetrievedBundle } from "../../query/types.js";
 import { assessConfidence, type ConfidenceLevel } from "../../query/confidence.js";
 import type { Chat } from "../../chat/types.js";
-import { rewriteFollowUp } from "../../chat/rewrite.js";
+import { needsFollowUpRewrite, rewriteFollowUp } from "../../chat/rewrite.js";
 import { getModelContextWindow } from "../../chat/model-context.js";
 import { budgetHistory } from "../../chat/history-budget.js";
 
@@ -67,7 +67,8 @@ export class QueryController {
     this.transition("loading");
 
     try {
-      const isFollowUp = args.chat.turns.length > 0;
+      const isFollowUp =
+        args.chat.turns.length > 0 && needsFollowUpRewrite(args.question);
       const retrievalQuery = isFollowUp
         ? await rewriteFollowUp({
             provider: this.opts.provider,

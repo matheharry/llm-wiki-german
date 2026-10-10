@@ -1,5 +1,30 @@
 import type { RetrievedBundle } from "./types.js";
 
+const MAX_FACTS_PER_ENTITY = 10;
+
+function prioritizeFacts(facts: readonly string[], question?: string): string[] {
+  if (facts.length <= 6 || !question) return [...facts];
+
+  const qTokens = question
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .split(/\s+/)
+    .filter((t) => t.length > 2);
+
+  const scored = facts.map((fact, idx) => {
+    const fLower = fact.toLowerCase();
+    let matches = 0;
+    for (const t of qTokens) {
+      if (fLower.includes(t)) matches++;
+    }
+    return { fact, matches, idx };
+  });
+
+  // Prioritize facts with matching query terms; preserve order on ties
+  scored.sort((a, b) => b.matches - a.matches || a.idx - b.idx);
+  return scored.slice(0, MAX_FACTS_PER_ENTITY).map((s) => s.fact);
+}
+
 export function formatContextMarkdown(bundle: RetrievedBundle): string {
   const lines: string[] = [];
 
@@ -12,7 +37,8 @@ export function formatContextMarkdown(bundle: RetrievedBundle): string {
       }
       if (e.facts.length > 0) {
         lines.push("Fakten:");
-        for (const f of e.facts) lines.push(`- ${f}`);
+        const facts = prioritizeFacts(e.facts, bundle.question);
+        for (const f of facts) lines.push(`- ${f}`);
       }
       if (e.sources.length > 0) {
         lines.push(`Quellen: ${e.sources.join(", ")}`);
@@ -20,6 +46,7 @@ export function formatContextMarkdown(bundle: RetrievedBundle): string {
       lines.push("");
     }
   }
+
 
   if (bundle.concepts.length > 0) {
     lines.push("## KONZEPTE");

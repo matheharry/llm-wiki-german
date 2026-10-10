@@ -25,8 +25,9 @@ const QUERY_WEIGHTS: Record<QueryType, [number, number, number]> = {
 
 const TYPE_HINT_BOOST = 2.5;
 const RRF_K = 60;
-const MAX_ENTITIES = 12;
-const MAX_CONCEPTS = 8;
+const MAX_ENTITIES = 8;
+const MAX_CONCEPTS = 5;
+const MAX_CONNECTIONS = 20;
 
 export interface RetrieveArgs {
   question: string;
@@ -56,11 +57,35 @@ export function retrieve(args: RetrieveArgs): RetrievedBundle {
 
   const typeHint = detectTypeHint(terms);
 
-  // Build id-keyed lookup maps once so id resolution is O(1).
+  // Build id-keyed lookup maps and source-keyed reverse indices once (O(1) lookups).
   const entitiesById = new Map<string, Entity>();
-  for (const e of args.kb.allEntities()) entitiesById.set(e.id, e);
+  const entitiesBySource = new Map<string, Entity[]>();
+  for (const e of args.kb.allEntities()) {
+    entitiesById.set(e.id, e);
+    for (const src of e.sources) {
+      let list = entitiesBySource.get(src);
+      if (!list) {
+        list = [];
+        entitiesBySource.set(src, list);
+      }
+      list.push(e);
+    }
+  }
+
   const conceptsById = new Map<string, Concept>();
-  for (const c of args.kb.allConcepts()) conceptsById.set(c.id, c);
+  const conceptsBySource = new Map<string, Concept[]>();
+  for (const c of args.kb.allConcepts()) {
+    conceptsById.set(c.id, c);
+    for (const src of c.sources) {
+      let list = conceptsBySource.get(src);
+      if (!list) {
+        list = [];
+        conceptsBySource.set(src, list);
+      }
+      list.push(c);
+    }
+  }
+
   const sourcesById = new Map<string, SourceRecord>();
   for (const s of args.kb.allSources()) sourcesById.set(s.id, s);
 
@@ -92,15 +117,17 @@ export function retrieve(args: RetrieveArgs): RetrievedBundle {
       seenSources.add(s.id);
       directSources.push(s);
 
-      // Pull in entities and concepts that reference this source
-      for (const e of args.kb.allEntities()) {
-        if (e.sources.includes(s.id) && !seenEntities.has(e.id) && entities.length < MAX_ENTITIES) {
+      // Fast O(1) retrieval of entities and concepts that reference this source
+      const matchingEntities = entitiesBySource.get(s.id) ?? [];
+      for (const e of matchingEntities) {
+        if (!seenEntities.has(e.id) && entities.length < MAX_ENTITIES) {
           seenEntities.add(e.id);
           entities.push(e);
         }
       }
-      for (const c of args.kb.allConcepts()) {
-        if (c.sources.includes(s.id) && !seenConcepts.has(c.id) && concepts.length < MAX_CONCEPTS) {
+      const matchingConcepts = conceptsBySource.get(s.id) ?? [];
+      for (const c of matchingConcepts) {
+        if (!seenConcepts.has(c.id) && concepts.length < MAX_CONCEPTS) {
           seenConcepts.add(c.id);
           concepts.push(c);
         }
@@ -133,11 +160,33 @@ export function retrieve(args: RetrieveArgs): RetrievedBundle {
     }
   }
 
-  // Gather connections that touch any of our entities (by id, not name).
+  // Gather connections that touch retrieved items, prioritizing most relevant ones
   const entityIds = new Set(entities.map((e) => e.id));
-  const connections = args.kb
+  const conceptIds = new Set(concepts.map((c) => c.id));
+  const retrievedNodeIds = new Set([...entityIds, ...conceptIds]);
+
+  const candidateConnections = args.kb
     .allConnections()
     .filter((c) => entityIds.has(c.from) || entityIds.has(c.to));
+
+  // Score connections: both ends retrieved > query term match > single end
+  const scoredConnections = candidateConnections.map((c) => {
+    let prio = 0;
+    const bothRetrieved =
+      retrievedNodeIds.has(c.from) && retrievedNodeIds.has(c.to);
+    if (bothRetrieved) prio += 10;
+    const descLower = (c.description ?? "").toLowerCase();
+    const typeLower = (c.type ?? "").toLowerCase();
+    for (const t of terms) {
+      if (descLower.includes(t) || typeLower.includes(t)) prio += 3;
+    }
+    return { connection: c, prio };
+  });
+
+  scoredConnections.sort((a, b) => b.prio - a.prio);
+  const connections = scoredConnections
+    .slice(0, MAX_CONNECTIONS)
+    .map((sc) => sc.connection);
 
   // Gather source records referenced by surviving entities/concepts + direct sources
   const sourcePaths = new Set<string>(directSources.map((s) => s.id));
@@ -146,6 +195,7 @@ export function retrieve(args: RetrieveArgs): RetrievedBundle {
   const sources = args.kb
     .allSources()
     .filter((s) => sourcePaths.has(s.id));
+
 
   const bundle: RetrievedBundle = {
     question: args.question,
