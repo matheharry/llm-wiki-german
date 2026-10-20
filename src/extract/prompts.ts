@@ -15,7 +15,10 @@ export interface BuildExtractionPromptArgs {
 const TEMPLATE = `Du bist ein System zur Wissensextraktion. Extrahiere strukturiertes Wissen aus dem gegebenen Dokument unter Berücksichtigung des Vokabulars bereits bekannter Entitäten und Konzepte.
 
 REGELN:
-1. Wenn eine Entität oder ein Konzept bereits im Vokabular existiert, VERWENDE EXAKT DIESEN NAMEN. Erstelle keine Duplikate oder Varianten.
+1. Das Vokabular listet BEKANNTE ENTITÄTEN und BEKANNTE KONZEPTE getrennt. Ein Begriff darf nur in EINER der beiden Listen vorkommen.
+1a. Steht ein Begriff unter "KNOWN ENTITIES", gib ihn IMMER als Entität aus (mit passendem type). Steht er unter "KNOWN CONCEPTS", gib ihn IMMER als Konzept aus.
+1b. Steht ein Begriff in BEIDEN Listen (erkennbar am Marker "[Auch als Konzept vorhanden]" bzw. "[Auch als Entität vorhanden]"), wähle GENAU EINE Variante: die, die inhaltlich besser zum aktuellen Dokument passt. Lege das Wort NICHT doppelt an.
+1c. Steht ein Begriff im Vokabular gar nicht, lege ihn an — aber prüfe zuerst, ob er wirklich eine eigenständige Entität ODER ein eigenständiges Konzept ist. Allgemeine Fachbegriffe (z.B. "Abfrage", "Technik", "Klima") sind KONZEPTE. Verwende den type "other" nur, wenn der Begriff weder Person, Organisation, Werkzeug, Projekt, Buch, Ort noch Ereignis ist.
 2. Erstelle eine NEUE Entität oder ein neues Konzept nur dann, wenn sie eindeutig nicht im Vokabular vorhanden sind.
 3. Sei konservativ — extrahiere nur das, was im Dokument tatsächlich steht, keine Schlussfolgerungen.
 4. Die gesamte Ausgabe muss in {output_language} erfolgen, unabhängig von der Sprache des Quelltexts.

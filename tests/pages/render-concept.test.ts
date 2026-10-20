@@ -8,7 +8,10 @@ const CONCEPT: Concept = {
   id: "zen-buddhism",
   name: "Zen Buddhism",
   definition: "Direct experience over scriptural study, emphasizing meditation",
-  related: ["Alan Watts", "D.T. Suzuki"],
+  // Nach der Auflösung (resolveAllRelated) stehen hier KB-IDs, keine
+  // freien Namen mehr. Der Renderer macht daraus direkt einen Wikilink —
+  // ohne die verlustbehaftete makeId()-Umwandlung.
+  related: ["alan-watts", "dt-suzuki"],
   sources: ["Books/Watts.md", "Learn/Zen.md"],
 };
 
@@ -33,8 +36,32 @@ describe("renderConceptPage", () => {
   it("lists related items as wikilinks under ## Verwandte Begriffe", () => {
     const md = renderConceptPage(CONCEPT, TODAY);
     expect(md).toContain("## Verwandte Begriffe");
+    // Ohne Namenskarte: das Linkziel ist die ID.
+    expect(md).toContain("[[alan-watts]]");
+    expect(md).toContain("[[dt-suzuki]]");
+  });
+
+  it("uses the display name when a name map is supplied", () => {
+    const names = new Map([
+      ["alan-watts", "Alan Watts"],
+      ["dt-suzuki", "D.T. Suzuki"],
+    ]);
+    const md = renderConceptPage(CONCEPT, TODAY, names);
     expect(md).toContain("[[alan-watts|Alan Watts]]");
     expect(md).toContain("[[dt-suzuki|D.T. Suzuki]]");
+  });
+
+  it("lists unresolved related names as plain text, without a link", () => {
+    const concept: Concept = {
+      ...CONCEPT,
+      related: ["alan-watts"],
+      unresolvedRelated: ["Nie angelegter Begriff"],
+    };
+    const md = renderConceptPage(concept, TODAY);
+    // Kein toter Wikilink — der Name steht als Klartext da.
+    expect(md).toContain("## Verwandte Begriffe (ohne Eintrag)");
+    expect(md).toContain("- Nie angelegter Begriff");
+    expect(md).not.toContain("[[nie-angelegter-begriff]]");
   });
 
   it("lists sources as wikilinks under ## Quellen", () => {

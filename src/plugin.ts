@@ -44,6 +44,7 @@ import { EmbeddingIndexController } from "./query/embedding-index-controller.js"
 import { generatePages, sourcePagePath } from "./pages/generator.js";
 import { safeDeletePage } from "./vault/safe-write.js";
 import { appendWikiLog } from "./vault/wiki-log.js";
+import { renderRunLogEntries } from "./vault/log-summary.js";
 
 /** Per-provider API keys, keyed by CloudProvider. */
 export type ApiKeys = Partial<Record<CloudProvider, string>>;
@@ -792,28 +793,47 @@ export default class LlmWikiPlugin extends Plugin {
 
       this.settings.lastExtractionRunIso = new Date().toISOString();
       await this.saveSettings();
-      await appendWikiLog(this.app, `Ingest | Batch-Extraktion durchgeführt: ${stats.succeeded} erfolgreich, ${stats.failed} fehlgeschlagen, ${stats.skipped} übersprungen`);
 
-      // Log individual skipped files (debug-level, reason always included)
-      for (const s of skippedLog) {
-        await appendWikiLog(this.app, `Übersprungen | ${s.path} – ${s.reason}`);
+      // `related`-Namen gegen die KB-IDs aufloesen. Das passiert EINMAL
+      // nach dem ganzen Batch: ein Name kann auf ein Ziel zeigen, das erst
+      // in einer spaeteren Datei angelegt wurde. Beim Merge aufgeloest
+      // wuerden solche Verweise faelschlich als unaufgeloest gelten.
+      const relatedStats = this.kb.resolveAllRelated();
+      if (relatedStats.resolved > 0 || relatedStats.unresolved > 0) {
+        await saveKB(this.app, this.kb, this.kbMtime);
+        this.kbMtime = (await loadKB(this.app)).mtime;
       }
-      // Log individual failed files with reason
-      for (const f of failedLog) {
-        await appendWikiLog(this.app, `Fehlgeschlagen | ${f.path} – ${f.reason}`);
+
+      const genResult = await generatePages(this.app, this.kb);
+
+      // Ein Sammel-Eintrag pro Lauf statt einer Zeile pro Datei.
+      // Bisher schrieb der Extraktor fuer jede Datei eine eigene Zeile
+      // (9.760 davon allein mit dem Grund "Inhalt unverändert") und
+      // lieferte damit ein 1,9-MB-Log mit ~15 Zeilen echtem Informationsgehalt.
+      // Fehler bleiben einzeln auffindbar, alles andere wird nach Grund
+      // zusammengefasst.
+      const runEntries = renderRunLogEntries({
+        succeeded: stats.succeeded,
+        failed: stats.failed,
+        skipped: stats.skipped,
+        elapsedMs: stats.elapsedMs,
+        skippedFiles: skippedLog,
+        failedFiles: failedLog,
+        filtered: genResult.filtered,
+      });
+      for (const entry of runEntries) {
+        await appendWikiLog(this.app, entry);
+      }
+      if (relatedStats.resolved > 0 || relatedStats.unresolved > 0) {
+        await appendWikiLog(
+          this.app,
+          `Verweise | ${relatedStats.resolved} related-Verweise aufgeloest, ${relatedStats.unresolved} ohne Ziel (als Klartext gefuehrt)`,
+        );
       }
 
       new Notice(
         `LLM Wiki: ${stats.succeeded} extracted, ${stats.failed} failed, ${stats.skipped} skipped (${Math.round(stats.elapsedMs / 1000)}s).`,
       );
-      const genResult = await generatePages(this.app, this.kb);
-      // Log items excluded by the quality filter
-      for (const f of genResult.filtered) {
-        await appendWikiLog(
-          this.app,
-          `Qualitätsfilter | ${f.kind === "entity" ? "Entität" : "Konzept"} "${f.name}" (${f.id}) nicht generiert – ${f.reason}`,
-        );
-      }
     } catch (e) {
       this.progress.emit("batch-errored", {
         message: (e as Error).message ?? "Unknown error",

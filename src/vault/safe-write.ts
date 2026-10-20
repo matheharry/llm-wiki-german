@@ -15,6 +15,7 @@ const STATIC_ALLOWED_PREFIXES: readonly string[] = Object.freeze([
   "wiki/knowledge.json",
   "wiki/log.md",
   "wiki/index.md",
+  "wiki/quellen-index.md",
   "wiki/lint-report.md",
   "wiki/memory.md",
   "wiki/entities/",

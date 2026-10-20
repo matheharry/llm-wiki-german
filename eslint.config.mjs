@@ -83,6 +83,9 @@ export default [
     files: ["tests/**/*.ts"],
     rules: {
       "obsidianmd/hardcoded-config-path": "off",
+      // YAML-safety tests must match real control characters (#x00-#x08)
+      // that occur in generated frontmatter.
+      "no-control-regex": "off",
     },
   },
 ];

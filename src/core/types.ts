@@ -73,7 +73,21 @@ export interface Concept {
   generatedAt?: string;
   verified?: VerifiedRecord | VerifiedRecord[];
   staleAfter?: string;
+  /**
+   * Verwandte Begriffe, aufgeloest gegen die KB-IDs.
+   *
+   * Nach der Auflösung stehen hier KB-IDs (nicht mehr freie Namen), damit
+   * der Renderer daraus ohne weitere Namensumwandlung einen Wikilink bauen
+   * kann. Namen ohne passendes Ziel stehen in `unresolvedRelated`.
+   */
   related: string[];
+  /**
+   * `related`-Namen, für die es im KB keinen passenden Eintrag gibt.
+   *
+   * Sie werden als Klartext geführt und erzeugen bewusst keinen Link —
+   * ein toter Wikilink wäre schlechter als gar keiner.
+   */
+  unresolvedRelated?: string[];
   sources: string[];
 }
 

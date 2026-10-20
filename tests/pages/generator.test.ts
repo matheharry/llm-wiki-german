@@ -48,8 +48,17 @@ describe("generatePages", () => {
   it("returns correct written count", async () => {
     const { app } = createMockApp();
     const result = await generatePages(app, buildRichKb());
-    // 2 entities + 1 concept + 3 sources + 1 index = 7
-    expect(result.written).toBe(7);
+    // 2 entities + 1 concept + 3 sources + 1 index + 1 Quellenindex = 8
+    expect(result.written).toBe(8);
+  });
+
+  it("writes a separate sources index", async () => {
+    const { app, files } = createMockApp();
+    await generatePages(app, buildRichKb());
+    expect(files.has("wiki/quellen-index.md")).toBe(true);
+    const content = files.get("wiki/quellen-index.md")?.content ?? "";
+    expect(content).toContain("[[wiki/sources/Books/Watts.md");
+    expect(content).toContain("[[wiki/index|Hauptindex]]");
   });
 
   it("deletes stale entity pages after regeneration", async () => {

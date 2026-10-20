@@ -3,7 +3,7 @@ import { isQualityEntity, isQualityConcept } from "../core/filters.js";
 import { renderEntityPage } from "./render-entity.js";
 import { renderConceptPage } from "./render-concept.js";
 import { renderSourcePage } from "./render-source.js";
-import { renderIndexPage } from "./render-index.js";
+import { renderIndexPage, renderSourcesIndexPage } from "./render-index.js";
 import {
   safeWritePage,
   safeDeletePage,
@@ -37,6 +37,31 @@ export async function generatePages(
   await safeWritePage(app, indexPath, renderIndexPage(kb));
   written.add(indexPath);
 
+  // Quellenindex — ausgelagert, damit der Hauptindex navigierbar bleibt.
+  // Die 1.001 Quellen-Zeilen machten 24 % der Index-Datei aus (631 KB von
+  // 2,7 MB). Der Hauptindex verweist auf den Quellenindex.
+  const sourcesIndexPath = "wiki/quellen-index.md";
+  await safeWritePage(app, sourcesIndexPath, renderSourcesIndexPage(kb));
+  written.add(sourcesIndexPath);
+
+  // Namenskarte: verwandte Verweise und Verbindungen zeigen als Linktext
+  // den Namen des Ziels, nicht die rohe ID.
+  const nameById = new Map<string, string>();
+  for (const e of kb.allEntities()) nameById.set(e.id, e.name);
+  for (const c of kb.allConcepts()) nameById.set(c.id, c.name);
+
+  // Menge der Seiten, die es nach diesem Lauf geben wird. Verbindungen
+  // werden dagegen gefiltert — sonst entstehen Wikilinks auf Seiten, die
+  // nie geschrieben werden (live gemessen: 296 tote Links).
+  const pageIds = new Set<string>();
+  for (const entity of kb.allEntities()) {
+    if (isQualityEntity(entity)) pageIds.add(entity.id);
+  }
+  for (const concept of kb.allConcepts()) {
+    if (isQualityConcept(concept)) pageIds.add(concept.id);
+  }
+  const hasPage = (id: string): boolean => pageIds.has(id);
+
   // Entities — only quality items get pages
   for (const entity of kb.allEntities()) {
     if (!isQualityEntity(entity)) {
@@ -50,7 +75,11 @@ export async function generatePages(
     }
     const path = `wiki/entities/${entity.id}.md`;
     const connections = kb.connectionsFor(entity.id);
-    await safeWritePage(app, path, renderEntityPage(entity, connections));
+    await safeWritePage(
+      app,
+      path,
+      renderEntityPage(entity, connections, undefined, hasPage, nameById),
+    );
     written.add(path);
   }
 
@@ -66,7 +95,7 @@ export async function generatePages(
       continue;
     }
     const path = `wiki/concepts/${concept.id}.md`;
-    await safeWritePage(app, path, renderConceptPage(concept));
+    await safeWritePage(app, path, renderConceptPage(concept, undefined, nameById));
     written.add(path);
   }
 

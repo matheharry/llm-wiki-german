@@ -104,13 +104,45 @@ export function sourceFrontmatter(
   return fm;
 }
 
+/**
+ * Characters that make a YAML plain scalar ambiguous or invalid.
+ * `,` and `]`/`}` matter for flow mappings (`{ resource: ..., id: ... }`).
+ */
+const YAML_UNSAFE = /[:{}[\],#&*!|>'"%@`]/;
+
+/** Control characters YAML forbids in any scalar (e.g. #x0008). */
+// eslint-disable-next-line no-control-regex -- matching real control characters is the point
+const YAML_CONTROL = /[\x00-\x08\x0b\x0c\x0e-\x1f]/;
+
+/**
+ * Words YAML resolves to a non-string type. As a plain scalar they would
+ * silently become null/true/false — e.g. an entity literally named "null".
+ */
+const YAML_RESERVED =
+  /^(?:null|Null|NULL|true|True|TRUE|false|False|FALSE|yes|Yes|YES|no|No|NO|on|On|ON|off|Off|OFF|y|Y|n|N|~)$/;
+
 function yamlScalar(value: unknown): string {
   if (typeof value === "string") {
-    // Quote if value contains YAML-unsafe characters
-    if (/[:{}[\],#&*!|>'"%@`]/.test(value) || value.trim() !== value) {
-      return `"${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+    // 1. Remove control characters (e.g. #x0008 produced by LaTeX escapes).
+    //    YAML forbids them in both plain and quoted scalars.
+    let s = value.replace(YAML_CONTROL, "");
+    // 2. Neutralise line breaks — a raw newline inside a value would split
+    //    the YAML line and produce "while scanning a simple key".
+    s = s.replace(/\r/g, " ").replace(/\n/g, " ").replace(/[ \t]{2,}/g, " ");
+    const t = s.trim();
+
+    // 3. Decide whether quoting is required.
+    const needsQuote =
+      YAML_UNSAFE.test(t) || // YAML-unsafe characters
+      /^[-?:,[\]{}#&*!|>'"%@`]/.test(t) || // leading indicator
+      t !== s || // leading/trailing whitespace was stripped
+      t.includes("\\") || // backslash: only safe when quoted
+      YAML_RESERVED.test(t); // null / true / false / yes / no / on / off / ~
+
+    if (needsQuote) {
+      return `"${t.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
     }
-    return value;
+    return t;
   }
   return String(value);
 }

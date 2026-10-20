@@ -1,5 +1,7 @@
 import type { Connection, Entity } from "../core/types.js";
 import { entityFrontmatter, serializeFrontmatter } from "./frontmatter.js";
+import { filterConnectionLinks } from "../core/connection-filter.js";
+import { toLinkLabel } from "../core/link-text.js";
 
 const CONNECTION_TYPE_LABELS: Record<string, string> = {
   influences: "beeinflusst",
@@ -17,10 +19,28 @@ export function renderEntityPage(
   entity: Entity,
   connections: Connection[],
   today?: string,
+  /**
+   * Prüft, ob für eine ID tatsächlich eine Seite geschrieben wird.
+   * Verbindungen, deren Ziel keine Seite hat, erzeugen sonst einen toten
+   * Wikilink.
+   */
+  hasPage?: (id: string) => boolean,
+  /**
+   * Anzeigenamen für Linktexte. Ohne diese Karte wird die ID angezeigt.
+   */
+  names?: ReadonlyMap<string, string>,
 ): string {
   const fm = entityFrontmatter(entity, today);
-  const outgoing = connections.filter((c) => c.from === entity.id);
-  const incoming = connections.filter((c) => c.to === entity.id);
+  const pageExists = hasPage ?? (() => true);
+
+  // Der Filter arbeitet pro Link-Ende: eine Verbindung (X → Y) ohne
+  // Y-Seite erzeugt auf der X-Seite einen toten Link, auf der Y-Seite
+  // aber einen völlig gültigen.
+  const { links, deadLinks } = filterConnectionLinks(
+    connections,
+    entity.id,
+    pageExists,
+  );
 
   const lines: string[] = [serializeFrontmatter(fm), "", `# ${entity.name}`, ""];
 
@@ -32,15 +52,27 @@ export function renderEntityPage(
     lines.push("");
   }
 
-  if (outgoing.length > 0 || incoming.length > 0) {
+  if (links.length > 0) {
     lines.push("## Verbindungen", "");
-    for (const c of outgoing) {
-      const typeLabel = CONNECTION_TYPE_LABELS[c.type] ?? c.type;
-      lines.push(`- [[${c.to}]] *(${typeLabel})*`);
+    for (const link of links) {
+      const typeLabel = CONNECTION_TYPE_LABELS[link.type] ?? link.type;
+      const label = names?.get(link.target);
+      const target = label
+        ? `[[${link.target}|${toLinkLabel(label)}]]`
+        : `[[${link.target}]]`;
+      lines.push(`- ${target} *(${typeLabel})*`);
     }
-    for (const c of incoming) {
-      const typeLabel = CONNECTION_TYPE_LABELS[c.type] ?? c.type;
-      lines.push(`- [[${c.from}]] *(${typeLabel})*`);
+    lines.push("");
+  }
+
+  // Verbindungen, deren Ziel keine Seite hat, erscheinen als Klartext.
+  // Ein toter Wikilink wäre schlechter als gar keiner.
+  if (deadLinks.length > 0) {
+    lines.push("## Verbindungen (ohne Eintrag)", "");
+    for (const link of deadLinks) {
+      const typeLabel = CONNECTION_TYPE_LABELS[link.type] ?? link.type;
+      const label = names?.get(link.target) ?? link.target;
+      lines.push(`- ${toLinkLabel(label)} *(${typeLabel})*`);
     }
     lines.push("");
   }

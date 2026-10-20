@@ -10,6 +10,9 @@ import type {
   VerifiedRecord,
 } from "./types.js";
 import { makeId } from "./ids.js";
+import { resolveCrossNamespaceCollision } from "./collision.js";
+import { buildRelatedIndex, resolveRelated } from "./related.js";
+import { isQualityEntity, isQualityConcept } from "./filters.js";
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -148,6 +151,43 @@ export class KnowledgeBase {
 
   addEntity(args: AddEntityArgs): Entity {
     const id = makeId(args.name);
+
+    // Namespace-Kollision: Ein Konzept mit demselben Begriff existiert
+    // bereits. Dann keine parallele Entity anlegen, sondern den Inhalt
+    // in das Konzept einfuehren.
+    const existingConcept = this.data.concepts[id];
+    if (existingConcept) {
+      const decision = resolveCrossNamespaceCollision({
+        newId: id,
+        newName: args.name,
+        newKind: "entity",
+        newType: args.type,
+        existingKind: "concept",
+        existingId: id,
+        existingName: existingConcept.name,
+        existingText: existingConcept.definition ?? "",
+        newText: (args.facts ?? []).join(" "),
+      });
+      if (decision.action === "merge" && decision.target === "concept") {
+        this.mergeEntityIntoConcept(existingConcept, args);
+        // Bewusst KEINE Entity gespeichert — der Begriff gehoert dem
+        // Konzept. Zurueckgegeben wird die eingereichte Entity, damit
+        // Aufrufer den Rueckgabewert weiterverwenden koennen. Ob sie
+        // tatsaechlich gespeichert wurde, zeigt kb.getEntity(id).
+        return {
+          id,
+          name: args.name,
+          type: args.type,
+          aliases: (args.aliases ?? []).filter((a) => a !== args.name),
+          facts: args.facts ?? [],
+          shortDescription: args.shortDescription,
+          generatedBy: args.generatedBy,
+          generatedAt: args.generatedAt,
+          sources: args.source ? [args.source] : [],
+        };
+      }
+    }
+
     const existing = this.data.entities[id];
     if (existing) {
       return this.mergeEntity(existing, {
@@ -176,6 +216,125 @@ export class KnowledgeBase {
     };
     this.data.entities[id] = entity;
     return entity;
+  }
+
+  /**
+   * Fuehrt den Inhalt einer Entity in ein bestehendes Konzept ein.
+   *
+   * Wird verwendet, wenn ein Begriff bereits als Konzept existiert und das
+   * LLM ihn als Entity extrahiert. Das Konzept behaelt seine Identitaet.
+   *
+   * Das Konzept-Schema kennt kein `facts`-Feld, sondern nur `definition` und
+   * `related`. Deshalb werden die Entity-Fakten an die Definition
+   * angehaengt (bzw. ersetzen sie sie, wenn noch keine da ist) und
+   * Aliasnamen wandern nach `related`.
+   */
+  private mergeEntityIntoConcept(concept: Concept, args: AddEntityArgs): void {
+    if (args.shortDescription && !concept.shortDescription) {
+      concept.shortDescription = args.shortDescription;
+    }
+    if (args.generatedBy) concept.generatedBy = args.generatedBy;
+    if (args.generatedAt && !concept.generatedAt) {
+      concept.generatedAt = args.generatedAt;
+    }
+
+    const facts = (args.facts ?? []).map((f) => f.trim()).filter(Boolean);
+    const definition = concept.definition.trim();
+
+    if (!definition) {
+      concept.definition = facts.join(" ");
+    } else {
+      const missing = facts.filter((f) => !definition.includes(f));
+      if (missing.length > 0) {
+        concept.definition = `${definition} ${missing.join(" ")}`.trim();
+      }
+    }
+
+    for (const alias of args.aliases ?? []) {
+      const trimmed = alias.trim();
+      if (!trimmed) continue;
+      if (trimmed !== concept.name && !concept.related.includes(trimmed)) {
+        concept.related.push(trimmed);
+      }
+    }
+
+    if (args.source && !concept.sources.includes(args.source)) {
+      concept.sources.push(args.source);
+    }
+  }
+
+  /**
+   * Fuehrt den Inhalt eines Konzepts in eine bestehende Entity ein.
+   *
+   * Spiegelbild von mergeEntityIntoConcept: die Definition wird zum Fakt
+   * (die Entity hat ein `facts`-Feld), die related-Namen werden zu Aliasen.
+   */
+  private mergeConceptIntoEntity(entity: Entity, args: AddConceptArgs): void {
+    if (args.shortDescription && !entity.shortDescription) {
+      entity.shortDescription = args.shortDescription;
+    }
+    if (args.generatedBy) entity.generatedBy = args.generatedBy;
+    if (args.generatedAt && !entity.generatedAt) {
+      entity.generatedAt = args.generatedAt;
+    }
+    const definition = (args.definition ?? "").trim();
+    if (definition && !entity.facts.includes(definition)) {
+      entity.facts.push(definition);
+    }
+    // Namen verwandter Konzepte sind Verweise, keine Fakten -> Aliase.
+    for (const related of args.related ?? []) {
+      const trimmed = related.trim();
+      if (!trimmed) continue;
+      if (trimmed !== entity.name && !entity.aliases.includes(trimmed)) {
+        entity.aliases.push(trimmed);
+      }
+    }
+    if (args.source && !entity.sources.includes(args.source)) {
+      entity.sources.push(args.source);
+    }
+  }
+
+  /**
+   * Migriert eine unklassifizierte "other"-Entity in ein Konzept.
+   *
+   * Wird verwendet, wenn das LLM einen Begriff zuerst als Entity
+   * ("other"-Typ) extrahiert hat und spaeter als Konzept. Das Konzept hat
+   * Vorrang, weil es eine Definition traegt; die Entity-Fakten und
+   * -Quellen werden uebernommen, die Entity wird geloescht.
+   */
+  private migrateEntityToConcept(entity: Entity, args: AddConceptArgs): Concept {
+    const concept: Concept = {
+      id: entity.id,
+      name: args.name,
+      definition: (args.definition ?? "").trim(),
+      shortDescription: args.shortDescription ?? entity.shortDescription,
+      generatedBy: args.generatedBy ?? entity.generatedBy,
+      generatedAt: entity.generatedAt ?? args.generatedAt,
+      verified: entity.verified,
+      staleAfter: entity.staleAfter,
+      related: [...(args.related ?? [])],
+      sources: [...entity.sources],
+    };
+    if (args.source && !concept.sources.includes(args.source)) {
+      concept.sources.push(args.source);
+    }
+    const definition = concept.definition.trim();
+    const missing = entity.facts
+      .map((f) => f.trim())
+      .filter((f) => f && !definition.includes(f));
+    if (!definition && missing.length > 0) {
+      concept.definition = missing.join(" ");
+    } else if (missing.length > 0) {
+      concept.definition = `${definition} ${missing.join(" ")}`.trim();
+    }
+    for (const alias of entity.aliases) {
+      if (alias !== concept.name && !concept.related.includes(alias)) {
+        concept.related.push(alias);
+      }
+    }
+    // Die Entity wird entfernt — der Begriff gehoert jetzt dem Konzept.
+    delete this.data.entities[entity.id];
+    return concept;
   }
 
   private mergeEntity(
@@ -225,6 +384,50 @@ export class KnowledgeBase {
 
   addConcept(args: AddConceptArgs): Concept {
     const id = makeId(args.name);
+
+    // Namespace-Kollision: Eine Entity mit demselben Begriff existiert
+    // bereits. Dann kein paralleles Konzept anlegen.
+    const existingEntity = this.data.entities[id];
+    if (existingEntity) {
+      const decision = resolveCrossNamespaceCollision({
+        newId: id,
+        newName: args.name,
+        newKind: "concept",
+        existingKind: "entity",
+        existingId: id,
+        existingName: existingEntity.name,
+        existingType: existingEntity.type,
+        existingText: existingEntity.facts.join(" "),
+        newText: args.definition ?? "",
+      });
+      if (decision.action === "merge") {
+        if (decision.target === "entity") {
+          // Die Entity behaelt ihre Identitaet, das Konzept wird in sie
+          // eingefuehrt und nicht gespeichert.
+          this.mergeConceptIntoEntity(existingEntity, args);
+          // Bewusst kein Konzept gespeichert. Zurueckgegeben wird das
+          // eingereichte Konzept, damit Aufrufer den Rueckgabewert
+          // weiterverwenden koennen. Ob es gespeichert wurde, zeigt
+          // kb.getConcept(id).
+          return {
+            id,
+            name: args.name,
+            definition: args.definition ?? "",
+            shortDescription: args.shortDescription,
+            generatedBy: args.generatedBy,
+            generatedAt: args.generatedAt,
+            related: args.related ?? [],
+            sources: args.source ? [args.source] : [],
+          };
+        }
+        // target === "concept": das Konzept hat Vorrang. Die
+        // unklassifizierte "other"-Entity wird migriert.
+        const migrated = this.migrateEntityToConcept(existingEntity, args);
+        this.data.concepts[id] = migrated;
+        return migrated;
+      }
+    }
+
     const existing = this.data.concepts[id];
     if (existing) {
       return this.mergeConcept(existing, {
@@ -247,6 +450,10 @@ export class KnowledgeBase {
       generatedAt: args.generatedAt ?? todayIso(),
       verified: args.verified,
       staleAfter: args.staleAfter,
+      // `related` speichert die Namen so, wie das LLM sie geliefert hat.
+      // Die Aufloesung zu IDs passiert spaeter in resolveAllRelated() —
+      // erst dann ist das vollstaendige KB sichtbar und ein Name kann
+      // auch auf ein Ziel zeigen, das erst spaeter angelegt wird.
       related: args.related ?? [],
       sources: args.source ? [args.source] : [],
     };
@@ -281,6 +488,8 @@ export class KnowledgeBase {
       concept.definition = patch.definition;
     }
     if (patch.related) {
+      // Namen unveraendert uebernehmen — die Aufloesung passiert
+      // spaeter in resolveAllRelated().
       const existing = new Set(concept.related);
       for (const r of patch.related) {
         if (!existing.has(r)) {
@@ -293,6 +502,67 @@ export class KnowledgeBase {
       concept.sources.push(patch.source);
     }
     return concept;
+  }
+
+  /**
+   * Index aller bekannten Entity- und Concept-IDs, gegen den
+   * `related`-Namen aufgeloest werden.
+   */
+  relatedIndex(): Map<string, string> {
+    // Nur Einträge, für die tatsächlich eine Seite geschrieben wird. Ein
+    // Verweis auf einen vom Qualitätsfilter verworfenen Eintrag wäre
+    // weiterhin ein toter Link.
+    return buildRelatedIndex([
+      ...Object.values(this.data.entities)
+        .filter((e) => isQualityEntity(e))
+        .map((e) => ({ id: e.id, name: e.name })),
+      ...Object.values(this.data.concepts)
+        .filter((c) => isQualityConcept(c))
+        .map((c) => ({ id: c.id, name: c.name })),
+    ]);
+  }
+
+  /**
+   * Loest alle `related`-Verweise im gesamten KB auf.
+   *
+   * Wird nach der Extraktion einmal ueber alle Eintraege gelaufen, damit
+   * auch Verweise aufgeloest werden, deren Ziel erst in einer spaeteren
+   * Datei desselben Batches angelegt wurde.
+   *
+   * Nach dem Durchlauf enthaelt `concept.related` die KB-IDs der
+   * aufgeloesten Verweise; Namen ohne Ziel stehen in
+   * `concept.unresolvedRelated`.
+   *
+   * @returns Anzahl der aufgeloesten und der unaufgeloesten Verweise
+   */
+  resolveAllRelated(): { resolved: number; unresolved: number } {
+    const index = this.relatedIndex();
+    let resolvedCount = 0;
+    let unresolvedCount = 0;
+
+    // Nur Konzepte fuehren ein `related`-Feld.
+    for (const concept of Object.values(this.data.concepts)) {
+      const names = concept.related ?? [];
+      if (names.length === 0) continue;
+
+      const { resolved, unresolved } = resolveRelated(names, index);
+      resolvedCount += resolved.length;
+      unresolvedCount += unresolved.length;
+
+      // Bereits aufgeloeste IDs (aus einem frueheren Lauf) mitnehmen.
+      const merged: string[] = [];
+      const seen = new Set<string>();
+      for (const id of resolved) {
+        if (!seen.has(id)) {
+          seen.add(id);
+          merged.push(id);
+        }
+      }
+      concept.related = merged;
+      concept.unresolvedRelated = unresolved;
+    }
+
+    return { resolved: resolvedCount, unresolved: unresolvedCount };
   }
 
   addConnection(args: AddConnectionArgs): Connection {
