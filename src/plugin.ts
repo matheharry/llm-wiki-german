@@ -729,6 +729,7 @@ export default class LlmWikiPlugin extends Plugin {
         includeFolders: this.settings.queryFolders,
         minFileSize: DEFAULT_MIN_FILE_SIZE,
         dailiesFromIso: defaultDailiesFromIso(),
+        knownSourcePaths: Object.keys(this.kb.data.sources),
       };
       const walk = walkVault(this.app, walkOpts);
       const walked = walk.files;
@@ -795,6 +796,22 @@ export default class LlmWikiPlugin extends Plugin {
       this.settings.lastExtractionRunIso = new Date().toISOString();
       await this.saveSettings();
 
+      // Verwaiste Source-Records entfernen. Ein Record zeigt auf eine
+      // Datei, die es nicht (mehr) gibt — jede Wiki-Seite, die ihn
+      // zitiert, verweist ins Leere.
+      //
+      // Reihenfolge: VOR der Seiten-Erzeugung, damit die betroffenen
+      // Seiten ihre Quellenangabe verlieren und nicht neu geschrieben
+      // werden. `removeSource()` loescht dabei Eintraege, die danach
+      // keine Quelle mehr haetten.
+      const orphanedCount = this.kb.removeOrphanedSources(
+        walk.orphanedSourcePaths,
+      );
+      if (orphanedCount > 0) {
+        await saveKB(this.app, this.kb, this.kbMtime);
+        this.kbMtime = (await loadKB(this.app)).mtime;
+      }
+
       // `related`-Namen gegen die KB-IDs aufloesen. Das passiert EINMAL
       // nach dem ganzen Batch: ein Name kann auf ein Ziel zeigen, das erst
       // in einer spaeteren Datei angelegt wurde. Beim Merge aufgeloest
@@ -825,6 +842,11 @@ export default class LlmWikiPlugin extends Plugin {
       if (walk.prunedTooSmall > 0) {
         runEntries.push(
           `Uebersprungen | ${walk.prunedTooSmall} Dateien unter Mindestgroesse (${DEFAULT_MIN_FILE_SIZE} B) verworfen`,
+        );
+      }
+      if (orphanedCount > 0) {
+        runEntries.push(
+          `Quellen | ${orphanedCount} verwaiste Quellen-Records entfernt (Datei existiert nicht mehr)`,
         );
       }
       for (const entry of runEntries) {

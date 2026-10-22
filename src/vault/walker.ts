@@ -7,6 +7,15 @@ export interface WalkOptions {
   minFileSize: number;
   /** ISO date YYYY-MM-DD; daily notes older than this are skipped. */
   dailiesFromIso: string;
+  /**
+   * Die Pfade der bereits bekannten KB-Quellen.
+   *
+   * Der Walker vergleicht diese Pfade mit dem Vault und meldet die,
+   * die es nicht (mehr) gibt — aber nur, wenn sie im Query-Scope
+   * liegen. Ein Record fuer eine Datei ausserhalb des Scopes bleibt
+   * erhalten: die Datei existiert, sie wird nur nicht gescannt.
+   */
+  knownSourcePaths?: Iterable<string>;
 }
 
 export interface WalkedFile {
@@ -27,6 +36,21 @@ export interface WalkResult {
    * Filter selbst waere unsichtbar.
    */
   prunedTooSmall: number;
+  /**
+   * KB-Source-Pfade, deren Datei im Vault nicht mehr existiert.
+   *
+   * Nur Pfade, die im QUERY-SCOPE liegen: eine Datei, die es nicht
+   * mehr gibt, aber ausserhalb des Scopes liegt (z.B. `Buecher/`, das
+   * nicht Teil von `queryFolders` ist), wird NICHT gemeldet. Sie ist
+   * nicht "verwaist", sondern "nicht gescannt" — ihr Record muss
+   * erhalten bleiben, sonst verliert der KB-Eintrag seine Quelle,
+   * obwohl die Quelle existiert.
+   *
+   * Die Pruefung nutzt `vault.getAbstractFileByPath()`, nicht den
+   * Adapter: der Adapter kann Pfade in Symlink-Zielen (z.B. `Buecher/`)
+   * aufloesen, die Obsidian selbst nicht kennt.
+   */
+  orphanedSourcePaths: string[];
 }
 
 /**
@@ -43,6 +67,11 @@ interface WalkerApp {
       content?: string;
       stat?: { mtime: number; size: number };
     }>;
+    /**
+     * Obsidian liefert `null` fuer einen Pfad, den es nicht kennt.
+     * Optional, damit der Mock-App ohne Aufrufe arbeiten kann.
+     */
+    getAbstractFileByPath?(path: string): unknown;
   };
 }
 
@@ -55,6 +84,7 @@ export function walkVault(
   const includeFolders = opts.includeFolders ?? [];
   const result: WalkedFile[] = [];
   let prunedTooSmall = 0;
+  const orphanedSourcePaths: string[] = [];
 
   for (const f of all) {
     const parts = f.path.split("/");
@@ -88,7 +118,21 @@ export function walkVault(
     });
   }
 
-  return { files: result, prunedTooSmall };
+  // Verwaiste Source-Records finden: KB-Quellen, deren Datei es nicht
+  // mehr gibt. Nur Pfade im Query-Scope werden geprueft — eine Datei
+  // ausserhalb des Scopes ist nicht "verwaist", sondern "nicht gescannt".
+  if (opts.knownSourcePaths && app.vault.getAbstractFileByPath) {
+    for (const path of opts.knownSourcePaths) {
+      const parts = path.split("/");
+      if (parts.some((p) => skipSet.has(p.toLowerCase()))) continue;
+      if (!isInAnyFolder(path, includeFolders)) continue;
+      if (app.vault.getAbstractFileByPath(path) === null) {
+        orphanedSourcePaths.push(path);
+      }
+    }
+  }
+
+  return { files: result, prunedTooSmall, orphanedSourcePaths };
 }
 
 /**

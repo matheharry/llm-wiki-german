@@ -641,6 +641,40 @@ export class KnowledgeBase {
   }
 
   /**
+   * Entfernt Source-Records, deren Datei im Vault nicht mehr existiert.
+   *
+   * Hintergrund: Das KB behaelt Source-Records fuer Dateien, die es im
+   * Vault nicht (mehr) gibt. Im Live-Vault waren das 46 Records:
+   *   - 24 geloeschte Dateien (Clippings/, Notizen/)
+   *   - 16 `Buecher/`-Pfade, deren Symlink-Ziel (`E:\Bibliothek\Buecher\`)
+   *     die Datei nicht mehr enthaelt
+   *   - 6 umbenannte/verschobene Dateien
+   *
+   * Solche Records sind nicht nur Schmutz: Jede Wiki-Seite, die auf
+   * einen solchen Record verweist, zitiert eine Quelle, die es nicht
+   * gibt. Der Link im Frontmatter zeigt ins Leere.
+   *
+   * WICHTIG — der Aufrufer entscheidet, was "nicht existiert" heisst:
+   * diese Methode bekommt die Liste der VERWAISTEN Pfade, nicht den
+   * Vault. Grund: der Extraktionslauf kennt nur die Dateien im
+   * Query-Scope. Eine Datei ausserhalb des Scopes (z.B. `Buecher/`)
+   * ist nicht "verwaist", sondern "nicht gescannt" — sie darf NICHT
+   * entfernt werden.
+   *
+   * @param orphanedPaths Pfade, die nachweislich nicht mehr existieren.
+   * @returns Die Anzahl der entfernten Records.
+   */
+  removeOrphanedSources(orphanedPaths: Iterable<string>): number {
+    let removed = 0;
+    for (const path of orphanedPaths) {
+      if (!this.data.sources[path]) continue;
+      this.removeSource(path);
+      removed++;
+    }
+    return removed;
+  }
+
+  /**
    * Fast pre-check by mtime: if a stored record has a contentHash and current mtime <= stored mtime,
    * we can skip reading the file and computing SHA-256 altogether.
    */

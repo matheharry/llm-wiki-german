@@ -16,6 +16,12 @@ export interface FakeApp {
   vault: {
     configDir: string;
     getMarkdownFiles(): FakeFile[];
+    /**
+     * Obsidian liefert `null` fuer einen unbekannten Pfad.
+     * Der Mock bildet das ab, damit der Walker dieselbe Information
+     * bekommt wie in der echten Obsidian-Instanz.
+     */
+    getAbstractFileByPath(path: string): FakeFile | null;
     cachedRead(file: FakeFile): Promise<string>;
     create(path: string, content: string): Promise<FakeFile>;
     modify(file: FakeFile, content: string): Promise<void>;
@@ -52,6 +58,7 @@ export function createMockApp(initial: FakeFile[] = []): {
       configDir: ".obsidian",
       getMarkdownFiles: () =>
         Array.from(files.values()).filter((f) => f.path.endsWith(".md")),
+      getAbstractFileByPath: (path) => files.get(path) ?? null,
       cachedRead: async (file) => {
         const f = files.get(file.path);
         if (!f) throw new Error(`File not found: ${file.path}`);
