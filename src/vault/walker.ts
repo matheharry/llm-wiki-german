@@ -16,6 +16,19 @@ export interface WalkedFile {
   origin: SourceOrigin;
 }
 
+export interface WalkResult {
+  /** Dateien, die den Filter passiert haben. */
+  files: WalkedFile[];
+  /**
+   * Anzahl der Dateien, die wegen `minFileSize` verworfen wurden.
+   *
+   * Der Walker filtert zu kleine Dateien schon vor dem Extraktionslauf.
+   * Ohne diese Zaehlung waere die Zahl im Log nur geschaetzt — der
+   * Filter selbst waere unsichtbar.
+   */
+  prunedTooSmall: number;
+}
+
 /**
  * Minimal Obsidian-vault interface for walking files. The real App's
  * `vault.getMarkdownFiles()` returns TFile objects with .path / .stat;
@@ -33,14 +46,15 @@ interface WalkerApp {
   };
 }
 
-export function walkVaultFiles(
+export function walkVault(
   app: WalkerApp,
   opts: WalkOptions,
-): Promise<WalkedFile[]> {
+): WalkResult {
   const all = app.vault.getMarkdownFiles();
   const skipSet = new Set(opts.skipDirs.map((d) => d.toLowerCase()));
   const includeFolders = opts.includeFolders ?? [];
   const result: WalkedFile[] = [];
+  let prunedTooSmall = 0;
 
   for (const f of all) {
     const parts = f.path.split("/");
@@ -50,7 +64,13 @@ export function walkVaultFiles(
     const size =
       f.stat?.size ??
       (typeof f.content === "string" ? f.content.length : 0);
-    if (size < opts.minFileSize) continue;
+    if (size < opts.minFileSize) {
+      // Der Groessenfilter ist der teuerste Hebel: jede verworfene Datei
+      // waere ein LLM-Aufruf, der nichts liefert. Die Zahl wird mitgezaehlt,
+      // damit der Filter im Log sichtbar ist.
+      prunedTooSmall++;
+      continue;
+    }
 
     const isDaily = parts.some((p) => p.toLowerCase() === "dailies");
     if (isDaily) {
@@ -68,7 +88,19 @@ export function walkVaultFiles(
     });
   }
 
-  return Promise.resolve(result);
+  return { files: result, prunedTooSmall };
+}
+
+/**
+ * Bequemer Zugriff auf die gefilterten Dateien.
+ *
+ * @see walkVault — wenn auch die Zahl der verworfenen Dateien gebraucht wird.
+ */
+export function walkVaultFiles(
+  app: WalkerApp,
+  opts: WalkOptions,
+): Promise<WalkedFile[]> {
+  return Promise.resolve(walkVault(app, opts).files);
 }
 
 const MONTHS: Record<string, string> = {

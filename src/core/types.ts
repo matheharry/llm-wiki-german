@@ -53,6 +53,19 @@ export interface Entity {
    * on every `generatePages` run.
    */
   generatedAt?: string;
+  /**
+   * ISO date (YYYY-MM-DD) of the last re-extraction.
+   *
+   * `generatedAt` ist ein ERSTELLUNGSdatum und bleibt unveraendert.
+   * `updatedAt` wird bei jeder Merge-Operation fortgeschrieben — auch
+   * wenn sich der Text nicht geaendert hat. Es ist damit die ehrliche
+   * "letzte Pruefung", nicht nur "letzte Aenderung".
+   *
+   * Ohne dieses Feld behauptete `aktualisiert` in jeder Seite ein
+   * Aktualitaetsdatum, das nicht existierte: 10.415 Eintraege verteilten
+   * sich auf nur 35 Datumswerte, der aelteste vom 2026-08-14.
+   */
+  updatedAt?: string;
   verified?: VerifiedRecord | VerifiedRecord[];
   staleAfter?: string;
   sources: string[];
@@ -71,6 +84,11 @@ export interface Concept {
    * on every `generatePages` run.
    */
   generatedAt?: string;
+  /**
+   * ISO date (YYYY-MM-DD) of the last re-extraction.
+   * Siehe `Entity.updatedAt`.
+   */
+  updatedAt?: string;
   verified?: VerifiedRecord | VerifiedRecord[];
   staleAfter?: string;
   /**

@@ -63,6 +63,10 @@ function sanitizeKbData(raw: KBData): KBData {
       shortDescription: c.shortDescription ? toStr(c.shortDescription) : undefined,
       generatedBy: c.generatedBy ? toStr(c.generatedBy) : undefined,
       generatedAt: c.generatedAt ? toStr(c.generatedAt) : today,
+      // Legacy-Eintraege ohne `updatedAt`: der Erstellungszeitpunkt ist die
+      // beste vorhandene Naeherung. Nach der naechsten Extraktion wird
+      // das Feld fortgeschrieben.
+      updatedAt: c.updatedAt ? toStr(c.updatedAt) : c.generatedAt ? toStr(c.generatedAt) : today,
       verified: c.verified,
       staleAfter: c.staleAfter ? toStr(c.staleAfter) : undefined,
       related: toStrArr(c.related),
@@ -80,6 +84,8 @@ function sanitizeKbData(raw: KBData): KBData {
       shortDescription: e.shortDescription ? toStr(e.shortDescription) : undefined,
       generatedBy: e.generatedBy ? toStr(e.generatedBy) : undefined,
       generatedAt: e.generatedAt ? toStr(e.generatedAt) : today,
+      // Siehe `updatedAt` bei den Konzepten.
+      updatedAt: e.updatedAt ? toStr(e.updatedAt) : e.generatedAt ? toStr(e.generatedAt) : today,
       verified: e.verified,
       staleAfter: e.staleAfter ? toStr(e.staleAfter) : undefined,
       sources: toStrArr(e.sources),
@@ -103,6 +109,7 @@ export interface AddEntityArgs {
   shortDescription?: string;
   generatedBy?: string;
   generatedAt?: string;
+  updatedAt?: string;
   verified?: VerifiedRecord | VerifiedRecord[];
   staleAfter?: string;
   source?: string;
@@ -114,6 +121,7 @@ export interface AddConceptArgs {
   shortDescription?: string;
   generatedBy?: string;
   generatedAt?: string;
+  updatedAt?: string;
   verified?: VerifiedRecord | VerifiedRecord[];
   staleAfter?: string;
   related?: string[];
@@ -183,6 +191,7 @@ export class KnowledgeBase {
           shortDescription: args.shortDescription,
           generatedBy: args.generatedBy,
           generatedAt: args.generatedAt,
+          updatedAt: args.updatedAt,
           sources: args.source ? [args.source] : [],
         };
       }
@@ -196,6 +205,7 @@ export class KnowledgeBase {
         shortDescription: args.shortDescription,
         generatedBy: args.generatedBy,
         generatedAt: args.generatedAt,
+        updatedAt: args.updatedAt,
         verified: args.verified,
         staleAfter: args.staleAfter,
         source: args.source,
@@ -210,6 +220,7 @@ export class KnowledgeBase {
       shortDescription: args.shortDescription,
       generatedBy: args.generatedBy,
       generatedAt: args.generatedAt ?? todayIso(),
+      updatedAt: args.updatedAt ?? todayIso(),
       verified: args.verified,
       staleAfter: args.staleAfter,
       sources: args.source ? [args.source] : [],
@@ -237,6 +248,9 @@ export class KnowledgeBase {
     if (args.generatedAt && !concept.generatedAt) {
       concept.generatedAt = args.generatedAt;
     }
+    // Auch beim Merge in ein bestehendes Konzept zaehlt der heutige Lauf
+    // als "zuletzt geprueft".
+    concept.updatedAt = args.updatedAt ?? todayIso();
 
     const facts = (args.facts ?? []).map((f) => f.trim()).filter(Boolean);
     const definition = concept.definition.trim();
@@ -277,6 +291,9 @@ export class KnowledgeBase {
     if (args.generatedAt && !entity.generatedAt) {
       entity.generatedAt = args.generatedAt;
     }
+    // Auch beim Merge in eine bestehende Entity zaehlt der heutige Lauf
+    // als "zuletzt geprueft".
+    entity.updatedAt = args.updatedAt ?? todayIso();
     const definition = (args.definition ?? "").trim();
     if (definition && !entity.facts.includes(definition)) {
       entity.facts.push(definition);
@@ -310,6 +327,11 @@ export class KnowledgeBase {
       shortDescription: args.shortDescription ?? entity.shortDescription,
       generatedBy: args.generatedBy ?? entity.generatedBy,
       generatedAt: entity.generatedAt ?? args.generatedAt,
+      // Die Entity wird zum Konzept migriert — das ist ein frischer
+      // Pruefzeitpunkt, also HEUTE. Das alte `updatedAt` der Entity
+      // beschreibt einen anderen Zeitpunkt und darf nicht uebernommen
+      // werden; das Erstellungsdatum bleibt erhalten.
+      updatedAt: args.updatedAt ?? todayIso(),
       verified: entity.verified,
       staleAfter: entity.staleAfter,
       related: [...(args.related ?? [])],
@@ -345,6 +367,7 @@ export class KnowledgeBase {
       shortDescription?: string;
       generatedBy?: string;
       generatedAt?: string;
+      updatedAt?: string;
       verified?: VerifiedRecord | VerifiedRecord[];
       staleAfter?: string;
       source?: string;
@@ -358,6 +381,10 @@ export class KnowledgeBase {
     if (patch.generatedAt && !entity.generatedAt) {
       entity.generatedAt = patch.generatedAt;
     }
+    // The creation date stays put; the last re-extraction is recorded
+    // separately. Without this, `aktualisiert` in the page frontmatter
+    // claimed a freshness that never existed.
+    entity.updatedAt = patch.updatedAt ?? todayIso();
     if (patch.verified) entity.verified = patch.verified;
     if (patch.staleAfter) entity.staleAfter = patch.staleAfter;
     if (patch.aliases) {
@@ -435,6 +462,7 @@ export class KnowledgeBase {
         shortDescription: args.shortDescription,
         generatedBy: args.generatedBy,
         generatedAt: args.generatedAt,
+        updatedAt: args.updatedAt,
         verified: args.verified,
         staleAfter: args.staleAfter,
         related: args.related,
@@ -448,6 +476,7 @@ export class KnowledgeBase {
       shortDescription: args.shortDescription,
       generatedBy: args.generatedBy,
       generatedAt: args.generatedAt ?? todayIso(),
+      updatedAt: args.updatedAt ?? todayIso(),
       verified: args.verified,
       staleAfter: args.staleAfter,
       // `related` speichert die Namen so, wie das LLM sie geliefert hat.
@@ -468,6 +497,7 @@ export class KnowledgeBase {
       shortDescription?: string;
       generatedBy?: string;
       generatedAt?: string;
+      updatedAt?: string;
       verified?: VerifiedRecord | VerifiedRecord[];
       staleAfter?: string;
       related?: string[];
@@ -482,6 +512,10 @@ export class KnowledgeBase {
     if (patch.generatedAt && !concept.generatedAt) {
       concept.generatedAt = patch.generatedAt;
     }
+    // The creation date stays put; the last re-extraction is recorded
+    // separately. Without this, `aktualisiert` in the page frontmatter
+    // claimed a freshness that never existed.
+    concept.updatedAt = patch.updatedAt ?? todayIso();
     if (patch.verified) concept.verified = patch.verified;
     if (patch.staleAfter) concept.staleAfter = patch.staleAfter;
     if (patch.definition && patch.definition.length > concept.definition.length) {

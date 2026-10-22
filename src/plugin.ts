@@ -1,7 +1,7 @@
 import { getLanguage, Notice, Plugin, TFile } from "obsidian";
 import { KnowledgeBase } from "./core/kb.js";
 import { loadKB, saveKB } from "./vault/kb-store.js";
-import { walkVaultFiles, type WalkOptions } from "./vault/walker.js";
+import { walkVault, walkVaultFiles, type WalkOptions } from "./vault/walker.js";
 import { openLintModal } from "./ui/modal/lint-modal.js";
 import { WelcomeModal } from "./ui/modal/welcome-modal.js";
 import { OllamaProvider } from "./llm/ollama.js";
@@ -730,7 +730,8 @@ export default class LlmWikiPlugin extends Plugin {
         minFileSize: DEFAULT_MIN_FILE_SIZE,
         dailiesFromIso: defaultDailiesFromIso(),
       };
-      const walked = await walkVaultFiles(this.app, walkOpts);
+      const walk = walkVault(this.app, walkOpts);
+      const walked = walk.files;
 
       if (walked.length === 0) {
         new Notice(
@@ -815,12 +816,17 @@ export default class LlmWikiPlugin extends Plugin {
       const runEntries = renderRunLogEntries({
         succeeded: stats.succeeded,
         failed: stats.failed,
-        skipped: stats.skipped,
+        skipped: stats.skipped + walk.prunedTooSmall,
         elapsedMs: stats.elapsedMs,
         skippedFiles: skippedLog,
         failedFiles: failedLog,
         filtered: genResult.filtered,
       });
+      if (walk.prunedTooSmall > 0) {
+        runEntries.push(
+          `Uebersprungen | ${walk.prunedTooSmall} Dateien unter Mindestgroesse (${DEFAULT_MIN_FILE_SIZE} B) verworfen`,
+        );
+      }
       for (const entry of runEntries) {
         await appendWikiLog(this.app, entry);
       }

@@ -16,8 +16,17 @@ export const DEFAULT_CHUNK_OVERLAP_CHARS = 300;
 export const DEFAULT_MAX_CHUNKS = 20;
 
 /** Minimum file size (in characters) before a file is considered
- *  worth extracting. Below this, the file is skipped. */
-export const DEFAULT_MIN_FILE_SIZE = 100;
+ *  worth extracting. Below this, the file is skipped.
+ *
+ *  300 statt 100: Im Live-Vault lagen 73 KB-Quellen unter 300 B. Sie
+ *  erzeugten pro Nachtlauf 73 sinnlose LLM-Aufrufe, ohne einen einzigen
+ *  verwertbaren Eintrag zu liefern. Gemessen in `knowledge.json`:
+ *  6 Dateien < 100 B, 67 Dateien 100-299 B, 884 ab 300 B.
+ *  Die Grenze ist ein Kompromiss: sie verwirft reine Kurznotizen
+ *  (Autor:innen-Listen, Ein-Link-Notizen), behält aber alles, was
+ *  tatsaechlich Inhalt traegt.
+ */
+export const DEFAULT_MIN_FILE_SIZE = 300;
 
 /**
  * Directory names to skip when walking the vault for extraction.

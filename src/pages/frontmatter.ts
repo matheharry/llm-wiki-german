@@ -29,6 +29,7 @@ export function entityFrontmatter(
   // Use the stable creation date when available; fall back to `today`
   // only for legacy entries that predate `generatedAt`.
   const generatedAt = entity.generatedAt || today;
+  const updatedAt = entity.updatedAt || entity.generatedAt || today;
   const fm: Record<string, unknown> = {
     type: `Entity/${entity.type}`,
     title: entity.name,
@@ -42,7 +43,8 @@ export function entityFrontmatter(
     generated: { by: entity.generatedBy || "llm-wiki-german/1.1.0c", at: `${generatedAt}T00:00:00Z` },
     status: "stable",
     "quellen-anzahl": entity.sources.length,
-    "aktualisiert": generatedAt,
+    "aktualisiert": updatedAt,
+    "erstellt": generatedAt,
     cssclasses: [],
   };
   if (entity.verified) fm["verified"] = entity.verified;
@@ -60,6 +62,7 @@ export function conceptFrontmatter(
   // Use the stable creation date when available; fall back to `today`
   // only for legacy entries that predate `generatedAt`.
   const generatedAt = concept.generatedAt || today;
+  const updatedAt = concept.updatedAt || concept.generatedAt || today;
   const fm: Record<string, unknown> = {
     type: "Concept",
     title: concept.name,
@@ -72,7 +75,8 @@ export function conceptFrontmatter(
     generated: { by: concept.generatedBy || "llm-wiki-german/1.1.0c", at: `${generatedAt}T00:00:00Z` },
     status: "stable",
     "quellen-anzahl": concept.sources.length,
-    "aktualisiert": generatedAt,
+    "aktualisiert": updatedAt,
+    "erstellt": generatedAt,
     cssclasses: [],
   };
   if (concept.verified) fm["verified"] = concept.verified;

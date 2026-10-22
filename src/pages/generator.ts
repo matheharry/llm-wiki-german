@@ -111,7 +111,7 @@ export async function generatePages(
     await safeWritePage(
       app,
       path,
-      renderSourcePage(source, relatedEntities, relatedConcepts),
+      renderSourcePage(source, relatedEntities, relatedConcepts, hasPage, nameById),
     );
     written.add(path);
   }
