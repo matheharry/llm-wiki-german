@@ -397,12 +397,21 @@ describe("KnowledgeBase.removeSource", () => {
     expect(kb.data.entities["alan-watts"]?.sources).toEqual(["Learn/Zen.md"]);
   });
 
-  it("deletes concept when its last source is removed", () => {
+  it("keeps the concept when its last source is removed", () => {
+    // Die Zitation verschwindet, das Wissen nicht. "Zen" mit der
+    // Definition "x" ist Wissen, das nicht verschwindet, nur weil die
+    // Quelldatei geloescht wurde.
+    //
+    // Der fruehere Code loeschte den Eintrag. Das war stiller
+    // Wissensverlust: die Seite verschwand, und jeder Verweis auf sie
+    // wurde sofort zu einem toten Link.
     const kb = new KnowledgeBase();
     kb.addConcept({ name: "Zen", definition: "x", source: "Books/Watts.md" });
     kb.markSource({ path: "Books/Watts.md", mtime: 1, origin: "user-note" });
     kb.removeSource("Books/Watts.md");
-    expect(kb.data.concepts["zen"]).toBeUndefined();
+    expect(kb.data.concepts["zen"]).toBeDefined();
+    expect(kb.data.concepts["zen"].definition).toBe("x");
+    expect(kb.data.concepts["zen"].sources).toEqual([]);
   });
 
   it("deletes connection when its last source is removed", () => {
@@ -418,12 +427,14 @@ describe("KnowledgeBase.removeSource", () => {
     expect(kb.data.connections).toHaveLength(0);
   });
 
-  it("deletes entity when its last source is removed", () => {
+  it("keeps the entity when its last source is removed", () => {
     const kb = new KnowledgeBase();
     kb.addEntity({ name: "Solo", type: "person", facts: ["f1"], source: "a.md" });
     kb.markSource({ path: "a.md", mtime: 1, origin: "user-note" });
     kb.removeSource("a.md");
-    expect(kb.data.entities["solo"]).toBeUndefined();
+    expect(kb.data.entities["solo"]).toBeDefined();
+    expect(kb.data.entities["solo"].facts).toEqual(["f1"]);
+    expect(kb.data.entities["solo"].sources).toEqual([]);
   });
 
   it("does not throw if the source does not exist", () => {

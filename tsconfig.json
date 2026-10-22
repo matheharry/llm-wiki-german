@@ -23,6 +23,6 @@
     "baseUrl": ".",
     "types": ["node"]
   },
-  "include": ["main.ts", "src/**/*", "tests/**/*", "*.config.ts", "*.config.mjs"],
-  "exclude": ["node_modules", "dist", "main.js"]
+  "include": ["main.ts", "src/**/*", "tests/**/*", "scripts/**/*", "*.config.ts", "*.config.mjs"],
+  "exclude": ["node_modules", "dist", "main.js", "tmp"]
 }

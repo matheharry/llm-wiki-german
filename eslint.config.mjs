@@ -14,6 +14,7 @@ export default [
       "main.js",
       "dist/**",
       "coverage/**",
+      "tmp/**",
       "Beispieldateien/**",
     ],
   },
@@ -86,6 +87,16 @@ export default [
       // YAML-safety tests must match real control characters (#x00-#x08)
       // that occur in generated frontmatter.
       "no-control-regex": "off",
+    },
+  },
+  {
+    // Standalone scripts run outside Obsidian. They have no `app` to
+    // read `configDir` from, and console output is their only output
+    // channel — the Obsidian plugin rules do not apply to them.
+    files: ["scripts/**/*.ts"],
+    rules: {
+      "obsidianmd/hardcoded-config-path": "off",
+      "obsidianmd/rule-custom-message": "off",
     },
   },
 ];

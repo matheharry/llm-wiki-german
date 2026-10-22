@@ -29,11 +29,31 @@ function emptyKb(): KBData {
   };
 }
 
-/** Coerce a raw JSON value to a trimmed string. */
+/**
+ * Control characters that YAML forbids in any scalar and that Obsidian
+ * renders as Muell.
+ *
+ * Hintergrund: Das LLM liefert manchmal LaTeX, und der Weg durch den
+ * JSON-Transport kann `\b` (Backslash-b) in ein echtes Backspace
+ * (0x08) verwandeln. Im Live-Wiki betraf das den Konzeptnamen
+ * "Beta-Zerfaelle ($\x08eta^-$ und $\x08eta^+$)" — die Seite war
+ * dadurch kein gueltiges YAML.
+ *
+ * Gesucht wird ausschliesslich nach den Zeichen, die YAML verbietet.
+ * Tab (\x09), LF (\x0a) und CR (\x0d) sind erlaubt und werden nicht
+ * angetastet.
+ */
+// eslint-disable-next-line no-control-regex -- matching real control characters is the point
+const YAML_CONTROL_CHARS = /[\x00-\x08\x0b\x0c\x0e-\x1f]/g;
+
+/**
+ * Coerce a raw JSON value to a trimmed string, without control
+ * characters that would break the YAML frontmatter.
+ */
 function toStr(v: unknown): string {
-  if (typeof v === "string") return v.trim();
+  if (typeof v === "string") return v.replace(YAML_CONTROL_CHARS, "").trim();
   if (v === null || v === undefined) return "";
-  return String(v).trim();
+  return String(v).replace(YAML_CONTROL_CHARS, "").trim();
 }
 
 /** Coerce a raw JSON value to a string array. */
@@ -98,7 +118,21 @@ function sanitizeKbData(raw: KBData): KBData {
     description: toStr(c.description),
     sources: toStrArr(c.sources),
   }));
-  return { ...raw, concepts, entities, connections };
+  // Quellen-Records: `summary` und `id` landen im Textkoerper der
+  // Quellseite. Auch hier muessen die Steuerzeichen raus, sonst
+  // schleppt die Seite sie weiter.
+  const sources: Record<string, SourceRecord> = {};
+  for (const [path, s] of Object.entries(raw.sources)) {
+    sources[path] = {
+      ...s,
+      id: toStr(s.id) || path,
+      summary: s.summary ? toStr(s.summary) : "",
+      shortDescription: s.shortDescription
+        ? toStr(s.shortDescription)
+        : undefined,
+    };
+  }
+  return { ...raw, concepts, entities, connections, sources };
 }
 
 export interface AddEntityArgs {
@@ -574,12 +608,24 @@ export class KnowledgeBase {
     let resolvedCount = 0;
     let unresolvedCount = 0;
 
-    // Nur Konzepte fuehren ein `related`-Feld.
+    // Nur Konzepte fuehren ein `related`-feld.
     for (const concept of Object.values(this.data.concepts)) {
       const names = concept.related ?? [];
-      if (names.length === 0) continue;
+      // Die Namen aus `unresolvedRelated` muessen MIT aufgeloest werden.
+      //
+      // Grund: `related` und `unresolvedRelated` sind zwei Haelften
+      // desselben Verweis-Satzes. Wird nur `related` aufgeloest,
+      // wandern die unaufgeloesten Namen beim naechsten Lauf ins
+      // Nichts — sie stehen dann weder in `related` noch in
+      // `unresolvedRelated` und sind fuer immer verloren.
+      //
+      // Praktisch heisst das: ein Konzept, dessen Verweis auf ein
+      // noch nicht existierendes Ziel zeigt, behaelt diesen Verweis
+      // auch dann, wenn der Aufloesungslauf mehrfach laeuft. Sobald
+      // das Ziel existiert, wird der Verweis automatisch aufgeloest.
+      const all = [...names, ...(concept.unresolvedRelated ?? [])];
 
-      const { resolved, unresolved } = resolveRelated(names, index);
+      const { resolved, unresolved } = resolveRelated(all, index);
       resolvedCount += resolved.length;
       unresolvedCount += unresolved.length;
 
@@ -772,15 +818,29 @@ export class KnowledgeBase {
     return this.data.concepts[id];
   }
 
+  /**
+   * Entfernt einen Source-Record und die Verweise darauf.
+   *
+   * WICHTIG: Eintraege werden dabei NICHT geloescht. Ein Konzept, dessen
+   * einzige Quelle geloescht wurde, verliert die Zitation — aber nicht
+   * die Definition. "Aggregatzustand" mit der Erklaernis "Ein Zustand der
+   * Materie (z.B. Feststoff, Fluessig...)" ist Wissen, das nicht verschwindet,
+   * nur weil die Quelldatei weg ist.
+   *
+   * Der fruehere Code loeschte solche Eintraege. Das war stiller
+   * Wissensverlust: 7 Konzepte verschwanden, und die Verweise anderer
+   * Seiten auf sie wurden sofort zu toten Links.
+   *
+   * Verbindungen ohne verbleibende Quelle werden entfernt — sie haben
+   * keine Grundlage mehr.
+   */
   removeSource(path: string): void {
     delete this.data.sources[path];
-    for (const [id, entity] of Object.entries(this.data.entities)) {
+    for (const entity of Object.values(this.data.entities)) {
       entity.sources = entity.sources.filter((s) => s !== path);
-      if (entity.sources.length === 0) delete this.data.entities[id];
     }
-    for (const [id, concept] of Object.entries(this.data.concepts)) {
+    for (const concept of Object.values(this.data.concepts)) {
       concept.sources = concept.sources.filter((s) => s !== path);
-      if (concept.sources.length === 0) delete this.data.concepts[id];
     }
     this.data.connections = this.data.connections.filter((conn) => {
       conn.sources = conn.sources.filter((s) => s !== path);

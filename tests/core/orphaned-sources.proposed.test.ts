@@ -106,11 +106,16 @@ describe("KB: removeOrphanedSources", () => {
     expect(removed).toBe(1);
     // Der Record ist weg...
     expect(kb.data.sources["Clippings/weg.md"]).toBeUndefined();
-    // ...und der Eintrag, der nur von ihm abhing, ebenfalls — sonst
-    // waere er eine Quelle ohne Quelle.
-    expect(kb.getEntity("nur-von-der-weg-quelle")).toBeUndefined();
-    // Der Eintrag mit einer lebenden Quelle bleibt.
+    // ...der Eintrag bleibt aber erhalten: die Zitation verschwindet,
+    // nicht das Wissen. Wuerde der Eintrag geloescht, verliert die
+    // Seite ihren Inhalt — und alle Verweise auf sie werden tot.
+    const survivor = kb.getEntity("nur-von-der-weg-quelle");
+    expect(survivor).toBeDefined();
+    expect(survivor!.facts).toEqual(["Existiert nur wegen der entfernten Quelle."]);
+    expect(survivor!.sources).toEqual([]);
+    // Der Eintrag mit einer lebenden Quelle bleibt unveraendert.
     expect(kb.getEntity("alan-watts")).toBeDefined();
+    expect(kb.getEntity("alan-watts")!.sources).toEqual(["Clippings/bleibt.md"]);
     expect(kb.data.sources["Clippings/bleibt.md"]).toBeDefined();
   });
 
