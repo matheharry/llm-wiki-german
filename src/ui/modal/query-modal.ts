@@ -14,6 +14,7 @@ import {
   type QueryControllerState,
 } from "./query-controller.js";
 import type { RetrievedBundle, ScoredSource } from "../../query/types.js";
+import type { RetrievalLimits } from "../../query/retrieve.js";
 import type {
   EmbeddingIndexController,
   EmbeddingIndexState,
@@ -55,6 +56,8 @@ export interface QueryModalArgs {
   /** Model used to build the embedding index — needed for query embedding. */
   embeddingModel?: string;
   folders: string[];
+  /** Obergrenzen der Abfrage (Punkt 5). */
+  limits?: Partial<RetrievalLimits>;
   chats: readonly Chat[];
   activeChatId: string | null;
   onChatsChanged: (chats: readonly Chat[]) => void;
@@ -701,6 +704,7 @@ export class QueryModal extends Modal {
       embeddingIndex,
       embeddingNorms,
       queryEmbedding: this.args.queryEmbedding,
+      limits: this.args.limits,
       onState: (s): void => {
         this.applyState(s);
         if (s === "done") {

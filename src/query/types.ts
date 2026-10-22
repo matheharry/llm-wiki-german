@@ -20,6 +20,15 @@ export interface RetrievedBundle {
   concepts: Concept[];
   connections: Connection[];
   sources: SourceRecord[];
+  /**
+   * Namen fuer die Anzeige: KB-ID -> lesbarer Name.
+   *
+   * Punkt 1b: `related`-Verweise und Verbindungen speichern IDs
+   * ("schulmaterial"). Ohne diese Mappe erscheinen sie im Prompt als
+   * Slug — das LLM kann "schulmaterial" keinem bekannten Begriff
+   * zuordnen. Mit der Mappe steht dort "Schulmaterial".
+   */
+  nameById?: ReadonlyMap<string, string>;
 }
 
 export interface ScoredSource {

@@ -2,6 +2,7 @@ import type { KnowledgeBase } from "../../core/kb.js";
 import { ask } from "../../query/ask.js";
 import type { LLMProvider } from "../../llm/provider.js";
 import type { RetrievedBundle } from "../../query/types.js";
+import type { RetrievalLimits } from "../../query/retrieve.js";
 import { assessConfidence, type ConfidenceLevel } from "../../query/confidence.js";
 import type { Chat } from "../../chat/types.js";
 import { needsFollowUpRewrite, rewriteFollowUp } from "../../chat/rewrite.js";
@@ -29,6 +30,8 @@ export interface QueryControllerOptions {
   /** Cached L2 norms paired with `embeddingIndex`. */
   embeddingNorms?: ReadonlyMap<string, number>;
   queryEmbedding?: number[] | null;
+  /** Obergrenzen der Abfrage (Punkt 5). */
+  limits?: Partial<RetrievalLimits>;
   onState: (s: QueryControllerState) => void;
   onContext: (bundle: RetrievedBundle, confidence: ConfidenceLevel) => void;
   onChunk: (text: string) => void;
@@ -105,6 +108,10 @@ export class QueryController {
         embeddingNorms: this.opts.embeddingNorms,
         queryEmbedding: this.opts.queryEmbedding,
         signal: this.abortCtrl.signal,
+        limits: this.opts.limits,
+        // Punkt 1b: IDs -> lesbare Namen, damit `related` und
+        // Verbindungen im Prompt nicht als Slugs erscheinen.
+        nameById: this.opts.kb.nameMap(),
       })) {
         if (this.state === "cancelled") return;
         if (ev.kind === "context" && ev.bundle) {

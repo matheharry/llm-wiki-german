@@ -3,6 +3,10 @@ import { openFolderPicker } from "../modal/folder-picker.js";
 
 export interface QuerySettings {
   queryFolders: string[];
+  queryMaxEntities: number;
+  queryMaxConcepts: number;
+  queryMaxConnections: number;
+  queryMaxSources: number;
 }
 
 export function applyQuerySettingsPatch(
@@ -18,6 +22,42 @@ export interface BuildQuerySectionArgs {
   settings: QuerySettings;
   onChange: (patch: Partial<QuerySettings>) => void | Promise<void>;
   rerender: () => void;
+}
+
+/** Begrenzung der Zahlenfelder: 0 heisst "keine". */
+function clampCount(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+/**
+ * Punkt 5: Die Obergrenzen der Abfrage waren hart codiert
+ * (MAX_ENTITIES = 8, MAX_CONCEPTS = 5, MAX_CONNECTIONS = 20) und
+ * fuer `maxSources` gab es gar keine Grenze. Die Werte bestimmen
+ * direkt, wie viel Kontext ans LLM geht — das sind Nutzer-Einstellungen,
+ * keine Konstanten.
+ */
+function buildLimitSetting(
+  args: BuildQuerySectionArgs,
+  key: "queryMaxEntities" | "queryMaxConcepts" | "queryMaxConnections" | "queryMaxSources",
+  name: string,
+  desc: string,
+  max: number,
+): void {
+  new Setting(args.container)
+    .setName(name)
+    .setDesc(desc)
+    .addText((text) => {
+      text.inputEl.type = "number";
+      text.inputEl.min = "0";
+      text.inputEl.max = String(max);
+      text.setValue(String(args.settings[key]));
+      text.onChange(async (raw) => {
+        const parsed = Number.parseInt(raw, 10);
+        const value = clampCount(Number.isNaN(parsed) ? 0 : parsed, 0, max);
+        await args.onChange({ [key]: value });
+      });
+    });
 }
 
 export function buildQuerySection(args: BuildQuerySectionArgs): void {
@@ -91,4 +131,43 @@ export function buildQuerySection(args: BuildQuerySectionArgs): void {
       });
     }
   }
+
+  // --- Obergrenzen der Abfrage (Punkt 5) ---------------------------------
+  new Setting(args.container)
+    .setName("Retrieval limits")
+    .setDesc(
+      "How much material a single answer may draw on. More means more context, " +
+        "more tokens and slower answers. 0 disables that category entirely.",
+    )
+    .setHeading();
+
+  buildLimitSetting(
+    args,
+    "queryMaxEntities",
+    "Max entities",
+    "Named things (people, tools, organisations) considered per answer.",
+    50,
+  );
+  buildLimitSetting(
+    args,
+    "queryMaxConcepts",
+    "Max concepts",
+    "Concepts considered per answer. Concepts carry the definitions.",
+    50,
+  );
+  buildLimitSetting(
+    args,
+    "queryMaxConnections",
+    "Max connections",
+    "Relations between the retrieved items included per answer.",
+    100,
+  );
+  buildLimitSetting(
+    args,
+    "queryMaxSources",
+    "Max source files",
+    "Source files listed per answer. This is the main lever on answer size: " +
+      "every source adds its full summary to the prompt.",
+    200,
+  );
 }

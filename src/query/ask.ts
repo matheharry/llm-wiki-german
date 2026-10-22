@@ -3,7 +3,7 @@ import type { KnowledgeBase } from "../core/kb.js";
 import type { LLMProvider } from "../llm/provider.js";
 import { formatContextMarkdown } from "./format-context.js";
 import { buildAskPrompt } from "./prompts.js";
-import { retrieve } from "./retrieve.js";
+import { retrieve, type RetrievalLimits } from "./retrieve.js";
 import { assessConfidence } from "./confidence.js";
 import { randomEmptyMessage } from "./confidence.js";
 import type { AnswerEvent } from "./types.js";
@@ -26,6 +26,10 @@ export interface AskArgs {
   embeddingNorms?: ReadonlyMap<string, number>;
   queryEmbedding?: number[] | null;
   signal?: AbortSignal;
+  /** Obergrenzen fuer das Bundle (Punkt 5). */
+  limits?: Partial<RetrievalLimits>;
+  /** KB-ID -> lesbarer Name, fuer die Anzeige im Kontext (Punkt 1b). */
+  nameById?: ReadonlyMap<string, string>;
 }
 
 async function computeQueryEmbedding(
@@ -71,6 +75,8 @@ export async function* ask(args: AskArgs): AsyncIterable<AnswerEvent> {
       embeddingIndex: args.embeddingIndex,
       embeddingNorms: args.embeddingNorms,
       queryEmbedding,
+      limits: args.limits,
+      nameById: args.nameById,
     });
     yield { kind: "context", bundle };
 

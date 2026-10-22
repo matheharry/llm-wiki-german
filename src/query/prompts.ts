@@ -7,10 +7,17 @@ export interface BuildAskPromptArgs {
 }
 
 /**
- * Maximum characters of retrieved context to include in the query prompt.
- * The model's full context window (num_ctx) is shared between the system
- * prompt, rules, history, question, and the answer itself. Truncating at
- * ~16k chars (~4k tokens) leaves enough room for the rest.
+ * Absolute Obergrenze fuer den Kontext im Prompt.
+ *
+ * Das ist ein **Sicherheitsnetz**, nicht die primaere Kuerzung. Die
+ * primaere Kuerzung passiert in `formatContextMarkdown()` je Abschnitt
+ * (Budget pro Abschnitt). Diese Grenze greift nur, falls das
+ * zusammenaddierte Budget doch ueberschritten wird.
+ *
+ * Vorher war das die einzige Kuerzung — und sie schnitt am Ende ab.
+ * Bei der Frage "Welche Werkzeuge nutzt Harald March im Unterricht?"
+ * (408 kB Kontext) blieben nur 8 Entities im Prompt; Konzepte,
+ * Verbindungen und alle 659 Quellen fielen kommentarlos weg.
  */
 const MAX_CONTEXT_CHARS = 16_000;
 

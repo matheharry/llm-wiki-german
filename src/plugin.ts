@@ -102,6 +102,18 @@ interface LlmWikiSettings {
   extractionChunkOverlapChars: number;
   lastExtractionRunIso: string | null;
   queryFolders: string[];
+  /**
+   * Obergrenzen der Abfrage (Punkt 5).
+   *
+   * Die Werte entscheiden direkt darueber, wie viel Kontext ans LLM
+   * geht. `maxSources` war vorher unbegrenzt — bei einer Frage nach
+   * "Werkzeuge von Harald March" waren das 659 Quellen und 377 kB
+   * Kontext, von denen 469 keine einzige Fundstelle belegten.
+   */
+  queryMaxEntities: number;
+  queryMaxConcepts: number;
+  queryMaxConnections: number;
+  queryMaxSources: number;
   nightlyExtractionEnabled: boolean;
   nightlyExtractionHour: number;
   showStatusBar: boolean;
@@ -136,6 +148,10 @@ const DEFAULT_SETTINGS: LlmWikiSettings = {
   extractionChunkOverlapChars: 300,
   lastExtractionRunIso: null,
   queryFolders: [],
+  queryMaxEntities: 8,
+  queryMaxConcepts: 5,
+  queryMaxConnections: 20,
+  queryMaxSources: 30,
   nightlyExtractionEnabled: false,
   nightlyExtractionHour: 2,
   showStatusBar: true,
@@ -894,6 +910,12 @@ export default class LlmWikiPlugin extends Plugin {
       model: this.activeModel,
       embeddingModel: this.activeEmbeddingModel,
       folders: this.settings.queryFolders,
+      limits: {
+        maxEntities: this.settings.queryMaxEntities,
+        maxConcepts: this.settings.queryMaxConcepts,
+        maxConnections: this.settings.queryMaxConnections,
+        maxSources: this.settings.queryMaxSources,
+      },
       chats: this.chats,
       activeChatId: null,
       indexController: this.embeddingIndexController,

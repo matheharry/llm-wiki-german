@@ -1,11 +1,25 @@
 import type { KnowledgeBase } from "../core/kb.js";
 import type { RankedItem } from "./types.js";
 import { buildKbView, type KbView } from "./kb-view.js";
+import { isExactNameHit } from "./exact-name.js";
 
 const NAME_HIT = 3;
 const FACT_HIT = 1;
 const BIGRAM_BOOST = 6;
-
+/**
+ * Bonus fuer einen EXAKTEN Namenstreffer.
+ *
+ * Ohne das schlaegt ein laengerer Name den kuerzeren: bei der Frage
+ * "Bleistift auf Finger" (1 Faktor) stand "Bleistift" (3 Fakten) vorn.
+ *
+ * Der Bonus wirkt auf den Keyword-Score, also auf die RRF-Position.
+ * Das ist entscheidend: RRF komprimiert die Score-Differenzen — 25.6
+ * gegen 10.5 werden zu 0.01311 gegen 0.01290, also zu 1.6 % Abstand.
+ * Der Vorrang in `retrieve.ts` allein (2.4) kann den Qualitaets-
+ * multiplikator (1.3) nicht ausgleichen; mit dem Keyword-Bonus
+ * stimmt die RRF-Position schon.
+ */
+const EXACT_NAME_BOOST = 6;
 function computeTermWeights(
   view: KbView,
   terms: readonly string[],
@@ -57,6 +71,7 @@ export function rankByKeyword(
   kb: KnowledgeBase,
   terms: readonly string[],
   view?: KbView,
+  fullQuestion?: string,
 ): RankedItem[] {
   if (terms.length === 0) return [];
   const prepared = view ?? buildKbView(kb);
@@ -77,6 +92,8 @@ export function rankByKeyword(
       const bigram = `${terms[i]} ${terms[i + 1]}`;
       if (nameLower.includes(bigram)) score += BIGRAM_BOOST;
     }
+    // Exakter Name — siehe `isExactNameHit`.
+    if (isExactNameHit(nameLower, terms, fullQuestion)) score += EXACT_NAME_BOOST;
     if (score > 0) {
       items.push({
         id: entity.id,
@@ -93,6 +110,8 @@ export function rankByKeyword(
       if (nameLower.includes(t)) score += NAME_HIT * w;
       if (definitionLower.includes(t)) score += FACT_HIT * w;
     }
+    // Exakter Name — siehe `isExactNameHit`.
+    if (isExactNameHit(nameLower, terms, fullQuestion)) score += EXACT_NAME_BOOST;
     if (score > 0) {
       items.push({
         id: `concept:${concept.id}`,

@@ -55,23 +55,94 @@ const STOP_WORDS = new Set([
   "selbst", "man", "hier", "dort", "jetzt",
 ]);
 
+/**
+ * Punkt 6: Komposita-Splitting.
+ *
+ * Die alte Fassung suchte an JEDER Position > 3 ein "s" und schnitt
+ * dort ab. Aus "aggregatzustand" wurde "aggregatzu" + "tand" — zwei
+ * sinnlose Fragmente, die im Ranking nichts treffen und den
+ * Bigram-Bonus (6 Punkte!) auf falsche Paare legen.
+ *
+ * Der S-Joiner ("Wissensbasis" -> "wissen" + "basis") ist eine echte
+ * deutsche Regel — aber nur, wenn das linke Teilstueck selbst ein
+ * Wort ist. Ohne diese Pruefung produziert die Regel Muell.
+ *
+ * Deshalb: nur splitten, wenn BEIDE Teile plausibel sind:
+ *  - das linke Teilstueck ist selbst ein Kompositum-Muster (Fugen-s
+ *    VOR dem Suffix) ODER ein bekanntes Wort
+ *  - das rechte Teilstueck ist lang genug und endet nicht auf einem
+ *    Truncations-Konsonanten
+ */
+const KNOWN_COMPOUND_HEADS = new Set([
+  "wissen", "wissens", "arbeits", "lebens", "zeit", "raum", "welt",
+  "schul", "stadt", "land", "haus", "haus", "werk", "maschinen", "daten",
+  "netz", "system", "software", "hardware", "prozess", "produkt", "projekt",
+]);
+
+/** Rechtschreibfehler, die der S-Joiner erzeugen kann. */
+const COMPOUND_TAIL_MIN = 4;
+
+function isPlausibleTail(part: string): boolean {
+  if (part.length < COMPOUND_TAIL_MIN) return false;
+  // Ein Part, der mit einem Konsonanten-Cluster endet, ist meistens
+  // abgeschnitten ("tand" ist ein Fragment von "Zustand").
+  return !/[bcdfghjklmnpqrstvwxz]{2}$/i.test(part);
+}
+
+function isPlausibleHead(part: string): boolean {
+  if (part.length < 4) return false;
+  if (KNOWN_COMPOUND_HEADS.has(part)) return true;
+  // Ein Head, der selbst mit "s" endet, sieht nach einem Fugen-s aus
+  // ("wissens" + "basis"). Das ist die eigentliche deutsche Regel.
+  return part.endsWith("s") && part.length >= 6;
+}
+
+/**
+ * Heuristischer Zerleger fuer deutsche Komposita.
+ *
+ * Liefert nur Teile zurueck, die plausibel sind. Im Zweifel lieber
+ * nichts liefern: ein falsches Teilstueck verschmutzt das Ranking
+ * (IDF-Gewichte, Bigram-Bonus) mehr als ein fehlendes.
+ */
+function splitGermanCompound(word: string): string[] {
+  if (word.length <= 8) return [];
+
+  const parts: string[] = [];
+
+  // 1. Fugen-s: nur wenn links ein Wort UND rechts ein Wort steht.
+  //    "wissensbasis" -> "wissen" + "basis" (der Head endet auf "s",
+  //    also "wissens" ist der Fugenanteil von "Wissens" + "basis").
+  for (let i = word.length - COMPOUND_TAIL_MIN; i > 3; i--) {
+    if (word[i] !== "s") continue;
+    const head = word.slice(0, i);
+    const tail = word.slice(i + 1);
+    if (!isPlausibleHead(head) || !isPlausibleTail(tail)) continue;
+    // "aggregatzustand": head "aggregatzu" (kein Wort, endet nicht auf
+    // "s") -> abgelehnt. "wissensbasis": head "wissens" -> akzeptiert.
+    parts.push(head.replace(/s$/, ""), tail);
+    return parts;
+  }
+
+  return parts;
+}
+
 export function extractQueryTerms(text: string): string[] {
   const tokens = text
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, " ")
     .split(/\s+/)
     .filter((t) => t.length > 1 && !STOP_WORDS.has(t));
-  
+
   const seen = new Set<string>();
   const out: string[] = [];
-  
+
   for (const t of tokens) {
     // Add the original token
     if (!seen.has(t)) {
       seen.add(t);
       out.push(t);
     }
-    
+
     // 2. Basic German Stemming (lightweight)
     const stem = stemGerman(t);
     if (stem !== t && !seen.has(stem) && stem.length > 2) {
@@ -80,7 +151,8 @@ export function extractQueryTerms(text: string): string[] {
     }
 
     // 3. Basic German Compound Splitting
-    // For words > 8 chars, try to split at common boundaries
+    // Nur fuer Komposita, die sich sauber zerlegen lassen — die alte
+    // Fassung produzierte aus jedem langen Wort sinnlose Fragmente.
     if (t.length > 8) {
       const parts = splitGermanCompound(t);
       for (const p of parts) {
@@ -128,22 +200,4 @@ function stemGerman(word: string): string {
     .replace(/ö/g, "o")
     .replace(/ü/g, "u")
     .replace(/ß/g, "ss");
-}
-
-/**
- * Heuristic splitter for German compound words.
- */
-function splitGermanCompound(word: string): string[] {
-  // Simple heuristic: split if we find common "Fugen-S" or other joining patterns
-  // and both parts are reasonably long.
-  const parts: string[] = [];
-  
-  // Look for "s" joiner: Wissensbasis -> Wissen, Basis
-  const sIndex = word.indexOf("s", 4);
-  if (sIndex > 3 && sIndex < word.length - 4) {
-    parts.push(word.slice(0, sIndex));
-    parts.push(word.slice(sIndex + 1));
-  }
-  
-  return parts;
 }

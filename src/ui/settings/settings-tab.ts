@@ -54,6 +54,10 @@ export class LlmWikiSettingsTab extends PluginSettingTab {
       container: containerEl,
       settings: {
         queryFolders: this.plugin.settings.queryFolders,
+        queryMaxEntities: this.plugin.settings.queryMaxEntities,
+        queryMaxConcepts: this.plugin.settings.queryMaxConcepts,
+        queryMaxConnections: this.plugin.settings.queryMaxConnections,
+        queryMaxSources: this.plugin.settings.queryMaxSources,
       },
       onChange: async (patch) => {
         Object.assign(this.plugin.settings, patch);

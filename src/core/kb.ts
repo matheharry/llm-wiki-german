@@ -591,6 +591,28 @@ export class KnowledgeBase {
   }
 
   /**
+   * Mappe von KB-ID zu lesbarem Namen — fuer die Anzeige im Query-Kontext.
+   *
+   * Punkt 1b: `related`-Verweise und Verbindungen speichern IDs
+   * ("schulmaterial"). Im Prompt erscheinen sie sonst als Slug, den das
+   * LLM keinem bekannten Begriff zuordnen kann.
+   *
+   * Anders als `relatedIndex()` nimmt diese Mappe ALLE Eintraege auf —
+   * auch solche, die keine Wiki-Seite bekommen. Eine Entity ohne Quelle
+   * ist zwar keine Seite wert, ihr Name aber sehr wohl.
+   */
+  nameMap(): Map<string, string> {
+    const map = new Map<string, string>();
+    for (const e of Object.values(this.data.entities)) {
+      map.set(e.id, e.name);
+    }
+    for (const c of Object.values(this.data.concepts)) {
+      map.set(c.id, c.name);
+    }
+    return map;
+  }
+
+  /**
    * Loest alle `related`-Verweise im gesamten KB auf.
    *
    * Wird nach der Extraktion einmal ueber alle Eintraege gelaufen, damit

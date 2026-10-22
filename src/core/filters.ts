@@ -152,6 +152,32 @@ export function isQualityEntity(e: Entity): boolean {
   return true;
 }
 
+/**
+ * Wie `isQualityEntity`, aber ohne die Quellen-Anforderung.
+ *
+ * Hintergrund: Eine Entity ohne Quelle hat keinen Beleg — sie ist im
+ * Wiki keine Seite wert. In der *Abfrage* ist sie aber trotzdem
+ * nutzbar: sie hat Fakten, die das LLM beantworten kann.
+ *
+ * Vor der Umstellung auf 300-Byte-Minimumdateigroesse und der
+ * Bereinigung verwaister Source-Records fielen 21 Entities mit
+ * zusammen 60 Faktoren durch das Raster — ihr Wissen war im KB, aber
+ * unerreichbar. Das ist Wissenverlust ohne Nutzen: die Seite fehlt
+ * zurecht (kein Beleg), die Antwort faellt aber nicht aus.
+ *
+ * Die beiden Pruefungen sind deshalb getrennt:
+ *  - `isQualityEntity()`  -> erzeugt eine Wiki-Seite
+ *  - `isRetrievableEntity()` -> darf in eine Antwort einfliesen
+ */
+export function isRetrievableEntity(e: Entity): boolean {
+  const lower = e.name.trim().toLowerCase();
+  if (ENTITY_BLACKLIST.has(lower)) return false;
+  if (isFileNameOrPathLike(e.name)) return false;
+  if (e.facts.length === 0 && e.aliases.length === 0) return false;
+  if (e.facts.length < MIN_FACTS_PER_ENTITY) return false;
+  return true;
+}
+
 export function isQualityConcept(c: Concept): boolean {
   const lower = c.name.trim().toLowerCase();
   if (CONCEPT_BLACKLIST.has(lower)) return false;
