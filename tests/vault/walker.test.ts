@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { walkVaultFiles, type WalkOptions } from "../../src/vault/walker.js";
+import { walkVault, walkVaultFiles, type WalkOptions } from "../../src/vault/walker.js";
 import { createMockApp, type FakeFile } from "../helpers/mock-app.js";
 
 const filesFor = (paths: string[]): FakeFile[] =>
@@ -107,5 +107,71 @@ describe("walkVaultFiles", () => {
       "Books/Watts.md",
       "Projects/Zen.md",
     ]);
+  });
+});
+
+describe("walkVault — Filterzaehlung", () => {
+  const opts: WalkOptions = {
+    skipDirs: ["wiki", ".obsidian", "Template", "Assets", ".trash"],
+    includeFolders: [],
+    minFileSize: 50,
+    dailiesFromIso: "2026-04-05",
+  };
+
+  it("zaehlt die wegen minFileSize verworfenen Dateien", () => {
+    const { app } = createMockApp([
+      {
+        path: "tiny.md",
+        content: "x",
+        mtime: 1700000000,
+        ctime: 1700000000,
+      },
+      {
+        path: "also-tiny.md",
+        content: "xx",
+        mtime: 1700000000,
+        ctime: 1700000000,
+      },
+      {
+        path: "Books/Watts.md",
+        content: "x".repeat(100),
+        mtime: 1700000000,
+        ctime: 1700000000,
+      },
+    ]);
+    const walk = walkVault(app, opts);
+    expect(walk.files.map((r) => r.path)).toEqual(["Books/Watts.md"]);
+    // Ohne diese Zaehlung waere der Groessenfilter unsichtbar — und
+    // damit auch sein Nutzen (gesparte LLM-Aufrufe) nicht belegbar.
+    expect(walk.prunedTooSmall).toBe(2);
+  });
+
+  it("zaehlt Dateien in ausgeschlossenen Ordnern NICHT als verworfen", () => {
+    const { app } = createMockApp([
+      {
+        path: "wiki/entities/x.md",
+        content: "x",
+        mtime: 1700000000,
+        ctime: 1700000000,
+      },
+      {
+        path: "Books/Watts.md",
+        content: "x".repeat(100),
+        mtime: 1700000000,
+        ctime: 1700000000,
+      },
+    ]);
+    const walk = walkVault(app, opts);
+    expect(walk.prunedTooSmall).toBe(0);
+    expect(walk.files.map((r) => r.path)).toEqual(["Books/Watts.md"]);
+  });
+
+  it("walkVaultFiles liefert dieselbe Dateiliste wie walkVault", async () => {
+    const { app } = createMockApp(
+      filesFor(["Books/Watts.md", "Learn/Zen.md", "notes/random.md"]),
+    );
+    const walk = walkVault(app, opts);
+    const viaWrapper = await walkVaultFiles(app, opts);
+    expect(viaWrapper.map((r) => r.path)).toEqual(walk.files.map((r) => r.path));
   });
 });
