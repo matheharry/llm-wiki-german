@@ -1,11 +1,12 @@
 import { App, SuggestModal, TFolder } from "obsidian";
 
-/** Sentinel value used to represent "the whole vault" (no folder restriction). */
-export const WHOLE_VAULT_LABEL = "(whole vault)";
+/** Sentinelwert für "der gesamte Vault" (keine Ordnereinschränkung). */
+export const WHOLE_VAULT_LABEL = "(gesamter Vault)";
 
 /**
- * Searchable picker over every folder in the vault. The first entry is always
- * the "(whole vault)" sentinel, which resolves to an empty string on pick.
+ * Durchsuchbare Auswahl aller Ordner im Vault. Der erste Eintrag ist immer
+ * der Sentinel "(gesamter Vault)", der beim Auswählen zu einem leeren String
+ * wird.
  */
 export class FolderPickerModal extends SuggestModal<string> {
   private readonly folders: readonly string[];
@@ -16,7 +17,7 @@ export class FolderPickerModal extends SuggestModal<string> {
     private readonly onPick: (folder: string) => void,
   ) {
     super(app);
-    this.setPlaceholder("Search vault folders…");
+    this.setPlaceholder("Vault-Ordner durchsuchen…");
     this.folders = collectVaultFolders(app);
     this.modalEl.addClass("llm-wiki-centered-suggest");
   }
@@ -33,7 +34,7 @@ export class FolderPickerModal extends SuggestModal<string> {
     const effective = folder === WHOLE_VAULT_LABEL ? "" : folder;
     if (effective === this.current) {
       el.createEl("small", {
-        text: "Current default",
+        text: "Aktueller Standard",
         cls: "llm-wiki-model-picker-hint",
       });
     }

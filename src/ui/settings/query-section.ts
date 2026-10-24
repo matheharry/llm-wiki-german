@@ -61,9 +61,10 @@ function buildLimitSetting(
 }
 
 export function buildQuerySection(args: BuildQuerySectionArgs): void {
-  new Setting(args.container).setName("Query").setHeading();
+  new Setting(args.container).setName("Abfrage").setHeading();
 
-  const wholeVaultDesc = "No folder restrictions (querying and indexing the entire vault)";
+  const wholeVaultDesc =
+    "Keine Ordnereinschränkung (Abfrage und Indizierung im gesamten Vault)";
 
   // Create a setting group for the query folder scope
   const settingGroup = args.container.createDiv({ cls: "setting-group" });
@@ -71,15 +72,15 @@ export function buildQuerySection(args: BuildQuerySectionArgs): void {
   // Heading with title and add button
   const heading = settingGroup.createDiv({ cls: "setting-item setting-item-heading" });
   const headingInfo = heading.createDiv({ cls: "setting-item-info" });
-  headingInfo.createDiv({ cls: "setting-item-name", text: "Query folders" });
+  headingInfo.createDiv({ cls: "setting-item-name", text: "Abfrage-Ordner" });
   headingInfo.createDiv({
     cls: "setting-item-description",
-    text: "Used for both answers and extraction indexing scope.",
+    text: "Gilt für Antworten und für den Umfang der Extraktions-Indizierung.",
   });
   const headingControl = heading.createDiv({ cls: "setting-item-control" });
 
   const addBtn = headingControl.createEl("button", {
-    text: "Add folder…",
+    text: "Ordner hinzufügen…",
     cls: "mod-cta",
   });
   addBtn.addEventListener("click", () => {
@@ -102,12 +103,12 @@ export function buildQuerySection(args: BuildQuerySectionArgs): void {
   // Items container for folders
   const itemsContainer = settingGroup.createDiv({ cls: "setting-items" });
 
-  // Display "Whole vault" when no folders are selected, or list of selected folders
+  // "Gesamter Vault" anzeigen, wenn kein Ordner gewählt ist, sonst die Liste
   if (args.settings.queryFolders.length === 0) {
     const settingItem = itemsContainer.createDiv({ cls: "setting-item" });
 
     const settingInfo = settingItem.createDiv({ cls: "setting-item-info" });
-    settingInfo.createDiv({ cls: "setting-item-name", text: "Whole vault" });
+    settingInfo.createDiv({ cls: "setting-item-name", text: "Gesamter Vault" });
     settingInfo.createDiv({ cls: "setting-item-description", text: wholeVaultDesc });
   } else {
     for (const folder of args.settings.queryFolders) {
@@ -118,7 +119,7 @@ export function buildQuerySection(args: BuildQuerySectionArgs): void {
 
       const settingControl = settingItem.createDiv({ cls: "setting-item-control" });
       const removeBtn = settingControl.createEl("button", {
-        text: "Remove",
+        text: "Entfernen",
         cls: "mod-warning",
       });
 
@@ -134,40 +135,45 @@ export function buildQuerySection(args: BuildQuerySectionArgs): void {
 
   // --- Obergrenzen der Abfrage (Punkt 5) ---------------------------------
   new Setting(args.container)
-    .setName("Retrieval limits")
+    .setName("Obergrenzen der Abfrage")
     .setDesc(
-      "How much material a single answer may draw on. More means more context, " +
-        "more tokens and slower answers. 0 disables that category entirely.",
+      "Wie viel Material eine einzelne Antwort heranziehen darf. Mehr bedeutet " +
+        "mehr Kontext, mehr Tokens und langsamere Antworten. 0 deaktiviert die " +
+        "jeweilige Kategorie vollständig.",
     )
     .setHeading();
 
   buildLimitSetting(
     args,
     "queryMaxEntities",
-    "Max entities",
-    "Named things (people, tools, organisations) considered per answer.",
+    "Maximale Entitäten",
+    "Benannte Dinge (Personen, Werkzeuge, Organisationen), die pro Antwort " +
+      "berücksichtigt werden.",
     50,
   );
   buildLimitSetting(
     args,
     "queryMaxConcepts",
-    "Max concepts",
-    "Concepts considered per answer. Concepts carry the definitions.",
+    "Maximale Konzepte",
+    "Konzepte, die pro Antwort berücksichtigt werden. Konzepte tragen die " +
+      "Definitionen.",
     50,
   );
   buildLimitSetting(
     args,
     "queryMaxConnections",
-    "Max connections",
-    "Relations between the retrieved items included per answer.",
+    "Maximale Verbindungen",
+    "Beziehungen zwischen den gefundenen Einträgen, die pro Antwort " +
+      "einbezogen werden.",
     100,
   );
   buildLimitSetting(
     args,
     "queryMaxSources",
-    "Max source files",
-    "Source files listed per answer. This is the main lever on answer size: " +
-      "every source adds its full summary to the prompt.",
+    "Maximale Quelldateien",
+    "Quelldateien, die pro Antwort aufgeführt werden. Das ist der wichtigste " +
+      "Hebel für die Antwortgröße: Jede Quelle bringt ihre vollständige " +
+      "Zusammenfassung in den Prompt ein.",
     200,
   );
 }
