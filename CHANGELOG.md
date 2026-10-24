@@ -6,6 +6,100 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.0.0] — 2026-10-24
+
+### Added
+- **Einstellbare Obergrenzen für den Abfragekontext**: Die Zahl der Entitäten,
+  Konzepte und Verbindungen im Prompt war fest im Code verdrahtet, für Quellen
+  gab es überhaupt keine Grenze. Alle vier Werte stehen jetzt im
+  Einstellungs-Modal. Die Voreinstellungen für Entitäten, Konzepte und
+  Verbindungen (8/5/20) entsprechen den bisherigen Konstanten; Quellen sind neu
+  auf 30 gedeckelt (vorher unbegrenzt).
+- **`scripts/regenerate-wiki.ts`**: erzeugt alle Wiki-Seiten direkt aus
+  `wiki/knowledge.json`, ohne Obsidian und ohne einen einzigen LLM-Aufruf. Das
+  Skript hat ein Sicherheitsnetz und bricht ab, wenn der Verzeichnis-Adapter
+  leer zurückkommt — sonst würde der Aufräumschritt die gesamte Seitenablage
+  löschen.
+- **`updatedAt` im KB-Schema**: eigener Zeitstempel der letzten Änderung,
+  getrennt vom Erstellungsdatum `generatedAt`. Bestehende Einträge werden beim
+  Laden einmalig migriert (`updatedAt = generatedAt`).
+
+### Changed
+- **Versionssprung auf 2.0.0**: Das Verhalten beim Entfernen von Quellen, die
+  Standard-Mindestdateigröße und das Frontmatter-Format haben sich geändert. Die
+  Migration der Wissensbasis läuft beim Laden automatisch.
+- **Gelöschte Quelldateien löschen kein Wissen mehr**: `removeSource()` entfernt
+  nur noch die Zitation, nicht den Eintrag. Im Live-Wiki wären 69 belegte
+  Wissensseiten und 64 Verweise darauf verschwunden, nur weil ihre Quelldatei
+  gelöscht wurde. Verbindungen ohne verbleibende Quelle entfallen weiterhin.
+- **Verwaiste Quellen-Records werden entfernt**: Zeigt ein KB-Quelleneintrag auf
+  eine Datei, die es nicht mehr gibt, wird er samt Verweisen und den
+  ausschließlich daran hängenden Verbindungen entfernt — vor der
+  Seitengenerierung, damit betroffene Seiten ihre Quellenangabe verlieren statt
+  neu geschrieben zu werden. Dateien, die existieren, aber außerhalb der
+  indizierten Ordner liegen, bleiben unangetastet.
+- **Standard-Mindestdateigröße 300 B**: Der Filter lief bisher mit 100 B, sodass
+  winzige Notizen pro Nachtlauf LLM-Aufrufe kosteten, ohne einen verwertbaren
+  Eintrag zu liefern; ein zweiter, hart kodierter 300er-Filter in `plugin.ts`
+  war toter Code. Übersprungene Dateien werden jetzt im Log gezählt.
+- **Frontmatter trennt `erstellt` und `aktualisiert`**: `aktualisiert` wurde
+  bisher aus `generatedAt` gespeist und behauptete damit eine Aktualität, die es
+  nicht gab (10.415 Einträge verteilten sich auf 35 Datumswerte, der älteste
+  vom 2026-08-14).
+- **Ein Log-Eintrag pro Extraktionslauf statt einer Zeile pro Datei**: Das
+  Wiki-Log war auf 13.000 Zeilen / 1,9 MB gewachsen, davon rund 9.760 Zeilen
+  "Inhalt unverändert" und nur etwa 15 Zeilen mit echtem Informationsgehalt.
+  Einzelne Dateien erscheinen nur noch bei Fehlern; übersprungene Dateien und
+  Qualitätsfilter werden nach Grund zusammengefasst.
+- **Index-Seiten aufgeteilt und gestrafft**: Der Hauptindex gruppiert Konzepte
+  alphabetisch und Entitäten nach Typ; die Quellen (zuvor rund 24 % der 2,7 MB)
+  liegen im eigenen `wiki/quellen-index`.
+
+### Fixed
+- **Kontext-Explosion im Prompt**: Eine einzige Frage erzeugte 408 kB Kontext.
+  Die Abschneidegrenze griff am Ende, und weil Entitäten zuerst kamen,
+  verschlang dieser Abschnitt das Budget — alle Konzepte, Verbindungen und
+  Quellen fielen stumm weg. Jetzt hat jeder Abschnitt sein eigenes Budget, wird
+  für sich gekürzt und die Kürzung wird markiert. Ergebnis im Live-Wiki: 408.450 →
+  14.829 Zeichen, alle vier Abschnitte im Prompt.
+- **Quellen-Explosion im Kontext**: Das Bundle enthielt 659 Quellen, davon 469
+  ohne eine einzige Fundstelle. Jetzt zuerst die Quellen der Fundstellen, dann
+  die direkt getroffenen, gedeckelt bei 30 (−67 %).
+- **Verbindungen mit Concept-Endpunkt waren unerreichbar**: `retrieve()`
+  filterte nur über Entity-IDs; 1.053 der 5.620 Verbindungen hatten
+  ausschließlich Concept-Endpunkte.
+- **Entitäten ohne Quelle waren unerreichbar**: 21 Entitäten mit zusammen 60
+  Fakten fehlten in Antworten, weil dieselbe Qualitätsprüfung wie für
+  Wiki-Seiten griff. Neu trennt `isRetrievableEntity()` die beiden Fragen; der
+  exakte Namensstreffer hat Vorrang, damit der Qualitätsmultiplikator die
+  Relevanz nicht überstimmt. 19 von 19 Entitäten mit Fakten sind erreichbar
+  (vorher 8).
+- **`related` und Verbindungen als Slug im Prompt**: Nach der
+  `related`-Migration enthalten die Felder IDs; im Prompt stand "schulmaterial"
+  statt "Schulmaterial". Jetzt über `kb.nameMap()` aufgelöst.
+- **Komposita-Splitter zerlegte Wörter falsch**: Der S-Joiner schnitt an jedem
+  "s" ab und machte aus "Aggregatzustand" die Fragmente "aggregatzu" und
+  "tand". Er greift nur noch, wenn beide Teile eigenständige Wörter sind.
+- **Tote Links auf Quellseiten**: Jeder Eintrag, dessen `sources` die Quelle
+  nannte, wurde verlinkt — auch die, die der Qualitätsfilter verworfen hatte
+  (95 tote Links auf 1.003 Seiten). Einträge ohne Seite stehen jetzt als
+  Klartext unter "Einträge (ohne Seite)".
+- **Steuerzeichen machten Seiten ungültig**: `\b` aus LaTeX wird auf dem Weg
+  durch den JSON-Transport zu einem echten Backspace und landete im
+  Konzeptnamen — im Frontmatter und in der Überschrift. Das KB wird deshalb
+  schon beim Laden bereinigt (`toStr`), für Namen, Definitionen, Aliasse,
+  Quellen-Zusammenfassungen und Verbindungs-Beschreibungen. Tab, Zeilenumbruch
+  und Wagenrücklauf bleiben erhalten.
+- **`resolveAllRelated()` war nicht idempotent**: Nur `related` wurde aufgelöst,
+  `unresolvedRelated` ignoriert. Beim zweiten Lauf verschwanden unaufgelöste
+  Namen endgültig. Beide Hälften werden jetzt gemeinsam aufgelöst, sodass ein
+  Verweis überlebt, bis sein Ziel existiert.
+- **Doppelte Einträge und ungültiges YAML**: Gleichnamige Entitäten und Konzepte
+  wurden mehrfach angelegt; `related`-Verweise zeigten auf Namen ohne Seite und
+  Verbindungen auf nicht existierende Endpunkte. Die Erzeugung dedupliziert
+  jetzt, löst Verweise nur auf gültige Seiten auf, filtert tote Verbindungen und
+  härtet das YAML-Frontmatter.
+
 ## [1.2.0] — 2026-10-10
 
 ### Changed
