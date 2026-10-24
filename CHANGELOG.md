@@ -29,9 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Standard-Mindestdateigröße und das Frontmatter-Format haben sich geändert. Die
   Migration der Wissensbasis läuft beim Laden automatisch.
 - **Gelöschte Quelldateien löschen kein Wissen mehr**: `removeSource()` entfernt
-  nur noch die Zitation, nicht den Eintrag. Im Live-Wiki wären 69 belegte
-  Wissensseiten und 64 Verweise darauf verschwunden, nur weil ihre Quelldatei
-  gelöscht wurde. Verbindungen ohne verbleibende Quelle entfallen weiterhin.
+  nur noch die Zitation, nicht den Eintrag. 
 - **Verwaiste Quellen-Records werden entfernt**: Zeigt ein KB-Quelleneintrag auf
   eine Datei, die es nicht mehr gibt, wird er samt Verweisen und den
   ausschließlich daran hängenden Verbindungen entfernt — vor der
@@ -44,24 +42,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   war toter Code. Übersprungene Dateien werden jetzt im Log gezählt.
 - **Frontmatter trennt `erstellt` und `aktualisiert`**: `aktualisiert` wurde
   bisher aus `generatedAt` gespeist und behauptete damit eine Aktualität, die es
-  nicht gab (10.415 Einträge verteilten sich auf 35 Datumswerte, der älteste
-  vom 2026-08-14).
-- **Ein Log-Eintrag pro Extraktionslauf statt einer Zeile pro Datei**: Das
-  Wiki-Log war auf 13.000 Zeilen / 1,9 MB gewachsen, davon rund 9.760 Zeilen
-  "Inhalt unverändert" und nur etwa 15 Zeilen mit echtem Informationsgehalt.
+  nicht gab.
+- **Ein Log-Eintrag pro Extraktionslauf statt einer Zeile pro Datei**: 
   Einzelne Dateien erscheinen nur noch bei Fehlern; übersprungene Dateien und
   Qualitätsfilter werden nach Grund zusammengefasst.
 - **Index-Seiten aufgeteilt und gestrafft**: Der Hauptindex gruppiert Konzepte
-  alphabetisch und Entitäten nach Typ; die Quellen (zuvor rund 24 % der 2,7 MB)
-  liegen im eigenen `wiki/quellen-index`.
+  alphabetisch und Entitäten nach Typ; die Quellen liegen im eigenen `wiki/quellen-index`.
 
 ### Fixed
 - **Kontext-Explosion im Prompt**: Eine einzige Frage erzeugte 408 kB Kontext.
   Die Abschneidegrenze griff am Ende, und weil Entitäten zuerst kamen,
   verschlang dieser Abschnitt das Budget — alle Konzepte, Verbindungen und
   Quellen fielen stumm weg. Jetzt hat jeder Abschnitt sein eigenes Budget, wird
-  für sich gekürzt und die Kürzung wird markiert. Ergebnis im Live-Wiki: 408.450 →
-  14.829 Zeichen, alle vier Abschnitte im Prompt.
+  für sich gekürzt und die Kürzung wird markiert. 
 - **Quellen-Explosion im Kontext**: Das Bundle enthielt 659 Quellen, davon 469
   ohne eine einzige Fundstelle. Jetzt zuerst die Quellen der Fundstellen, dann
   die direkt getroffenen, gedeckelt bei 30 (−67 %).
@@ -72,11 +65,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   Fakten fehlten in Antworten, weil dieselbe Qualitätsprüfung wie für
   Wiki-Seiten griff. Neu trennt `isRetrievableEntity()` die beiden Fragen; der
   exakte Namensstreffer hat Vorrang, damit der Qualitätsmultiplikator die
-  Relevanz nicht überstimmt. 19 von 19 Entitäten mit Fakten sind erreichbar
-  (vorher 8).
+  Relevanz nicht überstimmt.
 - **`related` und Verbindungen als Slug im Prompt**: Nach der
-  `related`-Migration enthalten die Felder IDs; im Prompt stand "schulmaterial"
-  statt "Schulmaterial". Jetzt über `kb.nameMap()` aufgelöst.
+  `related`-Migration enthalten die Felder IDs. Jetzt über `kb.nameMap()` aufgelöst.
 - **Komposita-Splitter zerlegte Wörter falsch**: Der S-Joiner schnitt an jedem
   "s" ab und machte aus "Aggregatzustand" die Fragmente "aggregatzu" und
   "tand". Er greift nur noch, wenn beide Teile eigenständige Wörter sind.
